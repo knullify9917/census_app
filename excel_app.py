@@ -37,6 +37,26 @@ st.markdown("""
     }
     .stButton > button:hover, form button[type="submit"]:hover { background-color: #0f766e !important; color: #ffffff !important; }
     
+    /* Sidebar Sign Out Button Styled to Match stMetric Cards */
+    section[data-testid="stSidebar"] div.stButton > button {
+        background-color: #ffffff !important;
+        color: #1e3a8a !important;
+        border: 1px solid #cbd5e1 !important;
+        border-left: 5px solid #0f766e !important;
+        border-radius: 8px !important;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        font-weight: 600 !important;
+        width: 100% !important;
+        text-align: left !important;
+        padding: 10px 15px !important;
+    }
+    section[data-testid="stSidebar"] div.stButton > button:hover {
+        background-color: #f0fdf4 !important;
+        color: #0f766e !important;
+        border-color: #0f766e !important;
+        border-left: 5px solid #1e3a8a !important;
+    }
+
     /* Form Inputs, Textareas, and Dropdown Controls */
     div[data-baseweb="select"] > div, input[type="text"], input[type="number"], input[type="password"], textarea {
         background-color: #ffffff !important; color: #1e3a8a !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important;
