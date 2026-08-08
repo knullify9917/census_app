@@ -964,7 +964,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 # FORM 5: Surgical Care Complex (OR Main)
 # ---------------------------------------------------------
 elif selected_sheet == "Surgical Care Complex (OR Main)":
-    st.header("Surgical Care Complex Patient Registration")
+    st.header("Surgical Care Complex (SCC) Patient Registration")
     ph_now = get_ph_time()
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_scc")
@@ -1101,7 +1101,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 # FORM 6: Special Care Complex (NICU-PICU-NSU/PCN-Outborn)
 # ---------------------------------------------------------
 elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
-    st.header("Special Care Unit Patient Registration")
+    st.header("Special Care Complex (SCC) Patient Registration")
 
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_scu")
