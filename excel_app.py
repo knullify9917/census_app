@@ -613,8 +613,6 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-st.markdown("All data entries are securely stored on our hospital database.")
-
 # Sidebar Profile Info, Database Security Notice & Sign Out
 st.sidebar.markdown(f"**Logged in as:** {st.session_state['name']}")
 st.sidebar.markdown(f"**Role:** `{st.session_state['role']}`")
@@ -639,7 +637,7 @@ if allowed_modules == "All":
 else:
     MODULES = allowed_modules
 
-st.sidebar.markdown("### 🧭 Navigation & Modules")
+st.sidebar.markdown("### 🧭 Department Navigation")
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
 
 st.sidebar.markdown("---")
