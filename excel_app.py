@@ -255,15 +255,21 @@ def ensure_google_sheets_exist():
         existing_worksheets = []
     
     if "Dashboard & Summary" not in existing_worksheets:
-        ws_sum = sh.add_worksheet(title="Dashboard & Summary", rows=100, cols=4)
-        ws_sum.update('A1:D1', [["METRO TERESA MEDICAL CENTER (MTCMC)", "", "", ""]])
-        ws_sum.update('A4:D4', [['Department / Module', 'Total Census Records', 'Active Column Count', 'Source Masterfile']])
+        try:
+            ws_sum = sh.add_worksheet(title="Dashboard & Summary", rows=100, cols=4)
+            ws_sum.update('A1:D1', [["METRO TERESA MEDICAL CENTER (MTCMC)", "", "", ""]])
+            ws_sum.update('A4:D4', [['Department / Module', 'Total Census Records', 'Active Column Count', 'Source Masterfile']])
+        except Exception:
+            pass
 
     for s_name, cols in SHEET_HEADERS.items():
         if s_name not in existing_worksheets:
-            ws = sh.add_worksheet(title=s_name, rows=1000, cols=len(cols))
-            ws.update('A1', [[f"MTCMC CLINICAL CENSUS - {s_name} MASTERFILE"]])
-            ws.update('A4', [cols])
+            try:
+                ws = sh.add_worksheet(title=s_name, rows=1000, cols=len(cols))
+                ws.update('A1', [[f"MTCMC CLINICAL CENSUS - {s_name} MASTERFILE"]])
+                ws.update('A4', [cols])
+            except Exception:
+                pass
 
 def append_record_to_google_sheet(sheet_name, row_dict):
     ensure_google_sheets_exist()
