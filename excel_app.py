@@ -256,7 +256,7 @@ SHEET_HEADERS = {
     ],
     "OBGYNE Care Complex (LRDR-OB Surgery)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
-        'DIAGNOSIS', 'PROCEDURE', 'PROCEDURE BREAKDOWN', 
+        'PRE-OP DIAGNOSIS', 'POST-OP DIAGNOSIS', 'PROCEDURE', 'PROCEDURE BREAKDOWN', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'SURGEON / OBGYNE', 'SURGEON SPECIALIZATION',
@@ -903,12 +903,17 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 
         st.subheader("📋 OBGYNE Diagnosis & Procedure Details")
         
+        # Row 1: Pre-Op Diagnosis & Post-Op Diagnosis (Matched 100% with Surgical Care Complex)
         cd1, cd2 = st.columns(2)
         with cd1:
-            diagnosis = st.text_area("OBGYNE Diagnosis", value="")
+            pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="")
         with cd2:
-            procedure = st.text_input("Procedure Name", value="")
+            post_op_diagnosis = st.text_area("Post-Op Diagnosis", value="")
 
+        # Row 2: Procedure Name
+        procedure = st.text_area("Procedure Name", value="")
+
+        # Row 3: Procedure Breakdown | Complexity Tier | Hospitalization Mode & Kit Package | Mode of Payment
         ca, cb, cc, cd = st.columns(4)
         with ca:
             ob_procs = st.multiselect("Procedure Breakdown", ["CS PRIMARY", "CS", "NSD", "D&C", "HYSTERECTOMY", "EXLAP", "OTHER PROCEDURES", "NST"])
@@ -940,7 +945,8 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
                 'MIDDLE NAME': middle_name,
                 'SEX': sex,
                 'AGE': float(age),
-                'DIAGNOSIS': diagnosis,
+                'PRE-OP DIAGNOSIS': pre_op_diagnosis,
+                'POST-OP DIAGNOSIS': post_op_diagnosis,
                 'PROCEDURE': procedure,
                 'PROCEDURE BREAKDOWN': ", ".join(ob_procs) if ob_procs else "None",
                 'ATTENDING PHYSICIAN': attending_physician if attending_physician else "N/A",
