@@ -8,7 +8,7 @@ import os
 # 1. PAGE CONFIGURATION
 # ---------------------------------------------------------
 st.set_page_config(
-    page_title="MTCMC Patient Data Recording System",
+    page_title="PATIENT DATA RECORDING SYSTEM",
     layout="wide",
     initial_sidebar_state="expanded"
 )
