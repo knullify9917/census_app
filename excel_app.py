@@ -804,7 +804,7 @@ st.markdown("---")
 # ---------------------------------------------------------
 if selected_sheet == "Hospital Information System":
     st.header("🏥 Hospital Summary")
-    st.markdown("This is the census summary of the departments of MTCMC.")
+    st.markdown("This is the current active census summary today.")
 
     department_sheets = sorted([
         "Emergency Care Complex (ECC)", 
@@ -1291,7 +1291,8 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 # FORM 3: Hemodialysis Unit (HDU)
 # ---------------------------------------------------------
 elif selected_sheet == "Hemodialysis Unit (HDU)":
-    st.header("💧 Hemodialysis Unit Patient Registration")
+    hdu_icon_html = get_custom_icon_html("medical_icon.png", width=38)
+    st.markdown(f"<h2>{hdu_icon_html} Hemodialysis Unit Patient Registration</h2>", unsafe_allow_html=True)
 
     with st.form("hdu_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
@@ -1452,7 +1453,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 
         ca, cb, cc, cd, ce = st.columns(5)
         with ca:
-            selected_ob_procs = st.multiselect("Procedure Category", all_scc_procs if 'all_scc_procs' in locals() else all_ob_procs)
+            selected_ob_procs = st.multiselect("Procedure Category", all_ob_procs)
         with cb:
             complexity = st.selectbox("Complexity Tier", ["Select Complexity", "MAJOR", "MINOR", "DIAGNOSTIC"], index=0)
         with cc:
