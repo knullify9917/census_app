@@ -16,7 +16,28 @@ st.set_page_config(
 REGULAR_FONT_SIZE = 10
 
 # ---------------------------------------------------------
-# 2. EXACT SPECIALTIES SORTED BY FIELD OF MEDICINE THEN ALPHABETICALLY
+# 2. SORTED HOSPITAL UNIT AREAS LIST
+# ---------------------------------------------------------
+HOSPITAL_UNIT_AREAS = [
+    "None",
+    "GNU 1C",
+    "GNU 2A",
+    "GNU 2B",
+    "GNU 2C",
+    "GNU 2D",
+    "GNU 3A",
+    "GNU 3B",
+    "GNU 3C",
+    "GNU 4A",
+    "ICU",
+    "NSU",
+    "PCN",
+    "PICU",
+    "OUTBORN"
+]
+
+# ---------------------------------------------------------
+# 3. EXACT SPECIALTIES SORTED BY FIELD OF MEDICINE THEN ALPHABETICALLY
 # ---------------------------------------------------------
 SPECIALTIES_BY_FIELD = {
     "Anaesthesiology": [
@@ -140,7 +161,7 @@ def get_spec_index(default_name):
     return 0
 
 # ---------------------------------------------------------
-# 3. STREAMLINED SHEET HEADERS (UPDATED ECC & SCU HEADERS)
+# 4. STREAMLINED SHEET HEADERS
 # ---------------------------------------------------------
 SHEET_HEADERS = {
     "Emergency Care Complex (ECC)": [
@@ -204,7 +225,7 @@ def get_month_str(date_obj, fmt_style="numeric_prefix"):
     return month_name
 
 # ---------------------------------------------------------
-# 4. GOOGLE SHEETS CONNECTION & SETUP
+# 5. GOOGLE SHEETS CONNECTION & SETUP
 # ---------------------------------------------------------
 @st.cache_resource
 def init_google_sheets():
@@ -334,7 +355,7 @@ def check_existing_patient_ai(sheet_name, last_name, fn, curr_date_str):
 ensure_google_sheets_exist()
 
 # ---------------------------------------------------------
-# 5. STREAMLIT APP INTERFACE
+# 6. STREAMLIT APP INTERFACE
 # ---------------------------------------------------------
 st.title("PATIENT DATA RECORDING SYSTEM")
 st.markdown("All data entries are securely stored on our hospital database.")
@@ -479,11 +500,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         with c_doc3:
             payment_selected = st.selectbox("Mode of Payment", ["PHIC", "HMO", "SELF-PAY", "CHARITY"])
         with c_doc4:
-            unit_areas_list = [
-                "None", "GNU 1C", "GNU 2A", "GNU 2B", "GNU 2C", "GNU 2D", 
-                "GNU 3A", "GNU 3B", "GNU 3C", "GNU 4A", "ICU", "PICU", "OUTBORN"
-            ]
-            admitted_to = st.selectbox("Admitted to", unit_areas_list)
+            admitted_to = st.selectbox("Admitted to", HOSPITAL_UNIT_AREAS)
 
         st.subheader("📋 Clinical Details")
         diagnosis_text = st.text_area("Clinical Diagnosis")
@@ -1048,15 +1065,11 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
 
         c10, c11, c12, c13 = st.columns(4)
         with c10:
-            admitted_from = st.selectbox("Admitted From", ["ECC", "GNU 1C", "2A", "2B", "2C", "2D", "3A", "3B", "3C", "4A"])
+            admitted_from = st.selectbox("Admitted From", HOSPITAL_UNIT_AREAS)
         with c11:
             admitted_to = st.selectbox("Admitted To", ["NICU", "PICU", "NSU", "PCN", "OUTBORN", "ROOM-IN"])
         with c12:
-            unit_areas_list = [
-                "None", "GNU 1C", "GNU 2A", "GNU 2B", "GNU 2C", "GNU 2D", 
-                "GNU 3A", "GNU 3B", "GNU 3C", "GNU 4A", "ICU", "PICU", "OUTBORN"
-            ]
-            transferred_to = st.selectbox("Transferred To", unit_areas_list)
+            transferred_to = st.selectbox("Transferred To", HOSPITAL_UNIT_AREAS)
         with c13:
             hosp_mode = st.radio("Hospitalization Mode", ["IPD", "OPD"])
 
