@@ -355,13 +355,13 @@ def get_spec_index(default_name):
     return 0
 
 # ---------------------------------------------------------
-# 4. STREAMLINED SHEET HEADERS
+# 4. STREAMLINED SHEET HEADERS (Includes PATIENT STATUS)
 # ---------------------------------------------------------
 SHEET_HEADERS = {
     "Emergency Care Complex (ECC)": [
         'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
         'DISEASE CATEGORY', 'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
-        'HOSPITALIZATION MODE', 'CASE TYPE', 'MODE OF PAYMENT', 'ADMITTED TO', 'CASE COUNT'
+        'HOSPITALIZATION MODE', 'CASE TYPE', 'MODE OF PAYMENT', 'ADMITTED TO', 'PATIENT STATUS', 'CASE COUNT'
     ],
     "Endoscopy Unit (ENDO)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
@@ -370,13 +370,13 @@ SHEET_HEADERS = {
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'SURGEON / PROCEDURALIST', 'SURGEON SPECIALIZATION',
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
-        'PROCEDURE NATURE', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'CASE COUNT'
+        'PROCEDURE NATURE', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
     ],
     "Hemodialysis Unit (HDU)": [
         'MONTH', 'DATE', 'TRUE DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'DIAGNOSIS', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-        'DIALYSIS SHIFT SLOT', 'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'CASE COUNT'
+        'DIALYSIS SHIFT SLOT', 'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
     ],
     "OBGYNE Care Complex (LRDR-OB Surgery)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
@@ -385,7 +385,7 @@ SHEET_HEADERS = {
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'SURGEON / OBGYNE', 'SURGEON SPECIALIZATION',
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
-        'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'CASE COUNT'
+        'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
     ],
     "Surgical Care Complex (OR Main)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
@@ -394,14 +394,14 @@ SHEET_HEADERS = {
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'PRIMARY SURGEON', 'SURGEON SPECIALIZATION',
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
-        'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'CASE COUNT'
+        'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
     ],
     "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)": [
         'MONTH', 'DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AOG', 'AGE', 'DIAGNOSIS', 
         'DIAGNOSIS CATEGORY', 'ADMITTED FROM', 'ADMITTED TO', 'TRANSFERRED TO', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-        'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'CASE COUNT'
+        'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
     ]
 }
 
@@ -773,11 +773,11 @@ if selected_sheet == "Hospital Information System":
     st.dataframe(summary_df, use_container_width=True)
 
     # ---------------------------------------------------------
-    # HOSPITAL-WIDE ACTIVE / ADMITTED PATIENT ROSTER
+    # HOSPITAL-WIDE ACTIVE & MAY GO HOME PATIENT ROSTER
     # ---------------------------------------------------------
     st.markdown("---")
-    st.subheader("📋 Hospital-Wide Active & Admitted Patient Roster")
-    st.markdown("Aggregated live roster of patients currently recorded across all hospital departments and care units.")
+    st.subheader("📋 Hospital-Wide Active Patient Roster (Active & May Go Home)")
+    st.markdown("Aggregated live roster displaying patients currently tagged as **Active** or **May Go Home** across all hospital departments.")
 
     all_roster_frames = []
     for dept in department_sheets:
@@ -790,24 +790,32 @@ if selected_sheet == "Hospital Information System":
     if all_roster_frames:
         master_roster_df = pd.concat(all_roster_frames, ignore_index=True)
         
-        # Filter options for active roster view
+        # Filter strictly for Active & May Go Home if PATIENT STATUS column exists
+        if 'PATIENT STATUS' in master_roster_df.columns:
+            master_roster_df['PATIENT STATUS'] = master_roster_df['PATIENT STATUS'].fillna("Active")
+            active_roster_filtered = master_roster_df[
+                master_roster_df['PATIENT STATUS'].astype(str).str.strip().str.lower().isin(['active', 'may go home'])
+            ]
+        else:
+            active_roster_filtered = master_roster_df
+
         c_filt1, c_filt2 = st.columns(2)
         with c_filt1:
             unit_filter = st.selectbox("Filter by Department Unit", ["All Departments"] + department_sheets)
         with c_filt2:
             search_name = st.text_input("Search Patient Last Name", value="")
 
-        filtered_roster = master_roster_df.copy()
+        final_roster_display = active_roster_filtered.copy()
         if unit_filter != "All Departments":
-            filtered_roster = filtered_roster[filtered_roster["DEPARTMENT UNIT"] == unit_filter]
+            final_roster_display = final_roster_display[final_roster_display["DEPARTMENT UNIT"] == unit_filter]
         if search_name.strip():
-            if 'LAST NAME' in filtered_roster.columns:
-                filtered_roster = filtered_roster[filtered_roster['LAST NAME'].astype(str).str.contains(search_name.strip(), case=False, na=False)]
+            if 'LAST NAME' in final_roster_display.columns:
+                final_roster_display = final_roster_display[final_roster_display['LAST NAME'].astype(str).str.contains(search_name.strip(), case=False, na=False)]
 
-        st.dataframe(filtered_roster, use_container_width=True)
-        st.caption(f"Showing {len(filtered_roster)} active patient records.")
+        st.dataframe(final_roster_display, use_container_width=True)
+        st.caption(f"Showing {len(final_roster_display)} active / may-go-home patient records.")
     else:
-        st.info("No active patient admission records found across hospital sheets.")
+        st.info("No patient admission records found across hospital sheets.")
 
     st.markdown("---")
     st.subheader("Department Summary")
@@ -826,7 +834,7 @@ if selected_sheet == "Hospital Information System":
                 dept_df = dept_df[dept_df['ADMITTED TO'] == selected_area]
                 st.write(f"Filtered to **{selected_area}** ({len(dept_df)} records)")
 
-        preferred_cols = ['DATE', 'LAST NAME', 'FIRST NAME', 'DIAGNOSIS', 'DIAGNOSIS CATEGORY', 'ATTENDING PHYSICIAN', 'PRIMARY SURGEON', 'SURGEON / PROCEDURALIST', 'SURGEON / OBGYNE', 'ADMITTED TO', 'TRANSFERRED TO', 'MODE OF PAYMENT']
+        preferred_cols = ['DATE', 'LAST NAME', 'FIRST NAME', 'DIAGNOSIS', 'PATIENT STATUS', 'DIAGNOSIS CATEGORY', 'ATTENDING PHYSICIAN', 'PRIMARY SURGEON', 'SURGEON / PROCEDURALIST', 'SURGEON / OBGYNE', 'ADMITTED TO', 'TRANSFERRED TO', 'MODE OF PAYMENT']
         display_cols = [c for c in preferred_cols if c in dept_df.columns]
         if not display_cols:
             display_cols = dept_df.columns.tolist()
@@ -868,13 +876,15 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         with c_d2:
             entry_time_str = civilian_time_text_field("Time of Entry", key_suffix="ecc_time")
 
-        c_h1, c_h2, c_h3 = st.columns(3)
+        c_h1, c_h2, c_h3, c_h4 = st.columns(4)
         with c_h1:
             hosp_mode = st.selectbox("Hospitalization Mode", ["None", "Inpatient", "Outpatient"])
         with c_h2:
             case_type = st.selectbox("Case Type", ["None", "Private Case", "House Case (Walk-in)", "Not Applicable"])
         with c_h3:
             payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY", "CHARITY"])
+        with c_h4:
+            patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"])
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
@@ -922,6 +932,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
                 'CASE TYPE': case_type,
                 'MODE OF PAYMENT': payment_selected,
                 'ADMITTED TO': admitted_to,
+                'PATIENT STATUS': patient_status,
                 'CASE COUNT': 1
             }
 
@@ -1002,7 +1013,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         proc_cols = ['GASTROSCOPY', 'COLONOSCOPY', 'NASAL PROCEDURE', 'PEG PROCEDURE', 'ERCP', 'PROCTOSIGMOIDOSCOPY', 'PARACENTESIS', 'BRONCHOSCOPY', 'OTHER PROCEDURES']
         selected_procs = st.multiselect("Procedure Category", proc_cols)
         
-        ca, cb, cc, cd = st.columns(4)
+        ca, cb, cc, cd, ce = st.columns(5)
         with ca: 
             proc_type = st.selectbox("Procedure Classification", ["None", "DIAGNOSTICS", "THERAPEUTICS", "DIAGNOSTICS & THERAPEUTICS"])
         with cb: 
@@ -1010,6 +1021,8 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         with cc: 
             payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
         with cd:
+            patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"])
+        with ce:
             kit_package = st.checkbox("Hospital Kit Package", value=False)
 
         submitted = st.form_submit_button("Submit Record to Google Sheets")
@@ -1047,6 +1060,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
                 'HOSPITALIZATION MODE': hosp_mode,
                 'HOSPITAL KIT PACKAGE': "Yes" if kit_package else "No",
                 'MODE OF PAYMENT': payment_selected,
+                'PATIENT STATUS': patient_status,
                 'CASE COUNT': 1
             }
 
@@ -1102,13 +1116,15 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
                     cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_hdu_{i}")
                 cm_entries.append((cm_name, cm_spec))
 
-        c7, c8, c9 = st.columns(3)
+        c7, c8, c9, c10 = st.columns(4)
         with c7:
             shift_set = st.selectbox("Dialysis Shift Slot", ["None", "1ST SET", "2ND SET", "3RD SET", "ONCALL"])
         with c8:
             hosp_mode = st.selectbox("Hospitalization Mode", ["None", "Outpatient", "Inpatient"])
         with c9:
             payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
+        with c10:
+            patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"])
 
         submitted = st.form_submit_button("Submit Record to Google Sheets")
         if submitted:
@@ -1139,6 +1155,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
                 'DIALYSIS SHIFT SLOT': shift_set,
                 'HOSPITALIZATION MODE': hosp_mode,
                 'MODE OF PAYMENT': payment_selected,
+                'PATIENT STATUS': patient_status,
                 'CASE COUNT': 1
             }
 
@@ -1227,7 +1244,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             'CS PRIMARY', 'CS', 'NSD', 'D&C', 'HYSTERECTOMY', 'EXLAP', 'OTHER PROCEDURES', 'NST'
         ]
 
-        ca, cb, cc, cd = st.columns(4)
+        ca, cb, cc, cd, ce = st.columns(5)
         with ca:
             selected_ob_procs = st.multiselect("Procedure Category", all_ob_procs)
         with cb:
@@ -1237,6 +1254,8 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             kit_used = st.checkbox("Hospital Kit Package", value=True)
         with cd:
             payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
+        with ce:
+            patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"])
 
         submitted = st.form_submit_button("Submit Record to Google Sheets")
         if submitted:
@@ -1275,6 +1294,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
                 'HOSPITALIZATION MODE': hosp_mode,
                 'HOSPITAL KIT PACKAGE': "Yes" if kit_used else "No",
                 'MODE OF PAYMENT': payment_selected,
+                'PATIENT STATUS': patient_status,
                 'CASE COUNT': 1
             }
 
@@ -1366,7 +1386,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             'CHOLEDOSCOPY', 'DENTAL PROCEDURES', 'OTHER PROCEDURES'
         ]
         
-        ca, cb, cc, cd = st.columns(4)
+        ca, cb, cc, cd, ce = st.columns(5)
         with ca:
             selected_scc_procs = st.multiselect("Procedure Category", all_scc_procs)
         with cb:
@@ -1376,6 +1396,8 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             kit_package = st.checkbox("Hospital Kit Package", value=True)
         with cd:
             payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
+        with ce:
+            patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"])
 
         submitted = st.form_submit_button("Submit Record to Google Sheets")
         if submitted:
@@ -1413,6 +1435,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
                 'HOSPITALIZATION MODE': hosp_mode,
                 'HOSPITAL KIT PACKAGE': "Yes" if kit_package else "No",
                 'MODE OF PAYMENT': payment_selected,
+                'PATIENT STATUS': patient_status,
                 'CASE COUNT': 1
             }
 
@@ -1472,7 +1495,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
                     cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_scu_{i}")
                 cm_entries.append((cm_name, cm_spec))
 
-        c10, c11, c12, c13 = st.columns(4)
+        c10, c11, c12, c13, c14 = st.columns(5)
         with c10:
             admitted_from = st.selectbox("Admitted From", HOSPITAL_UNIT_AREAS)
         with c11:
@@ -1481,6 +1504,8 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
             transferred_to = st.selectbox("Transferred To", HOSPITAL_UNIT_AREAS)
         with c13:
             hosp_mode = st.selectbox("Hospitalization Mode", ["None", "Outpatient", "Inpatient"])
+        with c14:
+            patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"])
 
         payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
 
@@ -1524,6 +1549,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
                 'CO-MANAGEMENT SPECIALIZATION': cm_specs_str,
                 'HOSPITALIZATION MODE': hosp_mode,
                 'MODE OF PAYMENT': payment_selected,
+                'PATIENT STATUS': patient_status,
                 'CASE COUNT': 1
             }
 
