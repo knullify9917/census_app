@@ -45,9 +45,8 @@ SPECIALTIES_BY_FIELD = {
         "CLINICAL HAEMATOLOGY",
         "DERMATOLOGY",
         "ENDOCRINOLOGY",
-        "GASTROENTEROLOGY",
+        "GASTROENTEROLOGY & HEPATOLOGY",
         "GERIATRIC MEDICINE",
-	"HEPATOLOGY",
         "INFECTIOUS DISEASES",
         "INFECTIOUS DISEASES MEDICINE",
         "INTENSIVE CARE MEDICINE",
@@ -359,7 +358,7 @@ if os.path.exists(EXCEL_FILE):
 st.markdown("---")
 
 # ---------------------------------------------------------
-# FORM 1: ECC TOP DISEASES
+# FORM 1: ECC TOP DISEASES (Initial entry, no co-management)
 # ---------------------------------------------------------
 if selected_sheet == "ECC TOP DISEASES":
     st.header("Emergency Care Center (ECC) Data Entry Form")
@@ -385,7 +384,7 @@ if selected_sheet == "ECC TOP DISEASES":
         with c8:
             case_classification = st.selectbox("Patient Type / Case Classification", ["IPD", "OPD", "Private Case", "House Case (Walk-in)"])
 
-        st.subheader("👨‍⚕️ Physician & Care Team Information")
+        st.subheader("👨‍⚕️ Physician Information")
         c_doc1, c_doc2, c_doc3 = st.columns(3)
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name")
