@@ -5,7 +5,7 @@ import pandas as pd
 import os
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION & REFINED LIGHT MODE UI STYLING
+# 1. PAGE CONFIGURATION & LOGO-MATCHED THEME STYLING
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="PATIENT DATA RECORDING SYSTEM",
@@ -13,93 +13,86 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS ensuring that ALL buttons, form submit buttons, dropdown selectboxes, 
-# popovers, and option menus match the crisp hospital light theme (White & Royal Blue / Teal).
+# Custom CSS replacing default dark/black elements with MTCMC logo colors:
+# Royal Blue (#2563eb / #1e3a8a), Teal (#0d9488), Red (#dc2626), Clean Light background (#ffffff / #f8fafc)
 st.markdown("""
 <style>
-    /* Main app background and text color */
+    /* Main app container background and clean slate text */
     .stApp {
         background-color: #ffffff !important;
-        color: #1e293b !important;
+        color: #0f172a !important;
     }
     
-    /* Sidebar background and text */
+    /* Sidebar light mode with royal blue border accent */
     section[data-testid="stSidebar"] {
         background-color: #f8fafc !important;
-        border-right: 1px solid #e2e8f0;
+        border-right: 2px solid #e2e8f0;
     }
     section[data-testid="stSidebar"] * {
-        color: #1e293b !important;
+        color: #0f172a !important;
     }
     
-    /* Headers & Typography */
+    /* Headers matching the primary royal blue from the logo ring */
     h1, h2, h3, h4, h5, h6 {
-        color: #1e3a8a !important; /* Royal Blue */
+        color: #1e3a8a !important;
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     }
     
-    /* --- BUTTON STYLING FIX --- */
+    /* --- ACTION BUTTONS (Royal Blue) --- */
     .stButton > button, form button[type="submit"] {
         background-color: #1e3a8a !important;
         color: #ffffff !important;
         border-radius: 6px !important;
         border: none !important;
         font-weight: bold !important;
-        box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2) !important;
+        box-shadow: 0 2px 4px rgba(30, 58, 138, 0.25) !important;
     }
     .stButton > button:hover, form button[type="submit"]:hover {
         background-color: #1d4ed8 !important;
         color: #ffffff !important;
     }
     
-    /* --- DROPDOWN & INPUT FIELD STYLING FIX --- */
-    div[data-baseweb="select"] > div {
+    /* --- INPUT FIELDS & SELECTBOXES (Clean Light Theme) --- */
+    div[data-baseweb="select"] > div, input[type="text"], input[type="number"], textarea {
         background-color: #ffffff !important;
-        color: #1e293b !important;
-        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+        border: 1px solid #94a3b8 !important;
         border-radius: 6px !important;
     }
     
     /* Selected option text inside selectbox */
     div[data-baseweb="select"] span {
-        color: #1e293b !important;
+        color: #0f172a !important;
     }
     
-    input[type="text"], input[type="number"], textarea {
-        background-color: #ffffff !important;
-        color: #1e293b !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 6px !important;
-    }
-    
-    /* --- DROPDOWN POPUP MENU LIGHT MODE FIX --- */
+    /* --- DROPDOWN POPUP MENU OVERRIDE (Replaces any dark/black panel) --- */
     div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"] {
         background-color: #ffffff !important;
-        color: #1e293b !important;
+        color: #0f172a !important;
         border: 1px solid #cbd5e1 !important;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1) !important;
     }
     
-    /* Dropdown individual option items */
+    /* Dropdown option items */
     div[data-baseweb="menu"] div, option, li[role="option"] {
         background-color: #ffffff !important;
-        color: #1e293b !important;
+        color: #0f172a !important;
     }
     
-    /* Hover state for dropdown options */
+    /* Hover state for dropdown options using logo Teal accent */
     div[data-baseweb="menu"] div:hover, li[role="option"]:hover {
-        background-color: #f1f5f9 !important;
-        color: #1e3a8a !important;
+        background-color: #f0fdfa !important;
+        color: #0d9488 !important;
     }
     
-    /* Metric cards in light mode */
+    /* --- METRIC CARDS (Teal accent border matching 'Calcutta' text) --- */
     div.stMetric {
         background-color: #f8fafc !important;
         padding: 15px;
         border-radius: 8px;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         border: 1px solid #e2e8f0;
-        border-left: 5px solid #0d9488; /* Teal accent */
+        border-left: 5px solid #0d9488 !important;
     }
     div.stMetric label {
         color: #64748b !important;
