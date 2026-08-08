@@ -175,7 +175,7 @@ if "name" not in st.session_state:
     st.session_state["name"] = ""
 
 # Session state initialization for co-management dynamic list storage per form context
-for form_key in ["ecc", "endo", "hdu", "ob", "scc", "scu"]:
+for form_key in ["ecc", "endo", "hdu", "ob", "scc", "scu", "gnu_1c", "gnu_2a", "gnu_2b", "gnu_2c", "gnu_2d", "gnu_3a", "gnu_3b", "gnu_3c", "gnu_4a"]:
     if f"cm_list_{form_key}" not in st.session_state:
         st.session_state[f"cm_list_{form_key}"] = []
 
@@ -367,8 +367,15 @@ def get_spec_index(default_name):
     return 0
 
 # ---------------------------------------------------------
-# 4. STREAMLINED SHEET HEADERS (Includes Co-Management fields)
+# 4. STREAMLINED SHEET HEADERS (Includes Co-Management fields & GNU Units)
 # ---------------------------------------------------------
+GNU_SHEET_HEADER = [
+    'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
+    'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
+    'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
+    'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
+]
+
 SHEET_HEADERS = {
     "Emergency Care Complex (ECC)": [
         'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
@@ -415,7 +422,16 @@ SHEET_HEADERS = {
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
-    ]
+    ],
+    "General Nursing Unit (GNU 1C)": GNU_SHEET_HEADER,
+    "General Nursing Unit (GNU 2A)": GNU_SHEET_HEADER,
+    "General Nursing Unit (GNU 2B)": GNU_SHEET_HEADER,
+    "General Nursing Unit (GNU 2C)": GNU_SHEET_HEADER,
+    "General Nursing Unit (GNU 2D)": GNU_SHEET_HEADER,
+    "General Nursing Unit (GNU 3A)": GNU_SHEET_HEADER,
+    "General Nursing Unit (GNU 3B)": GNU_SHEET_HEADER,
+    "General Nursing Unit (GNU 3C)": GNU_SHEET_HEADER,
+    "General Nursing Unit (GNU 4A)": GNU_SHEET_HEADER
 }
 
 def get_month_str(date_obj, fmt_style="numeric_prefix"):
@@ -641,6 +657,25 @@ logged_user_key = st.session_state["username"]
 user_info = USER_DATABASE.get(logged_user_key, {})
 allowed_modules = user_info.get("modules", "All")
 
+all_department_modules = [
+    "Hospital Information System", 
+    "Emergency Care Complex (ECC)", 
+    "Endoscopy Unit (ENDO)", 
+    "Hemodialysis Unit (HDU)", 
+    "OBGYNE Care Complex (LRDR-OB Surgery)", 
+    "Surgical Care Complex (OR Main)", 
+    "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
+    "General Nursing Unit (GNU 1C)",
+    "General Nursing Unit (GNU 2A)",
+    "General Nursing Unit (GNU 2B)",
+    "General Nursing Unit (GNU 2C)",
+    "General Nursing Unit (GNU 2D)",
+    "General Nursing Unit (GNU 3A)",
+    "General Nursing Unit (GNU 3B)",
+    "General Nursing Unit (GNU 3C)",
+    "General Nursing Unit (GNU 4A)"
+]
+
 if logged_user_key in ["ecc_staff", "scc_staff", "endo_staff", "hdu_staff"]:
     dept_map = {
         "ecc_staff": "Emergency Care Complex (ECC)",
@@ -652,15 +687,7 @@ if logged_user_key in ["ecc_staff", "scc_staff", "endo_staff", "hdu_staff"]:
 elif logged_user_key in ["nsgcon_staff", "ha_staff", "ha_staff1"]:
     MODULES = ["Hospital Information System"]
 elif allowed_modules == "All":
-    MODULES = [
-        "Hospital Information System", 
-        "Emergency Care Complex (ECC)", 
-        "Endoscopy Unit (ENDO)", 
-        "Hemodialysis Unit (HDU)", 
-        "OBGYNE Care Complex (LRDR-OB Surgery)", 
-        "Surgical Care Complex (OR Main)", 
-        "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
-    ]
+    MODULES = all_department_modules
 else:
     MODULES = allowed_modules
 
@@ -771,7 +798,16 @@ if selected_sheet == "Hospital Information System":
         "Hemodialysis Unit (HDU)", 
         "OBGYNE Care Complex (LRDR-OB Surgery)", 
         "Surgical Care Complex (OR Main)", 
-        "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
+        "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
+        "General Nursing Unit (GNU 1C)",
+        "General Nursing Unit (GNU 2A)",
+        "General Nursing Unit (GNU 2B)",
+        "General Nursing Unit (GNU 2C)",
+        "General Nursing Unit (GNU 2D)",
+        "General Nursing Unit (GNU 3A)",
+        "General Nursing Unit (GNU 3B)",
+        "General Nursing Unit (GNU 3C)",
+        "General Nursing Unit (GNU 4A)"
     ]
     
     summary_data = []
@@ -899,6 +935,101 @@ if selected_sheet == "Hospital Information System":
         st.dataframe(dept_df[display_cols], use_container_width=True)
     else:
         st.info(f"No records found yet for {selected_dept_view}.")
+
+# ---------------------------------------------------------
+# GENERIC REGISTRATION FORM FOR GNU UNITS
+# ---------------------------------------------------------
+elif selected_sheet.startswith("General Nursing Unit (GNU"):
+    gnu_title = selected_sheet
+    st.header(f"{gnu_title} Patient Registration")
+    ph_now = get_ph_time()
+    form_key_slug = gnu_title.replace("General Nursing Unit (", "").replace(")", "").strip().lower()
+    
+    with st.form(f"gnu_form_{form_key_slug}", clear_on_submit=True):
+        st.subheader("👤 Patient Demographics")
+        
+        c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
+        with c1:
+            last_name = st.text_input("Last Name", value="")
+        with c2:
+            first_name = st.text_input("First Name", value="")
+        with c3:
+            middle_name = st.text_input("Middle Name", value="")
+        with c4:
+            age = st.number_input("Age", min_value=0, max_value=120, value=0)
+        with c5:
+            sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
+
+        c_d1, c_d2 = st.columns(2)
+        with c_d1:
+            entry_date = st.date_input("Date", ph_now.date())
+        with c_d2:
+            entry_time_str = civilian_time_text_field("Time", key_suffix=f"gnu_{form_key_slug}_time")
+
+        c_h1, c_h2, c_h3 = st.columns(3)
+        with c_h1:
+            hosp_mode = st.selectbox("Hospitalization Mode", ["Select Mode", "Inpatient", "Outpatient"], index=0)
+        with c_h2:
+            payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY", "CHARITY"], index=0)
+        with c_h3:
+            patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"], index=0)
+
+        curr_date_str = entry_date.strftime("%m/%d/%Y")
+
+        st.subheader("👨‍⚕️ Medical Care Team")
+        c_doc1, c_doc2 = st.columns([2, 2])
+        with c_doc1:
+            attending_physician = st.text_input("Attending Physician Name", value="", key=f"gnu_{form_key_slug}_att")
+        with c_doc2:
+            attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key=f"gnu_{form_key_slug}_spec")
+
+        tag_as_cm = st.form_submit_button("Tag as Co-Management")
+
+        if st.session_state[f"cm_list_{form_key_slug}"]:
+            st.markdown("**Current Co-Management Doctors Added:**")
+            for idx, cm in enumerate(st.session_state[f"cm_list_{form_key_slug}"]):
+                st.write(f"- Dr. {cm['name']} ({cm['spec']})")
+
+        st.subheader("📋 Clinical & Diagnostic Details")
+        diagnosis_text = st.text_area("Clinical Diagnosis", value="")
+
+        submitted = st.form_submit_button("Submit Record")
+        if submitted:
+            existing_record = check_existing_patient_ai(gnu_title, last_name, first_name, curr_date_str)
+            if existing_record:
+                st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
+
+            final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
+            if tag_as_cm and attending_physician:
+                st.session_state[f"cm_list_{form_key_slug}"].append({"name": attending_physician.strip(), "spec": attending_spec})
+
+            valid_cm = st.session_state[f"cm_list_{form_key_slug}"]
+            cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
+            cm_specs_str = "; ".join([item['spec'] for item in valid_cm]) if valid_cm else "N/A"
+
+            row_data = {
+                'MONTH': get_month_str(entry_date, "full_month"),
+                'DATE': curr_date_str,
+                'TIME': entry_time_str,
+                'LAST NAME': last_name,
+                'FIRST NAME': first_name,
+                'MIDDLE NAME': middle_name,
+                'SEX': sex,
+                'AGE': str(age),
+                'DIAGNOSIS': diagnosis_text,
+                'ATTENDING PHYSICIAN': final_attending,
+                'ATTENDING SPECIALIZATION': attending_spec,
+                'CO-MANAGEMENT PHYSICIAN': cm_names_str,
+                'CO-MANAGEMENT SPECIALIZATION': cm_specs_str,
+                'HOSPITALIZATION MODE': hosp_mode,
+                'MODE OF PAYMENT': payment_selected,
+                'PATIENT STATUS': patient_status,
+                'CASE COUNT': 1
+            }
+
+            if append_record_to_google_sheet(gnu_title, row_data):
+                st.success(f"Successfully saved to Google Sheets `{gnu_title}` tab!")
+                st.session_state[f"cm_list_{form_key_slug}"] = []
 
 # ---------------------------------------------------------
 # FORM 1: Emergency Care Complex (ECC)
