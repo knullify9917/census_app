@@ -973,11 +973,3 @@ if not sheet_df.empty:
     st.caption(f"Showing last 10 entries of `{selected_sheet}` (Total: {len(sheet_df)} records)")
 else:
     st.info(f"Worksheet `{selected_sheet}` currently has no records.")
-'''
-
-# Save file
-with open("excel_app.py", "w") as f:
-    f.write(script_content)
-
-print("Saved updated script to excel_app.py!")
-}I encountered an error doing what you asked. Could you try again?
