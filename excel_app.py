@@ -204,7 +204,7 @@ def get_month_str(date_obj, fmt_style="numeric_prefix"):
     return month_name
 
 # ---------------------------------------------------------
-# 4. GOOGLE SHEETS CONNECTION & SETUP (USING GOOGLE-AUTH)
+# 4. GOOGLE SHEETS CONNECTION & SETUP (FOOLPROOF SANITIZER)
 # ---------------------------------------------------------
 @st.cache_resource
 def init_google_sheets():
@@ -215,12 +215,21 @@ def init_google_sheets():
     ]
     
     if "gcp_service_account" in st.secrets:
-        creds_dict = dict(st.secrets["gcp_service_account"])
-        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+        try:
+            creds_dict = dict(st.secrets["gcp_service_account"])
+            if "private_key" in creds_dict:
+                pk = str(creds_dict["private_key"])
+                pk = pk.strip("'\"")
+                pk = pk.replace("\\n", "\n")
+                creds_dict["private_key"] = pk
+            creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+        except Exception as e:
+            st.error(f"Error parsing Streamlit Secrets credentials: {e}")
+            st.stop()
     elif os.path.exists("credentials.json"):
         creds = Credentials.from_service_account_file("credentials.json", scopes=scope)
     else:
-        st.error("Google Cloud credentials not found! Please configure Streamlit Secrets (`gcp_service_account`) in your Streamlit Cloud app settings, or place your `credentials.json` file in the root directory for local testing.")
+        st.error("Google Cloud credentials not found! Please configure Streamlit Secrets (`gcp_service_account`) in your Streamlit Cloud app settings.")
         st.stop()
         
     client = gspread.authorize(creds)
