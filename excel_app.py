@@ -638,7 +638,7 @@ else:
     MODULES = allowed_modules
 
 st.sidebar.markdown("### 🧭 Department Navigation")
-selected_sheet = st.sidebar.selectbox("Select Target Department Module", MODULES, index=0)
+selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📥 Export Reports")
@@ -773,11 +773,11 @@ if selected_sheet == "Hospital Information System":
     st.dataframe(summary_df, use_container_width=True)
 
     # ---------------------------------------------------------
-    # ACTIVE PATIENT ROSTER
+    # ACTIVE PATIENT ROSTER (Condition: Active & May Go Home Inpatients)
     # ---------------------------------------------------------
     st.markdown("---")
     st.subheader("📋 Active Patient Roster")
-    st.markdown("Aggregated live roster displaying patients currently tagged as **Active** or **May Go Home** across all hospital departments.")
+    st.markdown("Aggregated live roster displaying **Inpatient** records currently tagged as **Active** or **May Go Home** across all hospital departments.")
 
     all_roster_frames = []
     for dept in department_sheets:
@@ -790,14 +790,20 @@ if selected_sheet == "Hospital Information System":
     if all_roster_frames:
         master_roster_df = pd.concat(all_roster_frames, ignore_index=True)
         
-        # Filter strictly for Active & May Go Home if PATIENT STATUS column exists
-        if 'PATIENT STATUS' in master_roster_df.columns:
-            master_roster_df['PATIENT STATUS'] = master_roster_df['PATIENT STATUS'].fillna("Active")
-            active_roster_filtered = master_roster_df[
-                master_roster_df['PATIENT STATUS'].astype(str).str.strip().str.lower().isin(['active', 'may go home'])
-            ]
-        else:
-            active_roster_filtered = master_roster_df
+        # Apply condition: Only Active & May Go Home AND strictly Inpatients (HOSPITALIZATION MODE == Inpatient)
+        filtered_records = []
+        for idx, row in master_roster_df.iterrows():
+            status = str(row.get('PATIENT STATUS', 'Active')).strip().lower()
+            hosp_mode = str(row.get('HOSPITALIZATION MODE', 'Inpatient')).strip().lower()
+            
+            # Condition check: Status is active/may go home AND mode is inpatient
+            is_active_status = status in ['active', 'may go home', '']
+            is_inpatient = hosp_mode == 'inpatient'
+            
+            if is_active_status and is_inpatient:
+                filtered_records.append(row)
+                
+        active_roster_filtered = pd.DataFrame(filtered_records) if filtered_records else pd.DataFrame(columns=master_roster_df.columns)
 
         c_filt1, c_filt2 = st.columns(2)
         with c_filt1:
@@ -806,14 +812,15 @@ if selected_sheet == "Hospital Information System":
             search_name = st.text_input("Search Patient Last Name", value="")
 
         final_roster_display = active_roster_filtered.copy()
-        if unit_filter != "All Departments":
-            final_roster_display = final_roster_display[final_roster_display["DEPARTMENT UNIT"] == unit_filter]
-        if search_name.strip():
-            if 'LAST NAME' in final_roster_display.columns:
-                final_roster_display = final_roster_display[final_roster_display['LAST NAME'].astype(str).str.contains(search_name.strip(), case=False, na=False)]
+        if not final_roster_display.empty:
+            if unit_filter != "All Departments":
+                final_roster_display = final_roster_display[final_roster_display["DEPARTMENT UNIT"] == unit_filter]
+            if search_name.strip():
+                if 'LAST NAME' in final_roster_display.columns:
+                    final_roster_display = final_roster_display[final_roster_display['LAST NAME'].astype(str).str.contains(search_name.strip(), case=False, na=False)]
 
         st.dataframe(final_roster_display, use_container_width=True)
-        st.caption(f"Showing {len(final_roster_display)} active / may-go-home patient records.")
+        st.caption(f"Showing {len(final_roster_display)} active inpatient records.")
     else:
         st.info("No patient admission records found across hospital sheets.")
 
@@ -834,7 +841,7 @@ if selected_sheet == "Hospital Information System":
                 dept_df = dept_df[dept_df['ADMITTED TO'] == selected_area]
                 st.write(f"Filtered to **{selected_area}** ({len(dept_df)} records)")
 
-        preferred_cols = ['DATE', 'LAST NAME', 'FIRST NAME', 'DIAGNOSIS', 'PATIENT STATUS', 'DIAGNOSIS CATEGORY', 'ATTENDING PHYSICIAN', 'PRIMARY SURGEON', 'SURGEON / PROCEDURALIST', 'SURGEON / OBGYNE', 'ADMITTED TO', 'TRANSFERRED TO', 'MODE OF PAYMENT']
+        preferred_cols = ['DATE', 'LAST NAME', 'FIRST NAME', 'DIAGNOSIS', 'PATIENT STATUS', 'HOSPITALIZATION MODE', 'DIAGNOSIS CATEGORY', 'ATTENDING PHYSICIAN', 'PRIMARY SURGEON', 'SURGEON / PROCEDURALIST', 'SURGEON / OBGYNE', 'ADMITTED TO', 'TRANSFERRED TO', 'MODE OF PAYMENT']
         display_cols = [c for c in preferred_cols if c in dept_df.columns]
         if not display_cols:
             display_cols = dept_df.columns.tolist()
