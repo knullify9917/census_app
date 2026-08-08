@@ -237,8 +237,9 @@ def ensure_excel_and_sheets_exist():
 
     if need_rebuild:
         wb = openpyxl.Workbook()
-        wb.remove(wb.active)
+        wb.remove(wb.active)  # remove default sheet
 
+        # Dashboard & Summary Sheet
         ws_sum = wb.create_sheet(title="Dashboard & Summary", index=0)
         ws_sum.views.sheetView[0].showGridLines = True
         ws_sum.cell(row=1, column=1, value="METRO TERESA MEDICAL CENTER (MTCMC)").font = BOLD_FONT
@@ -266,6 +267,7 @@ def ensure_excel_and_sheets_exist():
             col_letter = openpyxl.utils.get_column_letter(c)
             ws_sum.column_dimensions[col_letter].width = 32
 
+        # Create Department Sheets
         for s_name, cols in SHEET_HEADERS.items():
             ws = wb.create_sheet(title=s_name)
             ws.views.sheetView[0].showGridLines = True
@@ -311,6 +313,7 @@ def append_record_to_excel(sheet_name, row_dict):
         else:
             cell.alignment = Alignment(horizontal='left', vertical='center')
 
+    # Update Summary Count
     if "Dashboard & Summary" in wb.sheetnames:
         ws_summary = wb["Dashboard & Summary"]
         for r in range(5, ws_summary.max_row + 1):
@@ -332,39 +335,258 @@ def read_excel_sheet(sheet_name):
         st.warning(f"Note: Could not load sheet '{sheet_name}'.")
     return pd.DataFrame()
 
-def check_existing_patient_ai(sheet_name, last_name, fn, curr_date_str):
-    df = read_excel_sheet(sheet_name)
-    if df.empty or 'LAST NAME' not in df.columns:
+# ---------------------------------------------------------
+# 4. AI PATIENT CHECKER — cross-department lookup + same-date merge
+# ---------------------------------------------------------
+def _norm(s):
+    """Normalize a name fragment for matching (trim + uppercase)."""
+    return str(s).strip().upper() if s not in (None, "") else ""
+
+def build_patient_index():
+    """
+    Scans every department sheet in the workbook and builds an index of
+    every existing encounter, keyed by normalized (LAST, FIRST) name.
+    Returns: { (last, first): [ {sheet, date, data(dict of full row)}, ... ] }
+    """
+    ensure_excel_and_sheets_exist()
+    index = {}
+    try:
+        wb = openpyxl.load_workbook(EXCEL_FILE, data_only=True)
+    except Exception:
+        return index
+
+    for s_name in SHEET_HEADERS.keys():
+        if s_name not in wb.sheetnames:
+            continue
+        ws = wb[s_name]
+        headers = [ws.cell(row=4, column=c).value for c in range(1, ws.max_column + 1)]
+        if 'LAST NAME' not in headers or 'FIRST NAME' not in headers:
+            continue
+        for r in range(5, ws.max_row + 1):
+            row_vals = [ws.cell(row=r, column=c).value for c in range(1, ws.max_column + 1)]
+            row_dict = dict(zip(headers, row_vals))
+            last = _norm(row_dict.get('LAST NAME'))
+            first = _norm(row_dict.get('FIRST NAME'))
+            if not last or not first:
+                continue
+            key = (last, first)
+            index.setdefault(key, []).append({
+                'sheet': s_name,
+                'date': row_dict.get('DATE'),
+                'data': row_dict
+            })
+    return index
+
+def _parse_date_safe(d):
+    for fmt in ("%m/%d/%Y", "%B %d, %Y"):
+        try:
+            return datetime.strptime(str(d), fmt)
+        except Exception:
+            continue
+    return datetime.min
+
+def find_patient_matches(last_name, first_name):
+    """All prior encounters (any department) for a patient, newest first."""
+    last, first = _norm(last_name), _norm(first_name)
+    if not last or not first:
+        return []
+    index = build_patient_index()
+    matches = index.get((last, first), [])
+    return sorted(matches, key=lambda m: _parse_date_safe(m['date']), reverse=True)
+
+def get_patient_autofill(last_name, first_name):
+    """
+    AI Checker: if this patient already exists anywhere in the workbook,
+    return their most recently known demographics so the form can be
+    auto-filled, plus a summary of where their other records live.
+    Returns None if the patient has never been recorded before.
+    """
+    matches = find_patient_matches(last_name, first_name)
+    if not matches:
         return None
-    
-    ln = str(last_name).strip().upper()
-    first = str(fn).strip().upper()
-    
-    if not ln or not first:
+    latest = matches[0]['data']
+    return {
+        'MIDDLE NAME': latest.get('MIDDLE NAME', '') or '',
+        'SEX': latest.get('SEX', '') or '',
+        'AGE': latest.get('AGE', ''),
+        'last_visit_date': latest.get('DATE', ''),
+        'last_visit_sheet': matches[0]['sheet'],
+        'total_encounters': len(matches),
+        'departments': sorted(set(m['sheet'] for m in matches))
+    }
+
+def render_patient_checker(prefix, label="👤 AI Patient Checker"):
+    """
+    Draws a name-lookup control (outside the st.form) for a given form
+    prefix (e.g. 'ecc', 'endo'...). On click, searches ALL department
+    sheets for that name and — if found — stashes the known demographics
+    in st.session_state so the form fields below can default to them.
+    """
+    st.subheader(label)
+    st.caption("Type a patient's name and check — if they already have records in ANY department, their details auto-fill below.")
+    cs1, cs2, cs3, cs4 = st.columns([2, 2, 2, 1.2])
+    with cs1:
+        s_last = st.text_input("Last Name (lookup)", key=f"lookup_last_{prefix}")
+    with cs2:
+        s_first = st.text_input("First Name (lookup)", key=f"lookup_first_{prefix}")
+    with cs3:
+        s_middle = st.text_input("Middle Name (lookup, optional)", key=f"lookup_middle_{prefix}")
+    with cs4:
+        st.write("")
+        st.write("")
+        check_clicked = st.button("🔍 Check Patient", key=f"lookup_btn_{prefix}")
+
+    if check_clicked:
+        result = get_patient_autofill(s_last, s_first)
+        st.session_state[f"af_{prefix}_last"] = s_last.strip()
+        st.session_state[f"af_{prefix}_first"] = s_first.strip()
+        if result:
+            st.session_state[f"af_{prefix}_middle"] = result['MIDDLE NAME'] or s_middle.strip()
+            st.session_state[f"af_{prefix}_sex"] = result['SEX']
+            dept_list = ", ".join(result['departments'])
+            st.success(
+                f"✅ Existing patient found — **{result['total_encounters']}** prior record(s) across **{dept_list}**. "
+                f"Last visit: **{result['last_visit_date']}** ({result['last_visit_sheet']}). "
+                f"Demographics below have been auto-filled — you're adding NEW information for this patient."
+            )
+            if result['AGE']:
+                st.caption(f"Last recorded age on file: {result['AGE']}")
+        else:
+            st.session_state[f"af_{prefix}_middle"] = s_middle.strip()
+            st.session_state[f"af_{prefix}_sex"] = ""
+            st.info("🆕 No existing record found for this name — this will be entered as a new patient.")
+
+def get_af(prefix, field, default=""):
+    return st.session_state.get(f"af_{prefix}_{field}", default)
+
+def find_same_date_row(sheet_name, last_name, first_name, middle_name, date_str):
+    """
+    Looks inside ONE department sheet for a row belonging to this same
+    patient on this same date. Returns the row number if found, else None.
+    This is what lets same-day entries merge instead of duplicating.
+    """
+    ensure_excel_and_sheets_exist()
+    wb = openpyxl.load_workbook(EXCEL_FILE)
+    if sheet_name not in wb.sheetnames:
         return None
-        
-    matches = df[
-        (df['LAST NAME'].astype(str).str.strip().str.upper() == ln) &
-        (df['FIRST NAME'].astype(str).str.strip().str.upper() == first)
-    ]
-    
-    if matches.empty:
+    ws = wb[sheet_name]
+    headers = [ws.cell(row=4, column=c).value for c in range(1, ws.max_column + 1)]
+    if 'LAST NAME' not in headers or 'FIRST NAME' not in headers or 'DATE' not in headers:
         return None
-        
-    same_date_match = matches[matches['DATE'].astype(str).str.strip() == curr_date_str]
-    if not same_date_match.empty:
-        return same_date_match.iloc[-1].to_dict()
-        
+
+    last_idx = headers.index('LAST NAME') + 1
+    first_idx = headers.index('FIRST NAME') + 1
+    middle_idx = (headers.index('MIDDLE NAME') + 1) if 'MIDDLE NAME' in headers else None
+    date_idx = headers.index('DATE') + 1
+
+    target_last, target_first, target_middle = _norm(last_name), _norm(first_name), _norm(middle_name)
+
+    for r in range(5, ws.max_row + 1):
+        row_last = _norm(ws.cell(row=r, column=last_idx).value)
+        row_first = _norm(ws.cell(row=r, column=first_idx).value)
+        row_date = str(ws.cell(row=r, column=date_idx).value or "")
+        if row_last == target_last and row_first == target_first and row_date == str(date_str):
+            if middle_idx:
+                row_middle = _norm(ws.cell(row=r, column=middle_idx).value)
+                if target_middle and row_middle and row_middle != target_middle:
+                    continue
+            return r
     return None
 
+def merge_or_append_record(sheet_name, row_dict):
+    """
+    AI Checker write path:
+    - Same patient + same date already exists in THIS department sheet ->
+      MERGE the newly submitted info into that existing row (fills any
+      blanks, and appends anything new/different rather than overwriting
+      or duplicating).
+    - Different date, different department, or brand-new patient ->
+      append as a normal new row (a new visit/encounter).
+    Returns (success: bool, action: "merged" | "appended" | None)
+    """
+    ensure_excel_and_sheets_exist()
+    wb = openpyxl.load_workbook(EXCEL_FILE)
+    if sheet_name not in wb.sheetnames:
+        return False, None
+
+    existing_row = find_same_date_row(
+        sheet_name,
+        row_dict.get('LAST NAME', ''),
+        row_dict.get('FIRST NAME', ''),
+        row_dict.get('MIDDLE NAME', ''),
+        row_dict.get('DATE', '')
+    )
+
+    ws = wb[sheet_name]
+    headers = [ws.cell(row=4, column=c).value for c in range(1, ws.max_column + 1)]
+
+    if existing_row:
+        for c_idx, col_name in enumerate(headers, start=1):
+            cell = ws.cell(row=existing_row, column=c_idx)
+            new_val = row_dict.get(col_name, "")
+            old_val = cell.value
+
+            if col_name == 'CASE COUNT':
+                try:
+                    cell.value = (int(old_val) if old_val not in (None, "") else 0) + \
+                                 (int(new_val) if new_val not in (None, "") else 1)
+                except Exception:
+                    pass
+                continue
+
+            if old_val in (None, "", "N/A", "None") and new_val not in (None, ""):
+                cell.value = new_val
+            elif new_val not in (None, "", "N/A") and str(new_val) != str(old_val):
+                old_str = "" if old_val in (None, "", "N/A", "None") else str(old_val)
+                new_str = str(new_val)
+                existing_parts = [p.strip() for p in old_str.split("|")]
+                if new_str.strip() not in existing_parts:
+                    cell.value = f"{old_str} | {new_str}".strip(" |") if old_str else new_str
+
+            cell.font = REGULAR_FONT
+            cell.border = THIN_BORDER
+
+        wb.save(EXCEL_FILE)
+        return True, "merged"
+
+    else:
+        target_row = ws.max_row + 1
+        for c_idx, col_name in enumerate(headers, start=1):
+            cell = ws.cell(row=target_row, column=c_idx)
+            val = row_dict.get(col_name, "")
+            cell.value = "" if (val is None or pd.isna(val)) else val
+            cell.font = REGULAR_FONT
+            cell.border = THIN_BORDER
+            if isinstance(val, (int, float)):
+                cell.alignment = Alignment(horizontal='center' if val == 1 else 'right', vertical='center')
+            elif isinstance(val, bool):
+                cell.alignment = Alignment(horizontal='center', vertical='center')
+            else:
+                cell.alignment = Alignment(horizontal='left', vertical='center')
+
+        if "Dashboard & Summary" in wb.sheetnames:
+            ws_summary = wb["Dashboard & Summary"]
+            for r in range(5, ws_summary.max_row + 1):
+                if ws_summary.cell(row=r, column=1).value == sheet_name:
+                    curr_count = ws_summary.cell(row=r, column=2).value or 0
+                    ws_summary.cell(row=r, column=2, value=curr_count + 1)
+                    break
+
+        wb.save(EXCEL_FILE)
+        return True, "appended"
+
+# Initialize file on startup
 ensure_excel_and_sheets_exist()
 
+# App Header
 st.title("📊 MTCMC Direct Excel Data Entry Application")
 st.markdown("Enter patient census data into the input form below. Records are written directly to **`MTCMC_CENSUS_MASTERFILES_SYSTEM.xlsx`**.")
+st.caption("🤖 AI Patient Checker is active: existing patients are recognized across all departments and same-day entries are merged instead of duplicated.")
 
 MODULES = ["ECC TOP DISEASES", "ENDO", "HDU", "OBGYNE CASES", "SCC CASES", "SCU CASES"]
 selected_sheet = st.sidebar.selectbox("Select Target Excel Sheet", MODULES)
 
+# Sidebar Download Option
 if os.path.exists(EXCEL_FILE):
     with open(EXCEL_FILE, "rb") as f:
         st.sidebar.download_button(
@@ -376,19 +598,27 @@ if os.path.exists(EXCEL_FILE):
 
 st.markdown("---")
 
+# ---------------------------------------------------------
+# FORM 1: ECC TOP DISEASES
+# ---------------------------------------------------------
 if selected_sheet == "ECC TOP DISEASES":
     st.header("Emergency Care Center (ECC) Data Entry Form")
+
+    render_patient_checker("ecc")
+
     with st.form("ecc_form", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics & AI Checker")
+        st.subheader("👤 Patient Demographics")
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            last_name = st.text_input("Last Name")
+            last_name = st.text_input("Last Name", value=get_af("ecc", "last"))
         with c2:
-            first_name = st.text_input("First Name")
+            first_name = st.text_input("First Name", value=get_af("ecc", "first"))
         with c3:
-            middle_name = st.text_input("Middle Name")
+            middle_name = st.text_input("Middle Name", value=get_af("ecc", "middle"))
         with c4:
-            sex = st.selectbox("Sex", ["Male", "Female", "Others"])
+            sex_opts = ["Male", "Female", "Others"]
+            sex_default = get_af("ecc", "sex")
+            sex = st.selectbox("Sex", sex_opts, index=sex_opts.index(sex_default) if sex_default in sex_opts else 0)
 
         c5, c6, c7, c8 = st.columns(4)
         with c5:
@@ -399,8 +629,6 @@ if selected_sheet == "ECC TOP DISEASES":
             age = st.number_input("Age", min_value=0, max_value=120, value=25)
         with c8:
             hosp_mode = st.selectbox("Hospitalization Mode", ["IPD", "OPD", "Private Case", "House Case (Walk-in)"])
-
-        curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Physician Information")
         c_doc1, c_doc2, c_doc3, c_doc4 = st.columns(4)
@@ -427,13 +655,9 @@ if selected_sheet == "ECC TOP DISEASES":
 
         submitted = st.form_submit_button("Submit Record to Excel Sheet")
         if submitted:
-            existing_record = check_existing_patient_ai("ECC TOP DISEASES", last_name, first_name, curr_date_str)
-            if existing_record:
-                st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
-
             row_data = {
                 'MONTH': get_month_str(entry_date, "full_month"),
-                'DATE': curr_date_str,
+                'DATE': entry_date.strftime("%m/%d/%Y"),
                 'TIME': entry_time.strftime("%I:%M:%S %p"),
                 'LAST NAME': last_name,
                 'FIRST NAME': first_name,
@@ -450,26 +674,36 @@ if selected_sheet == "ECC TOP DISEASES":
                 'CASE COUNT': 1
             }
 
-            if append_record_to_excel("ECC TOP DISEASES", row_data):
+            ok, action = merge_or_append_record("ECC TOP DISEASES", row_data)
+            if ok and action == "merged":
+                st.success("🔄 Existing same-day record for this patient found — new information merged into it (no duplicate row created).")
+            elif ok:
                 st.success("Successfully saved to `ECC TOP DISEASES` sheet!")
 
+# ---------------------------------------------------------
+# FORM 2: ENDO
+# ---------------------------------------------------------
 elif selected_sheet == "ENDO":
     st.header("Endoscopy Unit Data Entry Form")
-    
+
+    render_patient_checker("endo")
+
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_endo")
 
     with st.form("endo_form", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics & AI Checker")
+        st.subheader("👤 Patient Demographics")
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            last_name = st.text_input("Last Name")
+            last_name = st.text_input("Last Name", value=get_af("endo", "last"))
         with c2:
-            first_name = st.text_input("First Name")
+            first_name = st.text_input("First Name", value=get_af("endo", "first"))
         with c3:
-            middle_name = st.text_input("Middle Name")
+            middle_name = st.text_input("Middle Name", value=get_af("endo", "middle"))
         with c4:
-            sex = st.selectbox("Sex", ["Male", "Female", "Others"])
+            sex_opts = ["Male", "Female", "Others"]
+            sex_default = get_af("endo", "sex")
+            sex = st.selectbox("Sex", sex_opts, index=sex_opts.index(sex_default) if sex_default in sex_opts else 0)
 
         c5, c6, c7, c8 = st.columns(4)
         with c5:
@@ -480,8 +714,6 @@ elif selected_sheet == "ENDO":
             actual_time = st.time_input("Actual Time", datetime.now().time())
         with c8:
             age = st.number_input("Age", min_value=0, max_value=120, value=40)
-
-        curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical & Surgical Care Team")
         c_att1, c_att2 = st.columns(2)
@@ -535,17 +767,13 @@ elif selected_sheet == "ENDO":
 
         submitted = st.form_submit_button("Submit Record to Excel Sheet")
         if submitted:
-            existing_record = check_existing_patient_ai("ENDO", last_name, first_name, curr_date_str)
-            if existing_record:
-                st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
-
             valid_cm = [(name.strip(), spec) for name, spec in cm_entries if name.strip()]
             cm_names_str = "; ".join([item[0] for item in valid_cm]) if valid_cm else "N/A"
             cm_specs_str = "; ".join([item[1] for item in valid_cm]) if valid_cm else "N/A"
 
             row_data = {
                 'MONTH': get_month_str(entry_date, "mixed"),
-                'DATE': curr_date_str,
+                'DATE': entry_date.strftime("%m/%d/%Y"),
                 'SCHEDULED TIME': sched_time.strftime("%I:%M:%S %p"),
                 'ACTUAL TIME': actual_time.strftime("%I:%M:%S %p"),
                 'LAST NAME': last_name,
@@ -571,34 +799,42 @@ elif selected_sheet == "ENDO":
                 'CASE COUNT': 1
             }
 
-            if append_record_to_excel("ENDO", row_data):
+            ok, action = merge_or_append_record("ENDO", row_data)
+            if ok and action == "merged":
+                st.success("🔄 Existing same-day record for this patient found — new information merged into it (no duplicate row created).")
+            elif ok:
                 st.success("Successfully saved to `ENDO` sheet!")
 
+# ---------------------------------------------------------
+# FORM 3: HDU
+# ---------------------------------------------------------
 elif selected_sheet == "HDU":
     st.header("Hemodialysis Unit Data Entry Form")
+
+    render_patient_checker("hdu")
 
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_hdu")
 
     with st.form("hdu_form", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics & AI Checker")
+        st.subheader("👤 Patient Demographics")
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            last_name = st.text_input("Last Name")
+            last_name = st.text_input("Last Name", value=get_af("hdu", "last"))
         with c2:
-            first_name = st.text_input("First Name")
+            first_name = st.text_input("First Name", value=get_af("hdu", "first"))
         with c3:
-            middle_name = st.text_input("Middle Name")
+            middle_name = st.text_input("Middle Name", value=get_af("hdu", "middle"))
         with c4:
-            sex = st.selectbox("Sex", ["Male", "Female", "Others"])
+            sex_opts = ["Male", "Female", "Others"]
+            sex_default = get_af("hdu", "sex")
+            sex = st.selectbox("Sex", sex_opts, index=sex_opts.index(sex_default) if sex_default in sex_opts else 0)
 
         c5, c6 = st.columns(2)
         with c5:
             entry_date = st.date_input("Dialysis Date", datetime.today())
         with c6:
             diagnosis = st.text_input("Diagnosis", value="CKD")
-
-        curr_date_str = entry_date.strftime("%B %d, %Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
         c_att1, c_att2 = st.columns(2)
@@ -628,10 +864,6 @@ elif selected_sheet == "HDU":
 
         submitted = st.form_submit_button("Submit Record to Excel Sheet")
         if submitted:
-            existing_record = check_existing_patient_ai("HDU", last_name, first_name, curr_date_str)
-            if existing_record:
-                st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
-
             epoch = datetime(1899, 12, 30)
             true_date = str((datetime.combine(entry_date, datetime.min.time()) - epoch).days)
             
@@ -641,7 +873,7 @@ elif selected_sheet == "HDU":
 
             row_data = {
                 'MONTH': get_month_str(entry_date, "numeric_prefix"),
-                'DATE': curr_date_str,
+                'DATE': entry_date.strftime("%B %d, %Y"),
                 'TRUE DATE': true_date,
                 'LAST NAME': last_name,
                 'FIRST NAME': first_name,
@@ -658,26 +890,36 @@ elif selected_sheet == "HDU":
                 'CASE COUNT': 1
             }
 
-            if append_record_to_excel("HDU", row_data):
+            ok, action = merge_or_append_record("HDU", row_data)
+            if ok and action == "merged":
+                st.success("🔄 Existing same-day record for this patient found — new information merged into it (no duplicate row created).")
+            elif ok:
                 st.success("Successfully saved to `HDU` sheet!")
 
+# ---------------------------------------------------------
+# FORM 4: OBGYNE CASES
+# ---------------------------------------------------------
 elif selected_sheet == "OBGYNE CASES":
     st.header("OBGYNE Cases Data Entry Form")
+
+    render_patient_checker("ob")
 
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_obgyne")
 
     with st.form("obgyne_form", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics & AI Checker")
+        st.subheader("👤 Patient Demographics")
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            last_name = st.text_input("Last Name")
+            last_name = st.text_input("Last Name", value=get_af("ob", "last"))
         with c2:
-            first_name = st.text_input("First Name")
+            first_name = st.text_input("First Name", value=get_af("ob", "first"))
         with c3:
-            middle_name = st.text_input("Middle Name")
+            middle_name = st.text_input("Middle Name", value=get_af("ob", "middle"))
         with c4:
-            sex = st.selectbox("Sex", ["Female", "Male", "Others"])
+            sex_opts = ["Female", "Male", "Others"]
+            sex_default = get_af("ob", "sex")
+            sex = st.selectbox("Sex", sex_opts, index=sex_opts.index(sex_default) if sex_default in sex_opts else 0)
 
         c5, c6, c7, c8 = st.columns(4)
         with c5:
@@ -688,8 +930,6 @@ elif selected_sheet == "OBGYNE CASES":
             actual_time = st.time_input("Actual Time", datetime.now().time())
         with c8:
             age = st.number_input("Age", min_value=10, max_value=100, value=30)
-
-        curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical & Surgical Care Team")
         c_att1, c_att2 = st.columns(2)
@@ -741,17 +981,13 @@ elif selected_sheet == "OBGYNE CASES":
 
         submitted = st.form_submit_button("Submit Record to Excel Sheet")
         if submitted:
-            existing_record = check_existing_patient_ai("OBGYNE CASES", last_name, first_name, curr_date_str)
-            if existing_record:
-                st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
-
             valid_cm = [(name.strip(), spec) for name, spec in cm_entries if name.strip()]
             cm_names_str = "; ".join([item[0] for item in valid_cm]) if valid_cm else "N/A"
             cm_specs_str = "; ".join([item[1] for item in valid_cm]) if valid_cm else "N/A"
 
             row_data = {
                 'MONTH': get_month_str(entry_date, "numeric_prefix"),
-                'DATE': curr_date_str,
+                'DATE': entry_date.strftime("%m/%d/%Y"),
                 'SCHEDULED TIME': sched_time.strftime("%I:%M:%S %p"),
                 'ACTUAL TIME': actual_time.strftime("%I:%M:%S %p"),
                 'LAST NAME': last_name,
@@ -777,26 +1013,36 @@ elif selected_sheet == "OBGYNE CASES":
                 'CASE COUNT': 1
             }
 
-            if append_record_to_excel("OBGYNE CASES", row_data):
+            ok, action = merge_or_append_record("OBGYNE CASES", row_data)
+            if ok and action == "merged":
+                st.success("🔄 Existing same-day record for this patient found — new information merged into it (no duplicate row created).")
+            elif ok:
                 st.success("Successfully saved to `OBGYNE CASES` sheet!")
 
+# ---------------------------------------------------------
+# FORM 5: SCC CASES
+# ---------------------------------------------------------
 elif selected_sheet == "SCC CASES":
     st.header("Surgical Care Center (SCC) Data Entry Form")
+
+    render_patient_checker("scc")
 
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_scc")
 
     with st.form("scc_form", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics & AI Checker")
+        st.subheader("👤 Patient Demographics")
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            last_name = st.text_input("Last Name")
+            last_name = st.text_input("Last Name", value=get_af("scc", "last"))
         with c2:
-            first_name = st.text_input("First Name")
+            first_name = st.text_input("First Name", value=get_af("scc", "first"))
         with c3:
-            middle_name = st.text_input("Middle Name")
+            middle_name = st.text_input("Middle Name", value=get_af("scc", "middle"))
         with c4:
-            sex = st.selectbox("Sex", ["Male", "Female", "Others"])
+            sex_opts = ["Male", "Female", "Others"]
+            sex_default = get_af("scc", "sex")
+            sex = st.selectbox("Sex", sex_opts, index=sex_opts.index(sex_default) if sex_default in sex_opts else 0)
 
         c5, c6, c7, c8 = st.columns(4)
         with c5:
@@ -807,8 +1053,6 @@ elif selected_sheet == "SCC CASES":
             actual_time = st.time_input("Actual Time", datetime.now().time())
         with c8:
             age = st.number_input("Age", min_value=0, max_value=120, value=35)
-
-        curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical & Surgical Care Team")
         c_att1, c_att2 = st.columns(2)
@@ -871,17 +1115,13 @@ elif selected_sheet == "SCC CASES":
 
         submitted = st.form_submit_button("Submit Record to Excel Sheet")
         if submitted:
-            existing_record = check_existing_patient_ai("SCC CASES", last_name, first_name, curr_date_str)
-            if existing_record:
-                st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
-
             valid_cm = [(name.strip(), spec) for name, spec in cm_entries if name.strip()]
             cm_names_str = "; ".join([item[0] for item in valid_cm]) if valid_cm else "N/A"
             cm_specs_str = "; ".join([item[1] for item in valid_cm]) if valid_cm else "N/A"
 
             row_data = {
                 'MONTH': get_month_str(entry_date, "numeric_prefix"),
-                'DATE': curr_date_str,
+                'DATE': entry_date.strftime("%m/%d/%Y"),
                 'SCHEDULED TIME': sched_time.strftime("%I:%M:%S %p"),
                 'ACTUAL TIME': actual_time.strftime("%I:%M:%S %p"),
                 'LAST NAME': last_name,
@@ -907,26 +1147,36 @@ elif selected_sheet == "SCC CASES":
                 'CASE COUNT': 1
             }
 
-            if append_record_to_excel("SCC CASES", row_data):
+            ok, action = merge_or_append_record("SCC CASES", row_data)
+            if ok and action == "merged":
+                st.success("🔄 Existing same-day record for this patient found — new information merged into it (no duplicate row created).")
+            elif ok:
                 st.success("Successfully saved to `SCC CASES` sheet!")
 
+# ---------------------------------------------------------
+# FORM 6: SCU CASES
+# ---------------------------------------------------------
 elif selected_sheet == "SCU CASES":
     st.header("Special Care Unit (SCU) Data Entry Form")
+
+    render_patient_checker("scu")
 
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_scu")
 
     with st.form("scu_form", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics & AI Checker")
+        st.subheader("👤 Patient Demographics")
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            last_name = st.text_input("Last Name")
+            last_name = st.text_input("Last Name", value=get_af("scu", "last"))
         with c2:
-            first_name = st.text_input("First Name")
+            first_name = st.text_input("First Name", value=get_af("scu", "first"))
         with c3:
-            middle_name = st.text_input("Middle Name")
+            middle_name = st.text_input("Middle Name", value=get_af("scu", "middle"))
         with c4:
-            sex = st.selectbox("Sex", ["Male", "Female", "Others"])
+            sex_opts = ["Male", "Female", "Others"]
+            sex_default = get_af("scu", "sex")
+            sex = st.selectbox("Sex", sex_opts, index=sex_opts.index(sex_default) if sex_default in sex_opts else 0)
 
         c5, c6, c7, c8 = st.columns(4)
         with c5:
@@ -938,8 +1188,6 @@ elif selected_sheet == "SCU CASES":
             age_m = st.number_input("Age (Months)", min_value=0, max_value=11, value=0)
         with c8:
             age_d = st.number_input("Age (Days)", min_value=0, max_value=31, value=0)
-
-        curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
         c_att1, c_att2 = st.columns(2)
@@ -975,10 +1223,6 @@ elif selected_sheet == "SCU CASES":
 
         submitted = st.form_submit_button("Submit Record to Excel Sheet")
         if submitted:
-            existing_record = check_existing_patient_ai("SCU CASES", last_name, first_name, curr_date_str)
-            if existing_record:
-                st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
-
             age_str_parts = []
             if age_y > 0: age_str_parts.append(f"{age_y} Yrs")
             if age_m > 0: age_str_parts.append(f"{age_m} Mos")
@@ -991,7 +1235,7 @@ elif selected_sheet == "SCU CASES":
 
             row_data = {
                 'MONTH': get_month_str(entry_date, "numeric_prefix"),
-                'DATE': curr_date_str,
+                'DATE': entry_date.strftime("%m/%d/%Y"),
                 'LAST NAME': last_name,
                 'FIRST NAME': first_name,
                 'MIDDLE NAME': middle_name,
@@ -1011,9 +1255,15 @@ elif selected_sheet == "SCU CASES":
                 'CASE COUNT': 1
             }
 
-            if append_record_to_excel("SCU CASES", row_data):
+            ok, action = merge_or_append_record("SCU CASES", row_data)
+            if ok and action == "merged":
+                st.success("🔄 Existing same-day record for this patient found — new information merged into it (no duplicate row created).")
+            elif ok:
                 st.success("Successfully saved to `SCU CASES` sheet!")
 
+# ---------------------------------------------------------
+# DATA TABLE PREVIEW
+# ---------------------------------------------------------
 st.markdown("---")
 st.subheader(f"Live Sheet Preview: `{selected_sheet}`")
 
