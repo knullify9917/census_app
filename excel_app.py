@@ -373,7 +373,8 @@ GNU_SHEET_HEADER = [
     'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
     'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
     'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-    'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
+    'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'PATIENT STATUS', 
+    'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CASE COUNT'
 ]
 
 SHEET_HEADERS = {
@@ -995,6 +996,12 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
         st.subheader("📋 Clinical & Diagnostic Details")
         diagnosis_text = st.text_area("Clinical Diagnosis", value="")
 
+        st.subheader("📋 Procedures & Diagnostics")
+        procedures_text = st.text_area("Procedures", value="", key=f"gnu_{form_key_slug}_procs")
+        diagnostic_exams_text = st.text_area("Diagnostic Examinations", value="", key=f"gnu_{form_key_slug}_diags")
+        medications_text = st.text_area("Medications", value="", key=f"gnu_{form_key_slug}_meds")
+        special_endorsements_text = st.text_area("Special Endorsements", value="", key=f"gnu_{form_key_slug}_ends")
+
         submitted = st.form_submit_button("Submit Record")
         if submitted:
             existing_record = check_existing_patient_ai(gnu_title, last_name, first_name, curr_date_str)
@@ -1026,6 +1033,10 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
                 'HOSPITALIZATION MODE': hosp_mode,
                 'MODE OF PAYMENT': payment_selected,
                 'PATIENT STATUS': patient_status,
+                'PROCEDURES': procedures_text,
+                'DIAGNOSTIC EXAMINATIONS': diagnostic_exams_text,
+                'MEDICATIONS': medications_text,
+                'SPECIAL ENDORSEMENTS': special_endorsements_text,
                 'CASE COUNT': 1
             }
 
