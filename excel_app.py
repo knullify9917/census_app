@@ -237,9 +237,8 @@ def ensure_excel_and_sheets_exist():
 
     if need_rebuild:
         wb = openpyxl.Workbook()
-        wb.remove(wb.active)  # remove default sheet
+        wb.remove(wb.active)
 
-        # Dashboard & Summary Sheet
         ws_sum = wb.create_sheet(title="Dashboard & Summary", index=0)
         ws_sum.views.sheetView[0].showGridLines = True
         ws_sum.cell(row=1, column=1, value="METRO TERESA MEDICAL CENTER (MTCMC)").font = BOLD_FONT
@@ -267,7 +266,6 @@ def ensure_excel_and_sheets_exist():
             col_letter = openpyxl.utils.get_column_letter(c)
             ws_sum.column_dimensions[col_letter].width = 32
 
-        # Create Department Sheets
         for s_name, cols in SHEET_HEADERS.items():
             ws = wb.create_sheet(title=s_name)
             ws.views.sheetView[0].showGridLines = True
@@ -313,7 +311,6 @@ def append_record_to_excel(sheet_name, row_dict):
         else:
             cell.alignment = Alignment(horizontal='left', vertical='center')
 
-    # Update Summary Count
     if "Dashboard & Summary" in wb.sheetnames:
         ws_summary = wb["Dashboard & Summary"]
         for r in range(5, ws_summary.max_row + 1):
@@ -335,7 +332,6 @@ def read_excel_sheet(sheet_name):
         st.warning(f"Note: Could not load sheet '{sheet_name}'.")
     return pd.DataFrame()
 
-# AI Checker helper: checks if patient already exists in the department sheet on the same date
 def check_existing_patient_ai(sheet_name, last_name, fn, curr_date_str):
     df = read_excel_sheet(sheet_name)
     if df.empty or 'LAST NAME' not in df.columns:
@@ -355,24 +351,20 @@ def check_existing_patient_ai(sheet_name, last_name, fn, curr_date_str):
     if matches.empty:
         return None
         
-    # Check if any match is on the exact same date
     same_date_match = matches[matches['DATE'].astype(str).str.strip() == curr_date_str]
     if not same_date_match.empty:
         return same_date_match.iloc[-1].to_dict()
         
     return None
 
-# Initialize file on startup
 ensure_excel_and_sheets_exist()
 
-# App Header
 st.title("📊 MTCMC Direct Excel Data Entry Application")
 st.markdown("Enter patient census data into the input form below. Records are written directly to **`MTCMC_CENSUS_MASTERFILES_SYSTEM.xlsx`**.")
 
 MODULES = ["ECC TOP DISEASES", "ENDO", "HDU", "OBGYNE CASES", "SCC CASES", "SCU CASES"]
 selected_sheet = st.sidebar.selectbox("Select Target Excel Sheet", MODULES)
 
-# Sidebar Download Option
 if os.path.exists(EXCEL_FILE):
     with open(EXCEL_FILE, "rb") as f:
         st.sidebar.download_button(
@@ -384,9 +376,6 @@ if os.path.exists(EXCEL_FILE):
 
 st.markdown("---")
 
-# ---------------------------------------------------------
-# FORM 1: ECC TOP DISEASES
-# ---------------------------------------------------------
 if selected_sheet == "ECC TOP DISEASES":
     st.header("Emergency Care Center (ECC) Data Entry Form")
     with st.form("ecc_form", clear_on_submit=True):
@@ -464,9 +453,6 @@ if selected_sheet == "ECC TOP DISEASES":
             if append_record_to_excel("ECC TOP DISEASES", row_data):
                 st.success("Successfully saved to `ECC TOP DISEASES` sheet!")
 
-# ---------------------------------------------------------
-# FORM 2: ENDO
-# ---------------------------------------------------------
 elif selected_sheet == "ENDO":
     st.header("Endoscopy Unit Data Entry Form")
     
@@ -588,9 +574,6 @@ elif selected_sheet == "ENDO":
             if append_record_to_excel("ENDO", row_data):
                 st.success("Successfully saved to `ENDO` sheet!")
 
-# ---------------------------------------------------------
-# FORM 3: HDU
-# ---------------------------------------------------------
 elif selected_sheet == "HDU":
     st.header("Hemodialysis Unit Data Entry Form")
 
@@ -678,9 +661,6 @@ elif selected_sheet == "HDU":
             if append_record_to_excel("HDU", row_data):
                 st.success("Successfully saved to `HDU` sheet!")
 
-# ---------------------------------------------------------
-# FORM 4: OBGYNE CASES
-# ---------------------------------------------------------
 elif selected_sheet == "OBGYNE CASES":
     st.header("OBGYNE Cases Data Entry Form")
 
@@ -800,9 +780,6 @@ elif selected_sheet == "OBGYNE CASES":
             if append_record_to_excel("OBGYNE CASES", row_data):
                 st.success("Successfully saved to `OBGYNE CASES` sheet!")
 
-# ---------------------------------------------------------
-# FORM 5: SCC CASES
-# ---------------------------------------------------------
 elif selected_sheet == "SCC CASES":
     st.header("Surgical Care Center (SCC) Data Entry Form")
 
@@ -933,9 +910,6 @@ elif selected_sheet == "SCC CASES":
             if append_record_to_excel("SCC CASES", row_data):
                 st.success("Successfully saved to `SCC CASES` sheet!")
 
-# ---------------------------------------------------------
-# FORM 6: SCU CASES
-# ---------------------------------------------------------
 elif selected_sheet == "SCU CASES":
     st.header("Special Care Unit (SCU) Data Entry Form")
 
@@ -1040,9 +1014,6 @@ elif selected_sheet == "SCU CASES":
             if append_record_to_excel("SCU CASES", row_data):
                 st.success("Successfully saved to `SCU CASES` sheet!")
 
-# ---------------------------------------------------------
-# DATA TABLE PREVIEW
-# ---------------------------------------------------------
 st.markdown("---")
 st.subheader(f"Live Sheet Preview: `{selected_sheet}`")
 
@@ -1052,12 +1023,3 @@ if not sheet_df.empty:
     st.caption(f"Showing last 10 entries of `{selected_sheet}` (Total: {len(sheet_df)} records)")
 else:
     st.info(f"Worksheet `{selected_sheet}` currently has no records.")
-'''
-
-with open("excel_app.py", "w") as f:
-    f.write(full_app_code)
-
-import py_compile
-py_compile.compile("excel_app.py", doraise=True)
-print("Updated excel_app.py compiled successfully with zero errors!")
-}I seem to be encountering an error. Can I try something else for you?
