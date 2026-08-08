@@ -56,7 +56,7 @@ st.markdown("""
 
     /* Form Inputs, Textareas, and Dropdown Controls */
     div[data-baseweb="select"] > div, input[type="text"], input[type="number"], input[type="password"], textarea {
-        background-color: #ffffff !important; color: #1e3a8a !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important;
+        background-color: #ffffff !important; color: #1e3a8a !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; text-transform: uppercase !important;
     }
     div[data-baseweb="select"] span { color: #1e3a8a !important; }
     
@@ -531,7 +531,7 @@ def append_record_to_google_sheet(sheet_name, row_dict):
         row_values = []
         for h in headers:
             val = row_dict.get(h, "")
-            row_values.append("" if (val is None or pd.isna(val)) else str(val))
+            row_values.append("" if (val is None or pd.isna(val)) else str(val).upper())
             
         ws.append_row(row_values)
         return True
@@ -960,11 +960,11 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value="")
+            last_name = st.text_input("Last Name", value="").strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value="")
+            first_name = st.text_input("First Name", value="").strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value="")
+            middle_name = st.text_input("Middle Name", value="").strip().upper()
         with c4:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c5:
@@ -989,7 +989,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name", value="", key=f"gnu_{form_key_slug}_att")
+            attending_physician = st.text_input("Attending Physician Name", value="", key=f"gnu_{form_key_slug}_att").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key=f"gnu_{form_key_slug}_spec")
 
@@ -1002,13 +1002,13 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
         st.subheader("📋 Clinical & Diagnostic Details")
-        diagnosis_text = st.text_area("Clinical Diagnosis", value="")
+        diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip().upper()
 
         st.subheader("📋 Procedures & Diagnostics")
-        procedures_text = st.text_area("Procedures", value="", key=f"gnu_{form_key_slug}_procs")
-        diagnostic_exams_text = st.text_area("Diagnostic Examinations", value="", key=f"gnu_{form_key_slug}_diags")
-        medications_text = st.text_area("Medications", value="", key=f"gnu_{form_key_slug}_meds")
-        special_endorsements_text = st.text_area("Special Endorsements", value="", key=f"gnu_{form_key_slug}_ends")
+        procedures_text = st.text_area("Procedures", value="", key=f"gnu_{form_key_slug}_procs").strip().upper()
+        diagnostic_exams_text = st.text_area("Diagnostic Examinations", value="", key=f"gnu_{form_key_slug}_diags").strip().upper()
+        medications_text = st.text_area("Medications", value="", key=f"gnu_{form_key_slug}_meds").strip().upper()
+        special_endorsements_text = st.text_area("Special Endorsements", value="", key=f"gnu_{form_key_slug}_ends").strip().upper()
 
         submitted = st.form_submit_button("Submit Record")
         if submitted:
@@ -1018,7 +1018,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
 
             final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
             if tag_as_cm and attending_physician:
-                st.session_state.setdefault(cm_list_key, []).append({"name": attending_physician.strip(), "spec": attending_spec})
+                st.session_state.setdefault(cm_list_key, []).append({"name": attending_physician.strip().upper(), "spec": attending_spec})
 
             valid_cm = st.session_state.get(cm_list_key, [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
@@ -1063,11 +1063,11 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value="")
+            last_name = st.text_input("Last Name", value="").strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value="")
+            first_name = st.text_input("First Name", value="").strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value="")
+            middle_name = st.text_input("Middle Name", value="").strip().upper()
         with c4:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c5:
@@ -1094,7 +1094,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name", value="", key="ecc_att_input")
+            attending_physician = st.text_input("Attending Physician Name", value="", key="ecc_att_input").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="ecc_spec_input")
 
@@ -1106,7 +1106,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
         st.subheader("📋 Clinical & Diagnostic Details")
-        diagnosis_text = st.text_area("Clinical Diagnosis", value="")
+        diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip().upper()
 
         disease_options = [
             'ACUTE GASTROENTERITIS', 'DENGUE FEVER', 'HYPERTENSION', 'GASTROESOPHAGEAL REFLUX DISEASE',
@@ -1125,7 +1125,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 
             final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
             if tag_as_cm and attending_physician:
-                st.session_state.setdefault("cm_list_ecc", []).append({"name": attending_physician.strip(), "spec": attending_spec})
+                st.session_state.setdefault("cm_list_ecc", []).append({"name": attending_physician.strip().upper(), "spec": attending_spec})
 
             valid_cm = st.session_state.get("cm_list_ecc", [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
@@ -1169,11 +1169,11 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value="")
+            last_name = st.text_input("Last Name", value="").strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value="")
+            first_name = st.text_input("First Name", value="").strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value="")
+            middle_name = st.text_input("Middle Name", value="").strip().upper()
         with c4:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c5:
@@ -1192,7 +1192,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name", value="", key="endo_att_input")
+            attending_physician = st.text_input("Attending Physician Name", value="", key="endo_att_input").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="endo_spec_input")
 
@@ -1203,17 +1203,17 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
             for cm in st.session_state["cm_list_endo"]:
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
-        surgeon = st.text_input("Surgeon / Endoscopist / Proceduralist", value="")
+        surgeon = st.text_input("Surgeon / Endoscopist / Proceduralist", value="").strip().upper()
         surgeon_spec = st.selectbox("Surgeon / Proceduralist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0)
-        anesthesiologist = st.text_input("Anesthesiologist Name", value="")
+        anesthesiologist = st.text_input("Anesthesiologist Name", value="").strip().upper()
         anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0)
 
         st.subheader("📋 Clinical & Diagnostic Details")
         cd1, cd2 = st.columns(2)
         with cd1:
-            diagnosis_text = st.text_input("Clinical Diagnosis", value="")
+            diagnosis_text = st.text_input("Clinical Diagnosis", value="").strip().upper()
         with cd2:
-            procedure_text = st.text_input("Procedure Name", value="")
+            procedure_text = st.text_input("Procedure Name", value="").strip().upper()
 
         proc_cols = ['GASTROSCOPY', 'COLONOSCOPY', 'NASAL PROCEDURE', 'PEG PROCEDURE', 'ERCP', 'PROCTOSIGMOIDOSCOPY', 'PARACENTESIS', 'BRONCHOSCOPY', 'OTHER PROCEDURES']
         selected_procs = st.multiselect("Procedure Category", proc_cols)
@@ -1238,7 +1238,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 
             final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
             if tag_as_cm and attending_physician:
-                st.session_state.setdefault("cm_list_endo", []).append({"name": attending_physician.strip(), "spec": attending_spec})
+                st.session_state.setdefault("cm_list_endo", []).append({"name": attending_physician.strip().upper(), "spec": attending_spec})
 
             valid_cm = st.session_state.get("cm_list_endo", [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
@@ -1288,11 +1288,11 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value="")
+            last_name = st.text_input("Last Name", value="").strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value="")
+            first_name = st.text_input("First Name", value="").strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value="")
+            middle_name = st.text_input("Middle Name", value="").strip().upper()
         with c4:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c5:
@@ -1302,13 +1302,13 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         with c_d1:
             entry_date = st.date_input("Dialysis Date", datetime.today())
 
-        diagnosis = st.text_input("Diagnosis", value="")
+        diagnosis = st.text_input("Diagnosis", value="").strip().upper()
         curr_date_str = entry_date.strftime("%B %d, %Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician", value="", key="hdu_att_input")
+            attending_physician = st.text_input("Attending Physician", value="", key="hdu_att_input").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="hdu_spec_input")
 
@@ -1340,7 +1340,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
             
             final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
             if tag_as_cm and attending_physician:
-                st.session_state.setdefault("cm_list_hdu", []).append({"name": attending_physician.strip(), "spec": attending_spec})
+                st.session_state.setdefault("cm_list_hdu", []).append({"name": attending_physician.strip().upper(), "spec": attending_spec})
 
             valid_cm = st.session_state.get("cm_list_hdu", [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
@@ -1382,11 +1382,11 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value="")
+            last_name = st.text_input("Last Name", value="").strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value="")
+            first_name = st.text_input("First Name", value="").strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value="")
+            middle_name = st.text_input("Middle Name", value="").strip().upper()
         with c4:
             age = st.number_input("Age", min_value=10, max_value=100, value=10)
         with c5:
@@ -1405,7 +1405,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name", value="", key="ob_att_input")
+            attending_physician = st.text_input("Attending Physician Name", value="", key="ob_att_input").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="ob_spec_input")
 
@@ -1416,24 +1416,24 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             for cm in st.session_state["cm_list_ob"]:
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
-        surgeon = st.text_input("Surgeon / OBGYNE Primary Operator", value="")
+        surgeon = st.text_input("Surgeon / OBGYNE Primary Operator", value="").strip().upper()
         surgeon_spec = st.selectbox("Surgeon Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0)
-        anesthesiologist = st.text_input("Anesthesiologist Name", value="")
+        anesthesiologist = st.text_input("Anesthesiologist Name", value="").strip().upper()
         anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0)
 
         st.subheader("📋 Clinical & Diagnostic Details")
         
         cd1, cd2 = st.columns(2)
         with cd1:
-            pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="")
+            pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="").strip().upper()
         with cd2:
-            post_op_diagnosis = st.text_area("Post-Op Diagnosis", value="")
+            post_op_diagnosis = st.text_area("Post-Op Diagnosis", value="").strip().upper()
 
         cp1, cp2 = st.columns(2)
         with cp1:
-            procedure_name = st.text_input("Procedure Name", value="")
+            procedure_name = st.text_input("Procedure Name", value="").strip().upper()
         with cp2:
-            surgical_procedure = st.text_area("Surgical Procedure", value="")
+            surgical_procedure = st.text_area("Surgical Procedure", value="").strip().upper()
 
         all_ob_procs = [
             'CS PRIMARY', 'CS', 'NSD', 'D&C', 'HYSTERECTOMY', 'EXLAP', 'OTHER PROCEDURES', 'NST'
@@ -1460,7 +1460,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 
             final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
             if tag_as_cm and attending_physician:
-                st.session_state.setdefault("cm_list_ob", []).append({"name": attending_physician.strip(), "spec": attending_spec})
+                st.session_state.setdefault("cm_list_ob", []).append({"name": attending_physician.strip().upper(), "spec": attending_spec})
 
             valid_cm = st.session_state.get("cm_list_ob", [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
@@ -1513,11 +1513,11 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value="")
+            last_name = st.text_input("Last Name", value="").strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value="")
+            first_name = st.text_input("First Name", value="").strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value="")
+            middle_name = st.text_input("Middle Name", value="").strip().upper()
         with c4:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c5:
@@ -1536,7 +1536,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name", value="", key="scc_att_input")
+            attending_physician = st.text_input("Attending Physician Name", value="", key="scc_att_input").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scc_spec_input")
 
@@ -1547,20 +1547,20 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             for cm in st.session_state["cm_list_scc"]:
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
-        surgeon = st.text_input("Primary Surgeon", value="")
+        surgeon = st.text_input("Primary Surgeon", value="").strip().upper()
         surgeon_spec = st.selectbox("Surgeon Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0)
-        anesthesiologist = st.text_input("Anesthesiologist Name", value="")
+        anesthesiologist = st.text_input("Anesthesiologist Name", value="").strip().upper()
         anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0)
 
         st.subheader("📋 Clinical & Diagnostic Details")
         
         cd1, cd2 = st.columns(2)
         with cd1:
-            pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="")
+            pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="").strip().upper()
         with cd2:
-            post_op_diagnosis = st.text_area("Post-Op Diagnosis", value="")
+            post_op_diagnosis = st.text_area("Post-Op Diagnosis", value="").strip().upper()
 
-        procedure = st.text_area("Surgical Procedure", value="")
+        procedure = st.text_area("Surgical Procedure", value="").strip().upper()
 
         all_scc_procs = [
             'EXCISION BIOPSY', 'INCISION AND DRAINAGE', 'WOUND SUTURING & CLOSING AND CHANGE OF DRESSING',
@@ -1594,7 +1594,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 
             final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
             if tag_as_cm and attending_physician:
-                st.session_state.setdefault("cm_list_scc", []).append({"name": attending_physician.strip(), "spec": attending_spec})
+                st.session_state.setdefault("cm_list_scc", []).append({"name": attending_physician.strip().upper(), "spec": attending_spec})
 
             valid_cm = st.session_state.get("cm_list_scc", [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
@@ -1645,15 +1645,15 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value="")
+            last_name = st.text_input("Last Name", value="").strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value="")
+            first_name = st.text_input("First Name", value="").strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value="")
+            middle_name = st.text_input("Middle Name", value="").strip().upper()
         with c4:
             sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
         with c5:
-            aog = st.text_input("Age of Gestation (AOG)", value="")
+            aog = st.text_input("Age of Gestation (AOG)", value="").strip().upper()
 
         c5_d, c6, c7, c8 = st.columns(4)
         with c5_d:
@@ -1670,7 +1670,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name", value="", key="scu_att_input")
+            attending_physician = st.text_input("Attending Physician Name", value="", key="scu_att_input").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scu_spec_input")
 
@@ -1696,7 +1696,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY"], index=0)
 
         st.subheader("📋 Clinical & Diagnostic Details")
-        diagnosis = st.text_area("Diagnosis Text", value="")
+        diagnosis = st.text_area("Diagnosis Text", value="").strip().upper()
         diag_flags = st.multiselect("Diagnosis Category", ["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY"])
 
         submitted = st.form_submit_button("Submit Record")
@@ -1713,7 +1713,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
 
             final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
             if tag_as_cm and attending_physician:
-                st.session_state.setdefault("cm_list_scu", []).append({"name": attending_physician.strip(), "spec": attending_spec})
+                st.session_state.setdefault("cm_list_scu", []).append({"name": attending_physician.strip().upper(), "spec": attending_spec})
 
             valid_cm = st.session_state.get("cm_list_scu", [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
