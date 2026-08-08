@@ -841,7 +841,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
 # FORM 4: OBGYNE Care Complex (LRDR-OB Surgery)
 # ---------------------------------------------------------
 elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
-    st.header("OBGYNE Care Complex Patient Registration")
+    st.header("OBGYNE Care Complex (LRDR-OB) Patient Registration")
     ph_now = get_ph_time()
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_obgyne")
