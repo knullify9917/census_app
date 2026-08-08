@@ -141,14 +141,14 @@ SPECIALTIES_BY_FIELD = {
     ]
 }
 
-SPECIALTY_DROutpatient DepartmentOWN_OPTIONS = ["OTHERS"]
+SPECIALTY_DROPDOWN_OPTIONS = ["OTHERS"]
 for field in sorted(SPECIALTIES_BY_FIELD.keys()):
     for spec in sorted(SPECIALTIES_BY_FIELD[field]):
-        SPECIALTY_DROutpatient DepartmentOWN_OPTIONS.append(spec)
+        SPECIALTY_DROPDOWN_OPTIONS.append(spec)
 
 def get_spec_index(default_name):
-    if default_name in SPECIALTY_DROutpatient DepartmentOWN_OPTIONS:
-        return SPECIALTY_DROutpatient DepartmentOWN_OPTIONS.index(default_name)
+    if default_name in SPECIALTY_DROPDOWN_OPTIONS:
+        return SPECIALTY_DROPDOWN_OPTIONS.index(default_name)
     return 0
 
 # ---------------------------------------------------------
@@ -382,14 +382,14 @@ if selected_sheet == "ECC TOP DISEASES":
         with c7:
             age = st.number_input("Age", min_value=0, max_value=120, value=25)
         with c8:
-            hosp_mode = st.selectbox("Hospitalization Mode", ["In-Patient Department", "Outpatient Department", "Private Case", "House Case (Walk-in)"])
+            hosp_mode = st.selectbox("Hospitalization Mode", ["IPD", "OPD", "Private Case", "House Case (Walk-in)"])
 
         st.subheader("👨‍⚕️ Physician Information")
         c_doc1, c_doc2, c_doc3, c_doc4 = st.columns(4)
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name")
         with c_doc2:
-            attending_spec = st.selectbox("Specialization", SPECIALTY_DROutpatient DepartmentOWN_OPTIONS)
+            attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS)
         with c_doc3:
             payment_selected = st.selectbox("Mode of Payment", ["PHIC", "HMO", "SELF-PAY", "CHARITY"])
         with c_doc4:
@@ -467,7 +467,7 @@ elif selected_sheet == "ENDO":
         with c_att1:
             attending_physician = st.text_input("Attending Physician Name")
         with c_att2:
-            attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROutpatient DepartmentOWN_OPTIONS)
+            attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS)
 
         cm_entries = []
         if num_comanage > 0:
@@ -477,20 +477,20 @@ elif selected_sheet == "ENDO":
                 with cm1:
                     cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", key=f"cm_name_endo_{i}")
                 with cm2:
-                    cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROutpatient DepartmentOWN_OPTIONS, key=f"cm_spec_endo_{i}")
+                    cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_endo_{i}")
                 cm_entries.append((cm_name, cm_spec))
 
         c_surg1, c_surg2 = st.columns(2)
         with c_surg1:
             surgeon = st.text_input("Surgeon / Endoscopist / Proceduralist")
         with c_surg2:
-            surgeon_spec = st.selectbox("Surgeon / Proceduralist Specialization", SPECIALTY_DROutpatient DepartmentOWN_OPTIONS, index=get_spec_index("GASTROENTEROLOGY"))
+            surgeon_spec = st.selectbox("Surgeon / Proceduralist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GASTROENTEROLOGY"))
 
         c_anes1, c_anes2 = st.columns(2)
         with c_anes1:
             anesthesiologist = st.text_input("Anesthesiologist Name (Optional)")
         with c_anes2:
-            anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROutpatient DepartmentOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
+            anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
         st.subheader("📋 Diagnosis & Procedure Details")
         cd1, cd2 = st.columns(2)
@@ -506,7 +506,7 @@ elif selected_sheet == "ENDO":
         with ca: 
             proc_type = st.radio("Nature", ["DIAGNOSTICS", "THERAPEUTIC"])
         with cb: 
-            hosp_mode = st.radio("Hospitalization Mode", ["Outpatient Department", "In-Patient Department"])
+            hosp_mode = st.radio("Hospitalization Mode", ["OPD", "IPD"])
         with cc: 
             payment_selected = st.selectbox("Mode of Payment", ["PHIC", "HMO", "SELF-PAY"])
         with cd:
@@ -581,7 +581,7 @@ elif selected_sheet == "HDU":
         with c_att1:
             attending_physician = st.text_input("Attending Nephrologist / Physician Name", value="DR. ALEJANDRO SESE JR.")
         with c_att2:
-            attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROutpatient DepartmentOWN_OPTIONS, index=get_spec_index("NEPHROLOGY"))
+            attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("NEPHROLOGY"))
 
         cm_entries = []
         if num_comanage > 0:
@@ -591,14 +591,14 @@ elif selected_sheet == "HDU":
                 with cm1:
                     cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", key=f"cm_name_hdu_{i}")
                 with cm2:
-                    cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROutpatient DepartmentOWN_OPTIONS, key=f"cm_spec_hdu_{i}")
+                    cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_hdu_{i}")
                 cm_entries.append((cm_name, cm_spec))
 
         c7, c8, c9 = st.columns(3)
         with c7:
             shift_set = st.selectbox("Dialysis Shift Slot", ["1ST SET", "2ND SET", "3RD SET", "ONCALL"])
         with c8:
-            hosp_mode = st.radio("Hospitalization Mode", ["Outpatient Department", "In-Patient Department"])
+            hosp_mode = st.radio("Hospitalization Mode", ["OPD", "IPD"])
         with c9:
             payment_selected = st.selectbox("Mode of Payment", ["PHIC", "HMO", "SELF-PAY"])
 
@@ -669,7 +669,7 @@ elif selected_sheet == "OBGYNE CASES":
         with c_att1:
             attending_physician = st.text_input("Attending Physician Name")
         with c_att2:
-            attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROutpatient DepartmentOWN_OPTIONS, index=get_spec_index("OBSTETRICS & GYNAECOLOGY"))
+            attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("OBSTETRICS & GYNAECOLOGY"))
 
         cm_entries = []
         if num_comanage > 0:
@@ -679,20 +679,20 @@ elif selected_sheet == "OBGYNE CASES":
                 with cm1:
                     cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", key=f"cm_name_ob_{i}")
                 with cm2:
-                    cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROutpatient DepartmentOWN_OPTIONS, key=f"cm_spec_ob_{i}")
+                    cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_ob_{i}")
                 cm_entries.append((cm_name, cm_spec))
 
         c_surg1, c_surg2 = st.columns(2)
         with c_surg1:
             surgeon = st.text_input("Surgeon / OBGYNE Primary Operator")
         with c_surg2:
-            surgeon_spec = st.selectbox("Surgeon Specialization", SPECIALTY_DROutpatient DepartmentOWN_OPTIONS, index=get_spec_index("OBSTETRICS & GYNAECOLOGY"))
+            surgeon_spec = st.selectbox("Surgeon Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("OBSTETRICS & GYNAECOLOGY"))
 
         c_anes1, c_anes2 = st.columns(2)
         with c_anes1:
             anesthesiologist = st.text_input("Anesthesiologist Name (Optional)")
         with c_anes2:
-            anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROutpatient DepartmentOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
+            anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
         st.subheader("📋 OBGYNE Diagnosis & Procedure Details")
         cd1, cd2 = st.columns(2)
@@ -707,7 +707,7 @@ elif selected_sheet == "OBGYNE CASES":
         with cb:
             complexity = st.selectbox("Complexity Tier", ["MAJOR", "MINOR", "DIAGNOSTIC"])
         with cc:
-            hosp_mode = st.radio("Hospitalization Mode", ["In-Patient Department", "Outpatient Department"])
+            hosp_mode = st.radio("Hospitalization Mode", ["IPD", "OPD"])
             kit_used = st.checkbox("Hospital Kit Package", value=True)
         with cd:
             payment_selected = st.selectbox("Mode of Payment", ["PHIC", "HMO", "SELF-PAY"])
@@ -785,7 +785,7 @@ elif selected_sheet == "SCC CASES":
         with c_att1:
             attending_physician = st.text_input("Attending Physician Name")
         with c_att2:
-            attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROutpatient DepartmentOWN_OPTIONS)
+            attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS)
 
         cm_entries = []
         if num_comanage > 0:
@@ -795,20 +795,20 @@ elif selected_sheet == "SCC CASES":
                 with cm1:
                     cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", key=f"cm_name_scc_{i}")
                 with cm2:
-                    cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROutpatient DepartmentOWN_OPTIONS, key=f"cm_spec_scc_{i}")
+                    cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_scc_{i}")
                 cm_entries.append((cm_name, cm_spec))
 
         c_surg1, c_surg2 = st.columns(2)
         with c_surg1:
             surgeon = st.text_input("Primary Surgeon")
         with c_surg2:
-            surgeon_spec = st.selectbox("Surgeon Specialization", SPECIALTY_DROutpatient DepartmentOWN_OPTIONS, index=get_spec_index("GENERAL SURGERY"))
+            surgeon_spec = st.selectbox("Surgeon Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL SURGERY"))
 
         c_anes1, c_anes2 = st.columns(2)
         with c_anes1:
             anesthesiologist = st.text_input("Anesthesiologist Name (Optional)")
         with c_anes2:
-            anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROutpatient DepartmentOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
+            anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
         st.subheader("📋 Pre/Post-Op & Surgical Details")
         cd1, cd2 = st.columns(2)
@@ -833,7 +833,7 @@ elif selected_sheet == "SCC CASES":
         with ca: 
             complexity = st.selectbox("Complexity Tier", ["MAJOR", "MEDIUM", "MINOR", "DIAGNOSTICS"])
         with cb: 
-            hosp_mode = st.radio("Hospitalization Mode", ["Outpatient Department", "In-Patient Department"])
+            hosp_mode = st.radio("Hospitalization Mode", ["OPD", "IPD"])
         with cc: 
             kit_package = st.checkbox("Hospital Kit Package", value=True)
         with cd: 
@@ -913,7 +913,7 @@ elif selected_sheet == "SCU CASES":
         with c_att1:
             attending_physician = st.text_input("Attending Physician Name")
         with c_att2:
-            attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROutpatient DepartmentOWN_OPTIONS, index=get_spec_index("GENERAL PAEDIATRICS"))
+            attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL PAEDIATRICS"))
 
         cm_entries = []
         if num_comanage > 0:
@@ -923,7 +923,7 @@ elif selected_sheet == "SCU CASES":
                 with cm1:
                     cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", key=f"cm_name_scu_{i}")
                 with cm2:
-                    cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROutpatient DepartmentOWN_OPTIONS, key=f"cm_spec_scu_{i}")
+                    cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_scu_{i}")
                 cm_entries.append((cm_name, cm_spec))
 
         c10, c11, c12, c13 = st.columns(4)
@@ -932,7 +932,7 @@ elif selected_sheet == "SCU CASES":
         with c11:
             admitted_to = st.selectbox("Admitted To", ["NICU", "NSU", "PCN", "OUTBORN", "ROOM-IN"])
         with c12:
-            hosp_mode = st.radio("Hospitalization Mode", ["In-Patient Department", "Outpatient Department"])
+            hosp_mode = st.radio("Hospitalization Mode", ["IPD", "OPD"])
         with c13:
             payment_selected = st.selectbox("Mode of Payment", ["PHIC", "HMO", "SELF-PAY"])
 
