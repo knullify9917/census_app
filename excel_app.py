@@ -5,7 +5,7 @@ import pandas as pd
 import os
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION & STRICT LOGO-BASED UI STYLING
+# 1. PAGE CONFIGURATION & LOGO-MATCHED LIGHT MODE STYLING
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="PATIENT DATA RECORDING SYSTEM",
@@ -13,80 +13,74 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS strictly matching the extracted colors from the MTCMC logo:
-# - Background: Pure White (#ffffff)
-# - Primary / Ring / Subtext Blue: Royal Blue (#2c5282 / #1e3a8a)
-# - Accent / Highlight Green-Teal: Calcutta Teal (#2b6cb0 / #0d9488)
-# - Highlight Red (Heart icon): Crimson Red (#dc2626)
+# Custom CSS matching the MTCMC and Mount Grace Hospital logo palette:
+# - Primary Royal Blue: #1e3a8a
+# - Calcutta Teal: #0d9488
+# - Accent Red: #dc2626
+# - Clean Light Backgrounds: #ffffff & #f8fafc
 st.markdown("""
 <style>
-    /* Strict white background matching the transparent logo context */
+    /* Force main container light background */
     .stApp {
         background-color: #ffffff !important;
-        color: #1a202c !important;
+        color: #1e293b !important;
     }
     
-    /* Clean light sidebar */
+    /* Sidebar styling */
     section[data-testid="stSidebar"] {
-        background-color: #f7fafc !important;
+        background-color: #f8fafc !important;
         border-right: 1px solid #e2e8f0;
     }
     section[data-testid="stSidebar"] * {
-        color: #1a202c !important;
+        color: #1e293b !important;
     }
     
-    /* Headers mapped to logo Royal Blue */
+    /* Typography headers */
     h1, h2, h3, h4, h5, h6 {
         color: #1e3a8a !important;
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     }
     
-    /* --- ACTION BUTTONS (Logo Royal Blue) --- */
+    /* Buttons */
     .stButton > button, form button[type="submit"] {
         background-color: #1e3a8a !important;
         color: #ffffff !important;
         border-radius: 6px !important;
         border: none !important;
         font-weight: bold !important;
-        box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2) !important;
     }
     .stButton > button:hover, form button[type="submit"]:hover {
         background-color: #1d4ed8 !important;
         color: #ffffff !important;
     }
     
-    /* --- FORM FIELDS & DROPDOWNS (Pure White Backgrounds) --- */
+    /* Input fields and selectboxes */
     div[data-baseweb="select"] > div, input[type="text"], input[type="number"], textarea {
         background-color: #ffffff !important;
-        color: #1a202c !important;
+        color: #1e293b !important;
         border: 1px solid #cbd5e1 !important;
         border-radius: 6px !important;
     }
-    
     div[data-baseweb="select"] span {
-        color: #1a202c !important;
+        color: #1e293b !important;
     }
     
-    /* --- DROPDOWN POPUP MENU OVERRIDE (Strict White Background) --- */
+    /* Dropdown popup menus and item lists */
     div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"] {
         background-color: #ffffff !important;
-        color: #1a202c !important;
+        color: #1e293b !important;
         border: 1px solid #cbd5e1 !important;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
     }
-    
     div[data-baseweb="menu"] div, option, li[role="option"] {
         background-color: #ffffff !important;
-        color: #1a202c !important;
+        color: #1e293b !important;
     }
-    
-    /* Hover state using logo Teal accent */
     div[data-baseweb="menu"] div:hover, li[role="option"]:hover {
         background-color: #f0fdfa !important;
         color: #0d9488 !important;
     }
     
-    /* --- METRIC CARDS (White background with Teal accent border) --- */
+    /* Metric Cards */
     div.stMetric {
         background-color: #ffffff !important;
         padding: 15px;
@@ -96,21 +90,19 @@ st.markdown("""
         border-left: 5px solid #0d9488 !important;
     }
     div.stMetric label {
-        color: #4a5568 !important;
+        color: #64748b !important;
     }
     div.stMetric div[data-testid="stMetricValue"] {
         color: #1e3a8a !important;
     }
     
-    /* Form containers */
+    /* Forms & Dataframe Tables */
     div.stForm {
         background-color: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
         padding: 20px;
     }
-    
-    /* Dataframe tables */
     div[data-testid="stDataFrame"] {
         background-color: #ffffff;
         border: 1px solid #e2e8f0;
