@@ -265,7 +265,7 @@ SHEET_HEADERS = {
     ],
     "Surgical Care Complex (OR Main)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
-        'DIAGNOSIS', 'PROCEDURE', 'SURGICAL PROCEDURE FLAGS', 
+        'PRE-OP DIAGNOSIS', 'POST-OP DIAGNOSIS', 'PROCEDURE', 'SURGICAL PROCEDURE FLAGS', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'PRIMARY SURGEON', 'SURGEON SPECIALIZATION',
@@ -964,7 +964,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 # FORM 5: Surgical Care Complex (OR Main)
 # ---------------------------------------------------------
 elif selected_sheet == "Surgical Care Complex (OR Main)":
-    st.header("Surgical Care Center (SCC) Data Entry Form")
+    st.header("Surgical Care Complex Patient Registration")
     ph_now = get_ph_time()
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_scc")
@@ -1024,11 +1024,13 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         with c_anes2:
             anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
-        st.subheader("📋 Pre/Post-Op & Surgical Details")
-        cd1, cd2 = st.columns(2)
+        st.subheader("📋 Surgical Details")
+        cd1, cd2, cd3 = st.columns(3)
         with cd1:
-            diagnosis = st.text_area("Pre/Post-Op Diagnosis", value="")
+            pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="")
         with cd2:
+            post_op_diagnosis = st.text_area("Post-Op Diagnosis", value="")
+        with cd3:
             procedure = st.text_area("Surgical Procedure", value="")
 
         all_scc_procs = [
@@ -1073,7 +1075,8 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
                 'MIDDLE NAME': middle_name,
                 'SEX': sex,
                 'AGE': float(age),
-                'DIAGNOSIS': diagnosis,
+                'PRE-OP DIAGNOSIS': pre_op_diagnosis,
+                'POST-OP DIAGNOSIS': post_op_diagnosis,
                 'PROCEDURE': procedure,
                 'SURGICAL PROCEDURE FLAGS': ", ".join(selected_scc_procs) if selected_scc_procs else "None",
                 'ATTENDING PHYSICIAN': attending_physician if attending_physician else "N/A",
