@@ -78,6 +78,23 @@ REGULAR_FONT_SIZE = 10
 def get_ph_time():
     return datetime.now(ZoneInfo("Asia/Manila"))
 
+# Helper for 12-hour civilian time input components
+def civilian_time_input(label, key_suffix=""):
+    ph_now = get_ph_time()
+    default_hour = ph_now.strftime("%I") # 12-hr format
+    default_minute = ph_now.strftime("%M")
+    default_ampm = ph_now.strftime("%p") # AM or PM
+
+    col_h, col_m, col_ap = st.columns([2, 2, 2])
+    with col_h:
+        hour_val = st.selectbox(f"{label} - Hour", [f"{i:02d}" for i in range(1, 13)], index=int(default_hour)-1, key=f"hour_{key_suffix}")
+    with col_m:
+        minute_val = st.selectbox(f"{label} - Minute", [f"{i:02d}" for i in range(60)], index=int(default_minute), key=f"min_{key_suffix}")
+    with col_ap:
+        ampm_val = st.selectbox(f"{label} - AM/PM", ["AM", "PM"], index=0 if default_ampm == "AM" else 1, key=f"ampm_{key_suffix}")
+
+    return f"{hour_val}:{minute_val}:00 {ampm_val}"
+
 # ---------------------------------------------------------
 # 2. SORTED HOSPITAL UNIT AREAS LIST
 # ---------------------------------------------------------
@@ -544,16 +561,18 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         with c4:
             sex = st.selectbox("Sex", ["None", "Male", "Female", "Others"])
 
-        c5, c6, c7, c8 = st.columns(4)
+        c5, c6, c7 = st.columns(3)
         with c5:
             entry_date = st.date_input("Date", ph_now.date())
         with c6:
-            # Streamlit 1.35+ native 12-hour formatting toggle integration via format specifier
-            entry_time = st.time_input("Time (12-hr AM/PM)", value=ph_now.time(), step=60)
+            entry_age_col, c_hosp_col = st.columns(2)
+            with entry_age_col:
+                age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c7:
-            age = st.number_input("Age", min_value=0, max_value=120, value=0)
-        with c8:
             hosp_mode = st.selectbox("Hospitalization Mode", ["None", "IPD - Inpatient", "OPD - Outpatient"])
+
+        st.markdown("**Time of Entry (12-hr AM/PM)**")
+        entry_time_str = civilian_time_input("Time of Entry", key_suffix="ecc_time")
 
         c_extra1, c_extra2 = st.columns(2)
         with c_extra1:
@@ -593,7 +612,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
             row_data = {
                 'MONTH': get_month_str(entry_date, "full_month"),
                 'DATE': curr_date_str,
-                'TIME': entry_time.strftime("%I:%M:%S %p"), # Forcing strict 12-hour AM/PM string formatting
+                'TIME': entry_time_str,
                 'LAST NAME': last_name,
                 'FIRST NAME': first_name,
                 'MIDDLE NAME': middle_name,
@@ -634,15 +653,17 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         with c4:
             sex = st.selectbox("Sex", ["None", "Male", "Female", "Others"])
 
-        c5, c6, c7, c8 = st.columns(4)
+        c5, c6 = st.columns(2)
         with c5:
             entry_date = st.date_input("Procedure Date", ph_now.date())
         with c6:
-            sched_time = st.time_input("Scheduled Time (12-hr AM/PM)", value=ph_now.time(), step=60)
-        with c7:
-            actual_time = st.time_input("Actual Time (12-hr AM/PM)", value=ph_now.time(), step=60)
-        with c8:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
+
+        st.markdown("**Scheduled Time (12-hr AM/PM)**")
+        sched_time_str = civilian_time_input("Scheduled Time", key_suffix="endo_sched")
+
+        st.markdown("**Actual Time (12-hr AM/PM)**")
+        actual_time_str = civilian_time_input("Actual Time", key_suffix="endo_actual")
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
@@ -709,8 +730,8 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
             row_data = {
                 'MONTH': get_month_str(entry_date, "mixed"),
                 'DATE': curr_date_str,
-                'SCHEDULED TIME': sched_time.strftime("%I:%M:%S %p"),
-                'ACTUAL TIME': actual_time.strftime("%I:%M:%S %p"),
+                'SCHEDULED TIME': sched_time_str,
+                'ACTUAL TIME': actual_time_str,
                 'LAST NAME': last_name,
                 'FIRST NAME': first_name,
                 'MIDDLE NAME': middle_name,
@@ -848,15 +869,17 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         with c4:
             sex = st.selectbox("Sex", ["None", "Female", "Male", "Others"])
 
-        c5, c6, c7, c8 = st.columns(4)
+        c5, c6 = st.columns(2)
         with c5:
             entry_date = st.date_input("Procedure Date", ph_now.date())
         with c6:
-            sched_time = st.time_input("Scheduled Time (12-hr AM/PM)", value=ph_now.time(), step=60)
-        with c7:
-            actual_time = st.time_input("Actual Time (12-hr AM/PM)", value=ph_now.time(), step=60)
-        with c8:
             age = st.number_input("Age", min_value=10, max_value=100, value=0)
+
+        st.markdown("**Scheduled Time (12-hr AM/PM)**")
+        sched_time_str = civilian_time_input("Scheduled Time", key_suffix="ob_sched")
+
+        st.markdown("**Actual Time (12-hr AM/PM)**")
+        actual_time_str = civilian_time_input("Actual Time", key_suffix="ob_actual")
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
@@ -921,8 +944,8 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             row_data = {
                 'MONTH': get_month_str(entry_date, "numeric_prefix"),
                 'DATE': curr_date_str,
-                'SCHEDULED TIME': sched_time.strftime("%I:%M:%S %p"),
-                'ACTUAL TIME': actual_time.strftime("%I:%M:%S %p"),
+                'SCHEDULED TIME': sched_time_str,
+                'ACTUAL TIME': actual_time_str,
                 'LAST NAME': last_name,
                 'FIRST NAME': first_name,
                 'MIDDLE NAME': middle_name,
@@ -970,15 +993,17 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         with c4:
             sex = st.selectbox("Sex", ["None", "Male", "Female", "Others"])
 
-        c5, c6, c7, c8 = st.columns(4)
+        c5, c6 = st.columns(2)
         with c5:
             entry_date = st.date_input("Surgery Date", ph_now.date())
         with c6:
-            sched_time = st.time_input("Scheduled Time (12-hr AM/PM)", value=ph_now.time(), step=60)
-        with c7:
-            actual_time = st.time_input("Actual Time (12-hr AM/PM)", value=ph_now.time(), step=60)
-        with c8:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
+
+        st.markdown("**Scheduled Time (12-hr AM/PM)**")
+        sched_time_str = civilian_time_input("Scheduled Time", key_suffix="scc_sched")
+
+        st.markdown("**Actual Time (12-hr AM/PM)**")
+        actual_time_str = civilian_time_input("Actual Time", key_suffix="scc_actual")
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
@@ -1054,8 +1079,8 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             row_data = {
                 'MONTH': get_month_str(entry_date, "numeric_prefix"),
                 'DATE': curr_date_str,
-                'SCHEDULED TIME': sched_time.strftime("%I:%M:%S %p"),
-                'ACTUAL TIME': actual_time.strftime("%I:%M:%S %p"),
+                'SCHEDULED TIME': sched_time_str,
+                'ACTUAL TIME': actual_time_str,
                 'LAST NAME': last_name,
                 'FIRST NAME': first_name,
                 'MIDDLE NAME': middle_name,
