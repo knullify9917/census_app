@@ -336,7 +336,7 @@ ensure_google_sheets_exist()
 # ---------------------------------------------------------
 # 5. STREAMLIT APP INTERFACE
 # ---------------------------------------------------------
-st.title("📊 MTCMC Direct Google Sheets Data Entry Application")
+st.title("PATIENT DATA RECORDING SYSTEM")
 st.markdown("Enter patient census data into the input form below. Records are written directly to your cloud **Google Sheet (`MTCMC_CENSUS_MASTERFILES_SYSTEM`)**.")
 
 MODULES = [
@@ -356,7 +356,7 @@ st.markdown("---")
 # MODULE: DASHBOARD & SUMMARY TALLY
 # ---------------------------------------------------------
 if selected_sheet == "Dashboard & Summary":
-    st.header("📈 MTCMC Department Census Tally & Summary")
+    st.header("Hospital Summary")
     st.markdown("This dashboard aggregates live data entries across all department modules from your Google Sheet.")
 
     department_sheets = [
