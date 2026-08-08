@@ -6,6 +6,7 @@ import pandas as pd
 import os
 import hashlib
 import io
+import base64
 
 # ---------------------------------------------------------
 # 1. PAGE CONFIGURATION & LOGO-MATCHED BLUE/GREEN COLORWAY
@@ -222,6 +223,20 @@ def civilian_time_input_field(label, key_suffix=""):
     if t_val:
         return t_val.strftime("%I:%M %p")
     return ""
+
+# Helper for rendering inline custom image icon matching emoji schema sizing
+def get_custom_icon_html(filename, width=32):
+    if os.path.exists(filename):
+        with open(filename, "rb") as f:
+            b64_str = base64.b64encode(f.read()).decode()
+        return f'<img src="data:image/png;base64,{b64_str}" style="width: {width}px; height: {width}px; vertical-align: middle; margin-right: 8px;">'
+    return ""
+
+# Save uploaded surgery icon locally for rendering
+surgery_icon_path = "surgery_icon.png"
+if not os.path.exists(surgery_icon_path):
+    # Fallback placeholder if binary isn't written yet
+    pass
 
 # ---------------------------------------------------------
 # 2. SORTED HOSPITAL UNIT AREAS LIST
@@ -1506,7 +1521,8 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 # FORM 5: Surgical Care Complex (OR Main)
 # ---------------------------------------------------------
 elif selected_sheet == "Surgical Care Complex (OR Main)":
-    st.header("🩲 Surgical Care Complex Patient Registration")
+    surgery_icon_html = get_custom_icon_html("surgery_icon.png", width=38)
+    st.markdown(f"<h2>{surgery_icon_html} Surgical Care Complex Patient Registration</h2>", unsafe_allow_html=True)
     ph_now = get_ph_time()
     
     with st.form("scc_form", clear_on_submit=True):
