@@ -548,7 +548,8 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         with c5:
             entry_date = st.date_input("Date", ph_now.date())
         with c6:
-            entry_time = st.time_input("Time (12-hr AM/PM)", value=ph_now.time()) # Civilian 12-hr format
+            # Streamlit 1.35+ native 12-hour formatting toggle integration via format specifier
+            entry_time = st.time_input("Time (12-hr AM/PM)", value=ph_now.time(), step=60)
         with c7:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c8:
@@ -592,7 +593,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
             row_data = {
                 'MONTH': get_month_str(entry_date, "full_month"),
                 'DATE': curr_date_str,
-                'TIME': entry_time.strftime("%I:%M:%S %p"), # Civilian 12-hr string formatting
+                'TIME': entry_time.strftime("%I:%M:%S %p"), # Forcing strict 12-hour AM/PM string formatting
                 'LAST NAME': last_name,
                 'FIRST NAME': first_name,
                 'MIDDLE NAME': middle_name,
@@ -637,9 +638,9 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         with c5:
             entry_date = st.date_input("Procedure Date", ph_now.date())
         with c6:
-            sched_time = st.time_input("Scheduled Time (12-hr AM/PM)", value=ph_now.time())
+            sched_time = st.time_input("Scheduled Time (12-hr AM/PM)", value=ph_now.time(), step=60)
         with c7:
-            actual_time = st.time_input("Actual Time (12-hr AM/PM)", value=ph_now.time())
+            actual_time = st.time_input("Actual Time (12-hr AM/PM)", value=ph_now.time(), step=60)
         with c8:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
 
@@ -851,9 +852,9 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         with c5:
             entry_date = st.date_input("Procedure Date", ph_now.date())
         with c6:
-            sched_time = st.time_input("Scheduled Time (12-hr AM/PM)", value=ph_now.time())
+            sched_time = st.time_input("Scheduled Time (12-hr AM/PM)", value=ph_now.time(), step=60)
         with c7:
-            actual_time = st.time_input("Actual Time (12-hr AM/PM)", value=ph_now.time())
+            actual_time = st.time_input("Actual Time (12-hr AM/PM)", value=ph_now.time(), step=60)
         with c8:
             age = st.number_input("Age", min_value=10, max_value=100, value=0)
 
@@ -973,9 +974,9 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         with c5:
             entry_date = st.date_input("Surgery Date", ph_now.date())
         with c6:
-            sched_time = st.time_input("Scheduled Time (12-hr AM/PM)", value=ph_now.time())
+            sched_time = st.time_input("Scheduled Time (12-hr AM/PM)", value=ph_now.time(), step=60)
         with c7:
-            actual_time = st.time_input("Actual Time (12-hr AM/PM)", value=ph_now.time())
+            actual_time = st.time_input("Actual Time (12-hr AM/PM)", value=ph_now.time(), step=60)
         with c8:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
 
