@@ -613,21 +613,11 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
+st.markdown("All data entries are securely stored on our hospital database.")
+
 # Sidebar Profile Info, Database Security Notice & Sign Out
 st.sidebar.markdown(f"**Logged in as:** {st.session_state['name']}")
 st.sidebar.markdown(f"**Role:** `{st.session_state['role']}`")
-
-st.sidebar.markdown("---")
-st.sidebar.markdown(
-    "<p style='font-size: 0.85rem; color: #0f766e; font-style: italic; margin-bottom: 10px;'>"
-    "All data entries are securely stored on our hospital database."
-    "</p>", 
-    unsafe_allow_html=True
-)
-
-if st.sidebar.button("Sign Out"):
-    st.session_state["authenticated"] = False
-    st.rerun()
 
 st.sidebar.markdown("---")
 
@@ -649,10 +639,11 @@ if allowed_modules == "All":
 else:
     MODULES = allowed_modules
 
+st.sidebar.markdown("### 🧭 Navigation & Modules")
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
 
 st.sidebar.markdown("---")
-st.sidebar.subheader("📥 Export Reports")
+st.sidebar.markdown("### 📥 Export Reports")
 
 # ---------------------------------------------------------
 # EXPORT TO EXCEL & PDF UTILITIES ON SIDEBAR
@@ -710,6 +701,18 @@ st.sidebar.download_button(
     file_name=f"MTCMC_{selected_sheet.replace(' ', '_')}_Report.html",
     mime="text/html"
 )
+
+st.sidebar.markdown("---")
+st.sidebar.markdown(
+    "<p style='font-size: 0.85rem; color: #0f766e; font-style: italic; margin-bottom: 10px;'>"
+    "All data entries are securely stored on our hospital database."
+    "</p>", 
+    unsafe_allow_html=True
+)
+
+if st.sidebar.button("Sign Out"):
+    st.session_state["authenticated"] = False
+    st.rerun()
 
 st.markdown("---")
 
