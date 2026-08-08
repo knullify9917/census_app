@@ -749,7 +749,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 # FORM 3: Hemodialysis Unit (HDU)
 # ---------------------------------------------------------
 elif selected_sheet == "Hemodialysis Unit (HDU)":
-    st.header("Hemodialysis Unit Patient Registration")
+    st.header("Hemodialysis Unit (HDU) Patient Registration")
 
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_hdu")
