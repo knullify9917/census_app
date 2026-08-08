@@ -559,7 +559,7 @@ elif selected_sheet == "ENDO":
         
         ca, cb, cc, cd = st.columns(4)
         with ca: 
-            proc_type = st.radio("Nature", ["DIAGNOSTICS", "THERAPEUTIC"])
+            proc_type = st.radio("Nature", ["DIAGNOSTICS", "THERAPEUTIC", "DIAGNOSTICS & THERAPEUTIC"])
         with cb: 
             hosp_mode = st.radio("Hospitalization Mode", ["OPD", "IPD"])
         with cc: 
