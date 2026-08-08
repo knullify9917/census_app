@@ -1,6 +1,7 @@
 import streamlit as st
 import gspread
 from datetime import datetime
+from zoneinfo import ZoneInfo
 import pandas as pd
 import os
 
@@ -72,6 +73,10 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 REGULAR_FONT_SIZE = 10
+
+# Helper function to get current Philippine Time
+def get_ph_time():
+    return datetime.now(ZoneInfo("Asia/Manila"))
 
 # ---------------------------------------------------------
 # 2. SORTED HOSPITAL UNIT AREAS LIST
@@ -449,9 +454,10 @@ if selected_sheet == "Hospital Information System":
     
     summary_data = []
     total_all_cases = 0
-    today_str = datetime.today().strftime("%m/%d/%Y")
-    current_month_num = str(datetime.today().month)
-    current_month_name = datetime.today().strftime("%B").upper()
+    ph_now_summary = get_ph_time()
+    today_str = ph_now_summary.strftime("%m/%d/%Y")
+    current_month_num = str(ph_now_summary.month)
+    current_month_name = ph_now_summary.strftime("%B").upper()
 
     for dept in department_sheets:
         df = read_google_sheet(dept)
@@ -525,6 +531,7 @@ if selected_sheet == "Hospital Information System":
 # ---------------------------------------------------------
 elif selected_sheet == "Emergency Care Complex (ECC)":
     st.header("Emergency Care Complex (ECC) Data Entry Form")
+    ph_now = get_ph_time()
     with st.form("ecc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics & AI Checker")
         c1, c2, c3, c4 = st.columns(4)
@@ -539,9 +546,9 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 
         c5, c6, c7, c8 = st.columns(4)
         with c5:
-            entry_date = st.date_input("Date", datetime.today())
+            entry_date = st.date_input("Date", ph_now.date())
         with c6:
-            entry_time = st.time_input("Time", value=datetime.now().time()) # System time default
+            entry_time = st.time_input("Time (12-hr AM/PM)", value=ph_now.time()) # Civilian 12-hr format
         with c7:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c8:
@@ -585,7 +592,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
             row_data = {
                 'MONTH': get_month_str(entry_date, "full_month"),
                 'DATE': curr_date_str,
-                'TIME': entry_time.strftime("%I:%M:%S %p"),
+                'TIME': entry_time.strftime("%I:%M:%S %p"), # Civilian 12-hr string formatting
                 'LAST NAME': last_name,
                 'FIRST NAME': first_name,
                 'MIDDLE NAME': middle_name,
@@ -610,7 +617,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 # ---------------------------------------------------------
 elif selected_sheet == "Endoscopy Unit (ENDO)":
     st.header("Endoscopy Unit Data Entry Form")
-    
+    ph_now = get_ph_time()
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_endo")
 
@@ -628,11 +635,11 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 
         c5, c6, c7, c8 = st.columns(4)
         with c5:
-            entry_date = st.date_input("Procedure Date", datetime.today())
+            entry_date = st.date_input("Procedure Date", ph_now.date())
         with c6:
-            sched_time = st.time_input("Scheduled Time", value=datetime.now().time()) # System time default
+            sched_time = st.time_input("Scheduled Time (12-hr AM/PM)", value=ph_now.time())
         with c7:
-            actual_time = st.time_input("Actual Time", value=datetime.now().time()) # System time default
+            actual_time = st.time_input("Actual Time (12-hr AM/PM)", value=ph_now.time())
         with c8:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
 
@@ -824,7 +831,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
 # ---------------------------------------------------------
 elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
     st.header("OBGYNE Cases Data Entry Form")
-
+    ph_now = get_ph_time()
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_obgyne")
 
@@ -842,11 +849,11 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 
         c5, c6, c7, c8 = st.columns(4)
         with c5:
-            entry_date = st.date_input("Procedure Date", datetime.today())
+            entry_date = st.date_input("Procedure Date", ph_now.date())
         with c6:
-            sched_time = st.time_input("Scheduled Time", value=datetime.now().time()) # System time default
+            sched_time = st.time_input("Scheduled Time (12-hr AM/PM)", value=ph_now.time())
         with c7:
-            actual_time = st.time_input("Actual Time", value=datetime.now().time()) # System time default
+            actual_time = st.time_input("Actual Time (12-hr AM/PM)", value=ph_now.time())
         with c8:
             age = st.number_input("Age", min_value=10, max_value=100, value=0)
 
@@ -895,7 +902,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         with cb:
             complexity = st.selectbox("Complexity Tier", ["None", "MAJOR", "MINOR", "DIAGNOSTIC"])
         with cc:
-            hosp_mode = st.radio("Hospitalization Mode", ["IPD", "OPD"])
+            hosp_mode = st.radio("Hospitalization Mode", ["OPD", "IPD"])
             kit_used = st.checkbox("Hospital Kit Package", value=True)
         with cd:
             payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
@@ -946,7 +953,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 # ---------------------------------------------------------
 elif selected_sheet == "Surgical Care Complex (OR Main)":
     st.header("Surgical Care Center (SCC) Data Entry Form")
-
+    ph_now = get_ph_time()
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_scc")
 
@@ -964,11 +971,11 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 
         c5, c6, c7, c8 = st.columns(4)
         with c5:
-            entry_date = st.date_input("Surgery Date", datetime.today())
+            entry_date = st.date_input("Surgery Date", ph_now.date())
         with c6:
-            sched_time = st.time_input("Scheduled Time", value=datetime.now().time()) # System time default
+            sched_time = st.time_input("Scheduled Time (12-hr AM/PM)", value=ph_now.time())
         with c7:
-            actual_time = st.time_input("Actual Time", value=datetime.now().time()) # System time default
+            actual_time = st.time_input("Actual Time (12-hr AM/PM)", value=ph_now.time())
         with c8:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
 
