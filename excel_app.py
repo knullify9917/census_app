@@ -5,7 +5,7 @@ import pandas as pd
 import os
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION
+# 1. PAGE CONFIGURATION & LOGO-MATCHED LIGHT MODE STYLING
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="PATIENT DATA RECORDING SYSTEM",
@@ -13,27 +13,61 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+st.markdown("""
+<style>
+    /* Global Clean Light Theme */
+    .stApp { background-color: #ffffff !important; color: #1e293b !important; }
+    
+    /* Sidebar Styling */
+    section[data-testid="stSidebar"] { background-color: #f8fafc !important; border-right: 1px solid #e2e8f0; }
+    section[data-testid="stSidebar"] * { color: #1e293b !important; }
+    
+    /* Headers matching MTCMC Royal Blue */
+    h1, h2, h3, h4, h5, h6 { color: #1e3a8a !important; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
+    
+    /* Action Buttons */
+    .stButton > button, form button[type="submit"] {
+        background-color: #1e3a8a !important; color: #ffffff !important; border-radius: 6px !important; border: none !important; font-weight: bold !important;
+    }
+    .stButton > button:hover, form button[type="submit"]:hover { background-color: #1d4ed8 !important; color: #ffffff !important; }
+    
+    /* Form Inputs, Textareas, and Dropdown Controls */
+    div[data-baseweb="select"] > div, input[type="text"], input[type="number"], textarea {
+        background-color: #ffffff !important; color: #1e293b !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important;
+    }
+    div[data-baseweb="select"] span { color: #1e293b !important; }
+    
+    /* Dropdown Popover Lists (Fixes black background popovers) */
+    div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"] {
+        background-color: #ffffff !important; color: #1e293b !important; border: 1px solid #cbd5e1 !important;
+    }
+    li[role="option"], div[data-baseweb="menu"] div, option { background-color: #ffffff !important; color: #1e293b !important; }
+    li[role="option"]:hover, div[data-baseweb="menu"] div:hover { background-color: #f0fdfa !important; color: #0d9488 !important; }
+    
+    /* Dataframe Tables (Fixes dark background headers/cells) */
+    [data-testid="stDataFrame"] { background-color: #ffffff !important; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px; }
+    [data-testid="stDataFrame"] table { background-color: #ffffff !important; color: #1e293b !important; }
+    [data-testid="stDataFrame"] thead tr th { background-color: #f1f5f9 !important; color: #1e3a8a !important; }
+    
+    /* Metric Cards with Teal Accent Border */
+    div.stMetric {
+        background-color: #ffffff !important; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; border-left: 5px solid #0d9488 !important;
+    }
+    div.stMetric label { color: #64748b !important; }
+    div.stMetric div[data-testid="stMetricValue"] { color: #1e3a8a !important; }
+    
+    div.stForm { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; }
+</style>
+""", unsafe_allow_html=True)
+
 REGULAR_FONT_SIZE = 10
 
 # ---------------------------------------------------------
 # 2. SORTED HOSPITAL UNIT AREAS LIST
 # ---------------------------------------------------------
 HOSPITAL_UNIT_AREAS = [
-    "None",
-    "GNU 1C",
-    "GNU 2A",
-    "GNU 2B",
-    "GNU 2C",
-    "GNU 2D",
-    "GNU 3A",
-    "GNU 3B",
-    "GNU 3C",
-    "GNU 4A",
-    "ICU",
-    "NSU",
-    "PCN",
-    "PICU",
-    "OUTBORN"
+    "None", "GNU 1C", "GNU 2A", "GNU 2B", "GNU 2C", "GNU 2D", 
+    "GNU 3A", "GNU 3B", "GNU 3C", "GNU 4A", "ICU", "NSU", "PCN", "PICU", "OUTBORN"
 ]
 
 # ---------------------------------------------------------
@@ -50,103 +84,46 @@ SPECIALTIES_BY_FIELD = {
         "FAMILY MEDICINE"
     ],
     "Internal Medicine & Subspecialties": [
-        "CARDIOLOGY",
-        "CLINICAL HAEMATOLOGY",
-        "DERMATOLOGY",
-        "ENDOCRINOLOGY",
-        "GASTROENTEROLOGY",
-        "HEPATOLOGY",
-        "GERIATRIC MEDICINE",
-        "INFECTIOUS DISEASES",
-        "INFECTIOUS DISEASES MEDICINE",
-        "INTENSIVE CARE MEDICINE",
-        "INTERNAL MEDICINE",
-        "MEDICAL ONCOLOGY",
-        "NEPHROLOGY",
-        "NEUROLOGY",
-        "PALLIATIVE MEDICINE",
-        "RESPIRATORY MEDICINE",
-        "RHEUMATOLOGY"
+        "CARDIOLOGY", "CLINICAL HAEMATOLOGY", "DERMATOLOGY", "ENDOCRINOLOGY", 
+        "GASTROENTEROLOGY", "HEPATOLOGY", "GERIATRIC MEDICINE", "INFECTIOUS DISEASES", 
+        "INFECTIOUS DISEASES MEDICINE", "INTENSIVE CARE MEDICINE", "INTERNAL MEDICINE", 
+        "MEDICAL ONCOLOGY", "NEPHROLOGY", "NEUROLOGY", "PALLIATIVE MEDICINE", 
+        "RESPIRATORY MEDICINE", "RHEUMATOLOGY"
     ],
     "Obstetrics & Gynaecology": [
-        "GYNAE-ONCOLOGY",
-        "MATERNAL FETAL MEDICINE",
-        "OBSTETRICS & GYNAECOLOGY",
-        "REPRODUCTIVE MEDICINE",
-        "URO-GYNAECOLOGY"
+        "GYNAE-ONCOLOGY", "MATERNAL FETAL MEDICINE", "OBSTETRICS & GYNAECOLOGY", 
+        "REPRODUCTIVE MEDICINE", "URO-GYNAECOLOGY"
     ],
     "Oncology, Radiology & Physical Medicine": [
-        "CLINICAL ONCOLOGY",
-        "CLINICAL RADIOLOGY",
-        "NUCLEAR MEDICINE",
-        "ONCOLOGY",
-        "RADIATION ONCOLOGY",
-        "REHABILITATION MEDICINE",
-        "SPORTS MEDICINE"
+        "CLINICAL ONCOLOGY", "CLINICAL RADIOLOGY", "NUCLEAR MEDICINE", "ONCOLOGY", 
+        "RADIATION ONCOLOGY", "REHABILITATION MEDICINE", "SPORTS MEDICINE"
     ],
     "Paediatrics & Subspecialties": [
-        "ADOLESCENT MEDICINE",
-        "CLINICAL GENETICS",
-        "DEVELOPMENTAL PAEDIATRICS",
-        "GENERAL PAEDIATRICS",
-        "NEONATOLOGY",
-        "PAEDIATRIC CARDIOLOGY",
-        "PAEDIATRIC DERMATOLOGY",
-        "PAEDIATRIC ENDOCRINOLOGY",
-        "PAEDIATRIC GASTROENTEROLOGY",
-        "PAEDIATRIC HAEMATOLOGY & ONCOLOGY",
-        "PAEDIATRIC INFECTIOUS DISEASES",
-        "PAEDIATRIC INTENSIVE CARE",
-        "PAEDIATRIC NEPHROLOGY",
-        "PAEDIATRIC NEUROLOGY",
-        "PAEDIATRIC RESPIRATORY MEDICINE",
-        "PAEDIATRIC RHEUMATOLOGY",
+        "ADOLESCENT MEDICINE", "CLINICAL GENETICS", "DEVELOPMENTAL PAEDIATRICS", 
+        "GENERAL PAEDIATRICS", "NEONATOLOGY", "PAEDIATRIC CARDIOLOGY", "PAEDIATRIC DERMATOLOGY", 
+        "PAEDIATRIC ENDOCRINOLOGY", "PAEDIATRIC GASTROENTEROLOGY", "PAEDIATRIC HAEMATOLOGY & ONCOLOGY", 
+        "PAEDIATRIC INFECTIOUS DISEASES", "PAEDIATRIC INTENSIVE CARE", "PAEDIATRIC NEPHROLOGY", 
+        "PAEDIATRIC NEUROLOGY", "PAEDIATRIC RESPIRATORY MEDICINE", "PAEDIATRIC RHEUMATOLOGY", 
         "PAEDIATRICS AND CHILD HEALTH"
     ],
     "Pathology": [
-        "ANATOMICAL PATHOLOGY",
-        "CHEMICAL PATHOLOGY",
-        "CHEMICAL PATHOLOGY (METABOLIC MEDICINE)",
-        "FORENSIC PATHOLOGY",
-        "GENERAL PATHOLOGY",
-        "GENETIC PATHOLOGY",
-        "HAEMATOLOGY",
-        "TRANSFUSION MEDICINE"
+        "ANATOMICAL PATHOLOGY", "CHEMICAL PATHOLOGY", "CHEMICAL PATHOLOGY (METABOLIC MEDICINE)", 
+        "FORENSIC PATHOLOGY", "GENERAL PATHOLOGY", "GENETIC PATHOLOGY", "HAEMATOLOGY", "TRANSFUSION MEDICINE"
     ],
     "Psychiatry": [
-        "CHILD AND ADOLESCENT PSYCHIATRY",
-        "FORENSIC PSYCHIATRY",
-        "PSYCHIATRY"
+        "CHILD AND ADOLESCENT PSYCHIATRY", "FORENSIC PSYCHIATRY", "PSYCHIATRY"
     ],
     "Public, Occupational & Military Health": [
-        "COMMUNICABLE DISEASE EPIDEMIOLOGY",
-        "MILITARY MEDICINE",
-        "NON-COMMUNICABLE DISEASE EPIDEMIOLOGY",
-        "OCCUPATIONAL HEALTH",
-        "PUBLIC HEALTH MEDICINE"
+        "COMMUNICABLE DISEASE EPIDEMIOLOGY", "MILITARY MEDICINE", "NON-COMMUNICABLE DISEASE EPIDEMIOLOGY", 
+        "OCCUPATIONAL HEALTH", "PUBLIC HEALTH MEDICINE"
     ],
     "Surgical Specialties & Subspecialties": [
-        "ADVANCED MUSCOSKELETAL TRAUMA",
-        "ARTHOPLASTY",
-        "ARTHROSCOPY & SPORT SURGERY",
-        "BREAST / AND ENDOCRINE SURGERY",
-        "COLORECTAL SURGERY",
-        "GENERAL SURGERY",
-        "HEPATOBILIARY SURGERY",
-        "NEUROSURGERY",
-        "OPHTHALMOLOGY",
-        "ORTHOPAEDIC ONCOLOGY",
-        "ORTHOPAEDIC SURGERY",
-        "OTORHINOLARYNGOLOGY (ENT)",
-        "PAEDIATRIC ORTHOPAEDICS",
-        "PAEDIATRIC SURGERY",
-        "PLASTIC SURGERY",
-        "SPINE SURGERY",
-        "THORACIC / CARDIOTHORACIC SURGERY",
-        "UPPER GIT SURGERY",
-        "UPPER LIMB & MICROSURGERY",
-        "UROLOGY",
-        "VASCULAR SURGERY"
+        "ADVANCED MUSCOSKELETAL TRAUMA", "ARTHOPLASTY", "ARTHROSCOPY & SPORT SURGERY", 
+        "BREAST / AND ENDOCRINE SURGERY", "COLORECTAL SURGERY", "GENERAL SURGERY", 
+        "HEPATOBILIARY SURGERY", "NEUROSURGERY", "OPHTHALMOLOGY", "ORTHOPAEDIC ONCOLOGY", 
+        "ORTHOPAEDIC SURGERY", "OTORHINOLARYNGOLOGY (ENT)", "PAEDIATRIC ORTHOPAEDICS", 
+        "PAEDIATRIC SURGERY", "PLASTIC SURGERY", "SPINE SURGERY", "THORACIC / CARDIOTHORACIC SURGERY", 
+        "UPPER GIT SURGERY", "UPPER LIMB & MICROSURGERY", "UROLOGY", "VASCULAR SURGERY"
     ]
 }
 
@@ -278,7 +255,7 @@ def ensure_google_sheets_exist():
     if "Hospital Information System" not in existing_worksheets:
         try:
             ws_sum = sh.add_worksheet(title="Hospital Information System", rows=100, cols=4)
-            ws_sum.update('A1:D1', [["METRO TERESA MEDICAL CENTER (MTCMC)", "", "", ""]])
+            ws_sum.update('A1:D1', [["MOTHER TERESA OF CALCUTTA MEDICAL CENTER", "", "", ""]])
             ws_sum.update('A4:D4', [['Department / Module', 'Total Census Records', 'Daily Patient Census', 'Monthly Patient Census']])
         except Exception:
             pass
@@ -357,7 +334,7 @@ ensure_google_sheets_exist()
 # ---------------------------------------------------------
 # 6. STREAMLIT APP INTERFACE
 # ---------------------------------------------------------
-st.title("PATIENT DATA RECORDING SYSTEM")
+st.title("MOTHER TERESA OF CALCUTTA MEDICAL CENTER")
 st.markdown("All data entries are securely stored on our hospital database.")
 
 MODULES = [
@@ -487,7 +464,13 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         with c7:
             age = st.number_input("Age", min_value=0, max_value=120, value=25)
         with c8:
-            hosp_mode = st.selectbox("Hospitalization Mode", ["IPD", "OPD", "Private Case", "House Case (Walk-in)"])
+            # Separating IPD/OPD from Private Case / House Case (Walk-in) as requested[cite: 1]
+            hosp_mode = st.selectbox("Hospitalization Mode", [
+                "IPD - Inpatient", 
+                "OPD - Outpatient", 
+                "Private Case", 
+                "House Case (Walk-in)"
+            ])
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
