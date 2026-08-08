@@ -632,9 +632,11 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Sidebar Profile Info, Database Security Notice & Sign Out
+# Sidebar Profile Info, Dynamic Date & Time, Database Security Notice & Sign Out
 st.sidebar.markdown(f"**Logged in as:** {st.session_state['name']}")
 st.sidebar.markdown(f"**Role:** `{st.session_state['role']}`")
+ph_now_display = get_ph_time()
+st.sidebar.markdown(f"**Date & Time:** `{ph_now_display.strftime('%B %d, %Y - %I:%M:%S %p')}`")
 
 st.sidebar.markdown("---")
 
