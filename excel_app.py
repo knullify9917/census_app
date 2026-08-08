@@ -901,7 +901,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         with c_anes2:
             anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
-        st.subheader("📋 OBGYNE Diagnosis & Procedure Details")
+        st.subheader("📋 Procedure Details")
         cd1, cd2 = st.columns(2)
         with cd1:
             diagnosis = st.text_area("OBGYNE Diagnosis", value="")
