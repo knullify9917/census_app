@@ -41,9 +41,11 @@ st.markdown("""
         border-radius: 8px !important;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         font-weight: 600 !important;
+        font-size: 13px !important;
+        white-space: nowrap !important;
         width: 100% !important;
         text-align: left !important;
-        padding: 10px 15px !important;
+        padding: 8px 12px !important;
     }
     .stButton > button:hover, form button[type="submit"]:hover, .stFormSubmitButton > button:hover {
         background-color: #f0fdf4 !important;
@@ -938,16 +940,15 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
-        c_doc1, c_doc2, c_doc3, c_doc4 = st.columns([2, 1.5, 1.2, 0.8])
+        c_doc1, c_doc2, c_doc3 = st.columns([2, 1.5, 1.5])
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key="ecc_att_input")
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="ecc_spec_input")
         with c_doc3:
             admitted_to = st.selectbox("Admitted to", HOSPITAL_UNIT_AREAS, index=0)
-        with c_doc4:
-            st.markdown("<br>", unsafe_allow_html=True)
-            tag_as_cm = st.form_submit_button("Tag as Co-Management")
+
+        tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
         if st.session_state["cm_list_ecc"]:
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -1040,14 +1041,13 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
-        c_doc1, c_doc2, c_doc3 = st.columns([2, 1.5, 0.8])
+        c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key="endo_att_input")
         with c_doc2:
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="endo_spec_input")
-        with c_doc3:
-            st.markdown("<br>", unsafe_allow_html=True)
-            tag_as_cm = st.form_submit_button("Tag as Co-Management")
+
+        tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
         if st.session_state["cm_list_endo"]:
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -1157,14 +1157,13 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         curr_date_str = entry_date.strftime("%B %d, %Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
-        c_doc1, c_doc2, c_doc3 = st.columns([2, 1.5, 0.8])
+        c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
             attending_physician = st.text_input("Attending Physician", value="", key="hdu_att_input")
         with c_doc2:
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="hdu_spec_input")
-        with c_doc3:
-            st.markdown("<br>", unsafe_allow_html=True)
-            tag_as_cm = st.form_submit_button("Tag as Co-Management")
+
+        tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
         if st.session_state["cm_list_hdu"]:
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -1255,14 +1254,13 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
-        c_doc1, c_doc2, c_doc3 = st.columns([2, 1.5, 0.8])
+        c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key="ob_att_input")
         with c_doc2:
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="ob_spec_input")
-        with c_doc3:
-            st.markdown("<br>", unsafe_allow_html=True)
-            tag_as_cm = st.form_submit_button("Tag as Co-Management")
+
+        tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
         if st.session_state["cm_list_ob"]:
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -1387,14 +1385,13 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
-        c_doc1, c_doc2, c_doc3 = st.columns([2, 1.5, 0.8])
+        c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key="scc_att_input")
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scc_spec_input")
-        with c_doc3:
-            st.markdown("<br>", unsafe_allow_html=True)
-            tag_as_cm = st.form_submit_button("Tag as Co-Management")
+
+        tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
         if st.session_state["cm_list_scc"]:
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -1522,14 +1519,13 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
-        c_doc1, c_doc2, c_doc3 = st.columns([2, 1.5, 0.8])
+        c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key="scu_att_input")
         with c_doc2:
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scu_spec_input")
-        with c_doc3:
-            st.markdown("<br>", unsafe_allow_html=True)
-            tag_as_cm = st.form_submit_button("Tag as Co-Management")
+
+        tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
         if st.session_state["cm_list_scu"]:
             st.markdown("**Current Co-Management Doctors Added:**")
