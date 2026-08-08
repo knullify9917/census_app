@@ -853,14 +853,11 @@ if selected_sheet == "Hospital Information System":
         st.metric(label="Active Departments Tracked", value=len(department_sheets))
 
     st.markdown("---")
-    st.subheader("Department Performance")
-    summary_df = pd.DataFrame(summary_data)
-    st.dataframe(summary_df, use_container_width=True)
 
     # ---------------------------------------------------------
     # ACTIVE PATIENT ROSTER (Condition: Active & May Go Home Inpatients)
+    # Placed above Department Performance per user request
     # ---------------------------------------------------------
-    st.markdown("---")
     st.subheader("📋 Active Patient Roster")
     st.markdown("Aggregated live roster displaying **Inpatient** records currently tagged as **Active** or **May Go Home** across all hospital departments.")
 
@@ -910,6 +907,11 @@ if selected_sheet == "Hospital Information System":
         st.caption(f"Showing {len(final_roster_display)} active inpatient records.")
     else:
         st.info("No patient admission records found across hospital sheets.")
+
+    st.markdown("---")
+    st.subheader("Department Performance")
+    summary_df = pd.DataFrame(summary_data)
+    st.dataframe(summary_df, use_container_width=True)
 
     st.markdown("---")
     st.subheader("Department Summary")
