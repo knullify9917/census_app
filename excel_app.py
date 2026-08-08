@@ -867,6 +867,9 @@ if selected_sheet == "Hospital Information System":
         if not dept_df.empty:
             df_copy = dept_df.copy()
             df_copy.insert(0, "DEPARTMENT UNIT", dept)
+            # For GNU units, combine patient name and status for clear tracking
+            if dept.startswith("General Nursing Unit (GNU") and 'LAST NAME' in df_copy.columns and 'FIRST NAME' in df_copy.columns and 'PATIENT STATUS' in df_copy.columns:
+                df_copy['PATIENT & STATUS'] = df_copy['LAST NAME'].astype(str).str.strip() + ", " + df_copy['FIRST NAME'].astype(str).str.strip() + " [" + df_copy['PATIENT STATUS'].astype(str).str.strip() + "]"
             all_roster_frames.append(df_copy)
 
     if all_roster_frames:
@@ -914,6 +917,9 @@ if selected_sheet == "Hospital Information System":
     if not dept_df.empty:
         st.write(f"Showing all records for **{selected_dept_view}** (Total: {len(dept_df)} records)")
         
+        if selected_dept_view.startswith("General Nursing Unit (GNU") and 'LAST NAME' in dept_df.columns and 'PATIENT STATUS' in dept_df.columns:
+            dept_df['PATIENT & STATUS'] = dept_df['LAST NAME'].astype(str).str.strip() + ", " + dept_df['FIRST NAME'].astype(str).str.strip() + " [" + dept_df['PATIENT STATUS'].astype(str).str.strip() + "]"
+
         if selected_dept_view == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)" and 'ADMITTED TO' in dept_df.columns:
             st.markdown("##### 📍 Sort & Filter by Admitted Area")
             admit_areas = sorted(dept_df['ADMITTED TO'].dropna().unique().tolist())
@@ -923,7 +929,7 @@ if selected_sheet == "Hospital Information System":
                 dept_df = dept_df[dept_df['ADMITTED TO'] == selected_area]
                 st.write(f"Filtered to **{selected_area}** ({len(dept_df)} records)")
 
-        preferred_cols = ['DATE', 'LAST NAME', 'FIRST NAME', 'DIAGNOSIS', 'PATIENT STATUS', 'HOSPITALIZATION MODE', 'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION', 'DIAGNOSIS CATEGORY', 'ATTENDING PHYSICIAN', 'PRIMARY SURGEON', 'SURGEON / PROCEDURALIST', 'SURGEON / OBGYNE', 'ADMITTED TO', 'TRANSFERRED TO', 'MODE OF PAYMENT']
+        preferred_cols = ['DATE', 'PATIENT & STATUS', 'LAST NAME', 'FIRST NAME', 'DIAGNOSIS', 'PATIENT STATUS', 'HOSPITALIZATION MODE', 'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION', 'ATTENDING PHYSICIAN', 'MODE OF PAYMENT']
         display_cols = [c for c in preferred_cols if c in dept_df.columns]
         if not display_cols:
             display_cols = dept_df.columns.tolist()
@@ -1664,7 +1670,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key="scu_att_input")
         with c_doc2:
-            attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scu_spec_input")
+            attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scu_spec_input")
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
