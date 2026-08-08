@@ -8,7 +8,7 @@ import os
 # 1. PAGE CONFIGURATION
 # ---------------------------------------------------------
 st.set_page_config(
-    page_title="PATIENT DATA RECORDING SYSTEM",
+    page_title="MTCMC Direct Google Sheets Data Entry System",
     layout="wide",
     initial_sidebar_state="expanded"
 )
