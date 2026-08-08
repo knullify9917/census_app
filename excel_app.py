@@ -537,7 +537,7 @@ if selected_sheet == "Hospital Information System":
 # FORM 1: Emergency Care Complex (ECC)
 # ---------------------------------------------------------
 elif selected_sheet == "Emergency Care Complex (ECC)":
-    st.header("Emergency Care Complex (ECC) Data Entry Form")
+    st.header("Emergency Care Complex (ECC) Patient Registration")
     ph_now = get_ph_time()
     with st.form("ecc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
@@ -624,7 +624,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 # FORM 2: Endoscopy Unit (ENDO)
 # ---------------------------------------------------------
 elif selected_sheet == "Endoscopy Unit (ENDO)":
-    st.header("Endoscopy Unit Data Entry Form")
+    st.header("Endoscopy Unit Patient Registration")
     ph_now = get_ph_time()
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_endo")
@@ -749,7 +749,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 # FORM 3: Hemodialysis Unit (HDU)
 # ---------------------------------------------------------
 elif selected_sheet == "Hemodialysis Unit (HDU)":
-    st.header("Hemodialysis Unit Data Entry Form")
+    st.header("Hemodialysis Unit Patient Registration")
 
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_hdu")
@@ -841,7 +841,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
 # FORM 4: OBGYNE Care Complex (LRDR-OB Surgery)
 # ---------------------------------------------------------
 elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
-    st.header("OBGYNE Cases Data Entry Form")
+    st.header("OBGYNE Care Complex Patient Registration")
     ph_now = get_ph_time()
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_obgyne")
@@ -1101,7 +1101,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 # FORM 6: Special Care Complex (NICU-PICU-NSU/PCN-Outborn)
 # ---------------------------------------------------------
 elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
-    st.header("Special Care Unit (SCU) Data Entry Form")
+    st.header("Special Care Unit Patient Registration")
 
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_scu")
