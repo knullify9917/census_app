@@ -428,9 +428,24 @@ def check_existing_patient_ai(sheet_name, last_name, fn, curr_date_str):
 ensure_google_sheets_exist()
 
 # ---------------------------------------------------------
-# 6. STREAMLIT APP INTERFACE
+# 6. STREAMLIT APP INTERFACE (LOGO, TITLE & SUBTITLE HEADER)
 # ---------------------------------------------------------
-st.title("MOTHER TERESA OF CALCUTTA MEDICAL CENTER")
+col_logo, col_title = st.columns([0.12, 0.88], gap="small")
+
+with col_logo:
+    if os.path.exists("logo.png"):
+        st.image("logo.png", width=95)
+    elif os.path.exists("logo_2.png"):
+        st.image("logo_2.png", width=95)
+
+with col_title:
+    st.markdown("""
+        <div style="padding-top: 5px;">
+            <h1 style="margin-bottom: 0px; line-height: 1.1; font-size: 2.1rem; color: #1e3a8a;">MOTHER TERESA OF CALCUTTA MEDICAL CENTER</h1>
+            <p style="margin-top: 4px; font-size: 1.1rem; color: #0f766e; font-weight: 600; letter-spacing: 0.5px;">Touching Lives Through Expert Care</p>
+        </div>
+    """, unsafe_allow_html=True)
+
 st.markdown("All data entries are securely stored on our hospital database.")
 
 MODULES = [
