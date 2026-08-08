@@ -232,12 +232,6 @@ def get_custom_icon_html(filename, width=32):
         return f'<img src="data:image/png;base64,{b64_str}" style="width: {width}px; height: {width}px; vertical-align: middle; margin-right: 8px;">'
     return ""
 
-# Save uploaded surgery icon locally for rendering
-surgery_icon_path = "surgery_icon.png"
-if not os.path.exists(surgery_icon_path):
-    # Fallback placeholder if binary isn't written yet
-    pass
-
 # ---------------------------------------------------------
 # 2. SORTED HOSPITAL UNIT AREAS LIST
 # ---------------------------------------------------------
@@ -1390,7 +1384,8 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
 # FORM 4: OBGYNE Care Complex (LRDR-OB Surgery)
 # ---------------------------------------------------------
 elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
-    st.header("👶 OBGYNE Care Complex Patient Registration")
+    ob_icon_html = get_custom_icon_html("pregnant_icon.png", width=38)
+    st.markdown(f"<h2>{ob_icon_html} OBGYNE Care Complex Patient Registration</h2>", unsafe_allow_html=True)
     ph_now = get_ph_time()
     
     with st.form("obgyne_form", clear_on_submit=True):
