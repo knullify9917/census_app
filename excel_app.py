@@ -428,31 +428,69 @@ def check_existing_patient_ai(sheet_name, last_name, fn, curr_date_str):
 ensure_google_sheets_exist()
 
 # ---------------------------------------------------------
-# 6. STREAMLIT APP INTERFACE (ENHANCED LOGO_3.PNG, TITLE & SUBTITLE HEADER)
+# 6. STREAMLIT APP INTERFACE (LOGO_3.JPG, TITLE & SUBTITLE HEADER - PERFECTLY ALIGNED)
 # ---------------------------------------------------------
-col_logo, col_title = st.columns([0.07, 0.93], gap="small")
+st.markdown("""
+<style>
+    .header-container {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        margin-bottom: 5px;
+    }
+    .header-logo {
+        width: 65px;
+        height: 65px;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
+    .header-text-group {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+    .header-title {
+        margin: 0px !important;
+        line-height: 1.15 !important;
+        font-size: 1.85rem !important;
+        color: #1e3a8a !important;
+        font-weight: 800 !important;
+    }
+    .header-subtitle {
+        margin: 2px 0px 0px 0px !important;
+        font-size: 1.0rem !important;
+        color: #0f766e !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.5px !important;
+    }
+</style>
+""", unsafe_allow_html=True)
 
-with col_logo:
-    logo_found = False
-    for logo_filename in ["logo_3.png", "logo.png", "logo_2.png", "assets/logo_3.png", "assets/logo.png"]:
-        if os.path.exists(logo_filename):
-            st.image(logo_filename, width=58)
-            logo_found = True
-            break
-    if not logo_found:
-        st.markdown("""
-            <div style="background-color: #1e3a8a; width: 55px; height: 55px; border-radius: 10px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-                <span style="color: white; font-size: 26px; font-weight: bold;">✚</span>
-            </div>
-        """, unsafe_allow_html=True)
+logo_path_found = ""
+for logo_filename in ["logo_3.jpg", "logo_3.png", "logo.png", "logo_2.png", "assets/logo_3.jpg", "assets/logo_3.png"]:
+    if os.path.exists(logo_filename):
+        logo_path_found = logo_filename
+        break
 
-with col_title:
-    st.markdown("""
-        <div style="padding-top: 2px;">
-            <h1 style="margin-bottom: 0px; line-height: 1.1; font-size: 1.85rem; color: #1e3a8a;">MOTHER TERESA OF CALCUTTA MEDICAL CENTER</h1>
-            <p style="margin-top: 2px; font-size: 1.0rem; color: #0f766e; font-weight: 600; letter-spacing: 0.5px;">Touching Lives Through Expert Care</p>
+if logo_path_found:
+    import base64
+    def get_image_base64(path):
+        with open(path, "rb") as img_file:
+            return base64.b64encode(img_file.read()).decode()
+    img_base64 = get_image_base64(logo_path_found)
+    logo_html = f'<img src="data:image/jpeg;base64,{img_base64}" class="header-logo">'
+else:
+    logo_html = '<div style="background-color: #1e3a8a; width: 65px; height: 65px; border-radius: 10px; display: flex; align-items: center; justify-content: center;"><span style="color: white; font-size: 26px; font-weight: bold;">✚</span></div>'
+
+st.markdown(f"""
+    <div class="header-container">
+        {logo_html}
+        <div class="header-text-group">
+            <h1 class="header-title">MOTHER TERESA OF CALCUTTA MEDICAL CENTER</h1>
+            <p class="header-subtitle">Touching Lives Through Expert Care</p>
         </div>
-    """, unsafe_allow_html=True)
+    </div>
+""", unsafe_allow_html=True)
 
 st.markdown("All data entries are securely stored on our hospital database.")
 
