@@ -890,7 +890,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
-        st.subheader("👨‍⚕️ Medical & Surgical Care Team")
+        st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2, c_doc3 = st.columns(3)
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="")
@@ -973,7 +973,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
-        st.subheader("👨‍⚕️ Medical & Surgical Care Team")
+        st.subheader("👨‍⚕️ Medical Care Team")
         attending_physician = st.text_input("Attending Physician Name", value="")
         attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS)
         surgeon = st.text_input("Surgeon / Endoscopist / Proceduralist", value="")
@@ -1143,7 +1143,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
-        st.subheader("👨‍⚕️ Medical & Surgical Care Team")
+        st.subheader("👨‍⚕️ Medical Care Team")
         attending_physician = st.text_input("Attending Physician Name", value="")
         attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("OBSTETRICS & GYNAECOLOGY"))
         surgeon = st.text_input("Surgeon / OBGYNE Primary Operator", value="")
@@ -1252,7 +1252,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
-        st.subheader("👨‍⚕️ Medical & Surgical Care Team")
+        st.subheader("👨‍⚕️ Medical Care Team")
         attending_physician = st.text_input("Attending Physician Name", value="")
         attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS)
         surgeon = st.text_input("Primary Surgeon", value="")
