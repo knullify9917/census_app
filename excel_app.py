@@ -6,7 +6,7 @@ import pandas as pd
 import os
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION & LOGO-MATCHED LIGHT MODE STYLING
+# 1. PAGE CONFIGURATION & LOGO-MATCHED BRAND COLOR STYLING
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="PATIENT DATA RECORDING SYSTEM",
@@ -17,16 +17,16 @@ st.set_page_config(
 st.markdown("""
 <style>
     /* Global Clean Light Theme */
-    .stApp { background-color: #ffffff !important; color: #1e293b !important; }
+    .stApp { background-color: #fcfcfd !important; color: #1e293b !important; }
     
-    /* Sidebar Styling */
-    section[data-testid="stSidebar"] { background-color: #f8fafc !important; border-right: 1px solid #e2e8f0; }
+    /* Sidebar Styling matching Logo Deep Royal Blue / Soft Slate */
+    section[data-testid="stSidebar"] { background-color: #f1f5f9 !important; border-right: 1px solid #cbd5e1; }
     section[data-testid="stSidebar"] * { color: #1e293b !important; }
     
-    /* Headers matching MTCMC Royal Blue */
+    /* Headers matching MTCMC Logo Royal Blue (#1d4ed8 / #1e3a8a) */
     h1, h2, h3, h4, h5, h6 { color: #1e3a8a !important; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
     
-    /* Action Buttons */
+    /* Action Buttons (Logo Royal Blue with crisp hover) */
     .stButton > button, form button[type="submit"] {
         background-color: #1e3a8a !important; color: #ffffff !important; border-radius: 6px !important; border: none !important; font-weight: bold !important;
     }
@@ -56,19 +56,19 @@ st.markdown("""
     li[role="option"], div[data-baseweb="menu"] div, option { background-color: #ffffff !important; color: #1e293b !important; }
     li[role="option"]:hover, div[data-baseweb="menu"] div:hover { background-color: #f0fdfa !important; color: #0d9488 !important; }
     
-    /* Dataframe Tables (Fixes dark background headers/cells) */
-    [data-testid="stDataFrame"] { background-color: #ffffff !important; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px; }
+    /* Dataframe Tables */
+    [data-testid="stDataFrame"] { background-color: #ffffff !important; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px; }
     [data-testid="stDataFrame"] table { background-color: #ffffff !important; color: #1e293b !important; }
-    [data-testid="stDataFrame"] thead tr th { background-color: #f1f5f9 !important; color: #1e3a8a !important; }
+    [data-testid="stDataFrame"] thead tr th { background-color: #e2e8f0 !important; color: #1e3a8a !important; }
     
-    /* Metric Cards with Teal Accent Border */
+    /* Metric Cards with Logo Teal Accent Border (#0d9488) */
     div.stMetric {
-        background-color: #ffffff !important; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #e2e8f0; border-left: 5px solid #0d9488 !important;
+        background-color: #ffffff !important; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #cbd5e1; border-left: 5px solid #0d9488 !important;
     }
-    div.stMetric label { color: #64748b !important; }
+    div.stMetric label { color: #475569 !important; }
     div.stMetric div[data-testid="stMetricValue"] { color: #1e3a8a !important; }
     
-    div.stForm { background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; }
+    div.stForm { background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
 </style>
 """, unsafe_allow_html=True)
 
