@@ -258,7 +258,7 @@ def ensure_google_sheets_exist():
         try:
             ws_sum = sh.add_worksheet(title="Hospital Information System", rows=100, cols=4)
             ws_sum.update('A1:D1', [["METRO TERESA MEDICAL CENTER (MTCMC)", "", "", ""]])
-            ws_sum.update('A4:D4', [['Department / Module', 'Total Census Records', 'Active Column Count', 'Source Masterfile']])
+            ws_sum.update('A4:D4', [['Department / Module', 'Total Census Records', 'Daily Patient Census', 'Monthly Patient Census']])
         except Exception:
             pass
 
@@ -357,7 +357,7 @@ st.markdown("---")
 # ---------------------------------------------------------
 if selected_sheet == "Hospital Information System":
     st.header("Hospital Summary")
-    st.markdown("This dashboard aggregates live data entries across all department modules from your Google Sheet.")
+    st.markdown("This is the census summary of the departments of MTCMC.")
 
     department_sheets = [
         "Emergency Care Complex (ECC)", 
@@ -370,16 +370,35 @@ if selected_sheet == "Hospital Information System":
     
     summary_data = []
     total_all_cases = 0
+    today_str = datetime.today().strftime("%m/%d/%Y")
+    current_month_num = str(datetime.today().month)
+    current_month_name = datetime.today().strftime("%B").upper()
 
     for dept in department_sheets:
         df = read_google_sheet(dept)
         record_count = len(df) if not df.empty else 0
         total_all_cases += record_count
         
+        daily_count = 0
+        monthly_count = 0
+        
+        if not df.empty and 'DATE' in df.columns:
+            # Calculate Daily Census (matches current date)
+            daily_count = len(df[df['DATE'].astype(str).str.strip() == today_str])
+            
+            # Calculate Monthly Census (matches current month name or numeric prefix format)
+            if 'MONTH' in df.columns:
+                monthly_subset = df[
+                    df['MONTH'].astype(str).str.contains(current_month_name, case=False, na=False) |
+                    df['MONTH'].astype(str).str.startswith(f"{current_month_num}.", na=False)
+                ]
+                monthly_count = len(monthly_subset)
+
         summary_data.append({
             "Department Module": dept,
             "Total Census Records": record_count,
-            "Active Columns": len(df.columns) if not df.empty else len(SHEET_HEADERS.get(dept, []))
+            "Daily Patient Census": daily_count,
+            "Monthly Patient Census": monthly_count
         })
 
     m1, m2 = st.columns(2)
@@ -389,12 +408,12 @@ if selected_sheet == "Hospital Information System":
         st.metric(label="Active Departments Tracked", value=len(department_sheets))
 
     st.markdown("---")
-    st.subheader("📋 Department-wise Breakdown Table")
+    st.subheader("Department Performance")
     summary_df = pd.DataFrame(summary_data)
     st.dataframe(summary_df, use_container_width=True)
 
     st.markdown("---")
-    st.subheader("🔍 Deep-Dive Department Filter")
+    st.subheader("Department Summary")
     selected_dept_view = st.selectbox("Select Department to Tally & Inspect", department_sheets)
     
     dept_df = read_google_sheet(selected_dept_view)
