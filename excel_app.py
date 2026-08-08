@@ -45,7 +45,8 @@ SPECIALTIES_BY_FIELD = {
         "CLINICAL HAEMATOLOGY",
         "DERMATOLOGY",
         "ENDOCRINOLOGY",
-        "GASTROENTEROLOGY & HEPATOLOGY",
+        "GASTROENTEROLOGY",
+        "HEPATOLOGY",
         "GERIATRIC MEDICINE",
         "INFECTIOUS DISEASES",
         "INFECTIOUS DISEASES MEDICINE",
@@ -391,7 +392,7 @@ if selected_sheet == "ECC TOP DISEASES":
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS)
         with c_doc3:
-            transferred_to = st.selectbox("Transferred To", ["None", "GNU", "PICU", "ICU"])
+            transferred_to = st.selectbox("Transferred To", ["None","GNU 1C", "GNU 2A", "GNU 2B", "GNU 2C", "GNU 2D", "GNU 3A", "GNU 3B", "GNU 3C", "GNU 4A", "PICU", "OUTBORN", "ICU"])
 
         st.subheader("📋 Clinical Details")
         diagnosis_text = st.text_area("Clinical Diagnosis")
@@ -481,7 +482,7 @@ elif selected_sheet == "ENDO":
         with c_surg1:
             surgeon = st.text_input("Surgeon / Endoscopist / Proceduralist")
         with c_surg2:
-            surgeon_spec = st.selectbox("Surgeon / Proceduralist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GASTROENTEROLOGY & HEPATOLOGY"))
+            surgeon_spec = st.selectbox("Surgeon / Proceduralist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GASTROENTEROLOGY"))
 
         c_anes1, c_anes2 = st.columns(2)
         with c_anes1:
@@ -918,7 +919,7 @@ elif selected_sheet == "SCU CASES":
 
         c10, c11 = st.columns(2)
         with c10:
-            admitted_from = st.selectbox("Admitted From", ["ECC", "GNU 1C", "2A", "2B", "2C", "2D", "3A", "3B", "3C", "4A"])
+            admitted_from = st.selectbox("Admitted From", ["ECC", "GNU 1C", "GNU 2A", "GNU 2B", "GNU 2C", "GNU 2D", "GNU 3A", "GNU 3B", "GNU 3C", "GNU 4A"])
         with c11:
             admitted_to = st.selectbox("Admitted To", ["NICU", "NSU", "PCN", "OUTBORN", "ROOM-IN"])
 
