@@ -1452,7 +1452,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 
         ca, cb, cc, cd, ce = st.columns(5)
         with ca:
-            selected_ob_procs = st.multiselect("Procedure Category", all_ob_procs)
+            selected_ob_procs = st.multiselect("Procedure Category", all_scc_procs if 'all_scc_procs' in locals() else all_ob_procs)
         with cb:
             complexity = st.selectbox("Complexity Tier", ["Select Complexity", "MAJOR", "MINOR", "DIAGNOSTIC"], index=0)
         with cc:
@@ -1650,7 +1650,8 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 # FORM 6: Special Care Complex (NICU-PICU-NSU/PCN-Outborn)
 # ---------------------------------------------------------
 elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
-    st.header("⭐ Special Care Unit Patient Registration")
+    baby_icon_html = get_custom_icon_html("baby_feet_icon.png", width=38)
+    st.markdown(f"<h2>{baby_icon_html} Special Care Unit Patient Registration</h2>", unsafe_allow_html=True)
 
     with st.form("scu_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
