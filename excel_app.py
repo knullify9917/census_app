@@ -772,6 +772,43 @@ if selected_sheet == "Hospital Information System":
     summary_df = pd.DataFrame(summary_data)
     st.dataframe(summary_df, use_container_width=True)
 
+    # ---------------------------------------------------------
+    # HOSPITAL-WIDE ACTIVE / ADMITTED PATIENT ROSTER
+    # ---------------------------------------------------------
+    st.markdown("---")
+    st.subheader("📋 Hospital-Wide Active & Admitted Patient Roster")
+    st.markdown("Aggregated live roster of patients currently recorded across all hospital departments and care units.")
+
+    all_roster_frames = []
+    for dept in department_sheets:
+        dept_df = read_google_sheet(dept)
+        if not dept_df.empty:
+            df_copy = dept_df.copy()
+            df_copy.insert(0, "DEPARTMENT UNIT", dept)
+            all_roster_frames.append(df_copy)
+
+    if all_roster_frames:
+        master_roster_df = pd.concat(all_roster_frames, ignore_index=True)
+        
+        # Filter options for active roster view
+        c_filt1, c_filt2 = st.columns(2)
+        with c_filt1:
+            unit_filter = st.selectbox("Filter by Department Unit", ["All Departments"] + department_sheets)
+        with c_filt2:
+            search_name = st.text_input("Search Patient Last Name", value="")
+
+        filtered_roster = master_roster_df.copy()
+        if unit_filter != "All Departments":
+            filtered_roster = filtered_roster[filtered_roster["DEPARTMENT UNIT"] == unit_filter]
+        if search_name.strip():
+            if 'LAST NAME' in filtered_roster.columns:
+                filtered_roster = filtered_roster[filtered_roster['LAST NAME'].astype(str).str.contains(search_name.strip(), case=False, na=False)]
+
+        st.dataframe(filtered_roster, use_container_width=True)
+        st.caption(f"Showing {len(filtered_roster)} active patient records.")
+    else:
+        st.info("No active patient admission records found across hospital sheets.")
+
     st.markdown("---")
     st.subheader("Department Summary")
     selected_dept_view = st.selectbox("Select Department to Tally & Inspect", department_sheets)
