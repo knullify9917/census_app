@@ -1123,7 +1123,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
 
 if selected_sheet != "Hospital Information System":
     st.markdown("---")
-    st.subheader(f"Live Sheet Preview: `{selected_sheet}` (Google Sheets)")
+    st.subheader(f"Active Patient Census: {selected_sheet}")
 
     sheet_df = read_google_sheet(selected_sheet)
     if not sheet_df.empty:
