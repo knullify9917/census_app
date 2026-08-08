@@ -192,8 +192,8 @@ if not st.session_state["authenticated"]:
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown("""
             <div style="text-align: center; margin-bottom: 25px;">
-                <h1 style="color: #1e3a8a; margin-bottom: 6px; font-size: 2.2rem; white-space: nowrap; font-weight: 800;">Mother Teresa of Calcutta Medical Center</h1>
-                <p style="color: #0f766e; font-weight: 600; font-size: 1.2rem; margin-top: 0px; letter-spacing: 0.5px;">Patient Data System</p>
+                <h1 style="color: #1e3a8a; margin-bottom: 6px; font-size: 2.8rem; white-space: nowrap; font-weight: 800;">Mother Teresa of Calcutta Medical Center</h1>
+                <p style="color: #0f766e; font-weight: 600; font-size: 1.4rem; margin-top: 0px; letter-spacing: 0.5px;">Patient Data System</p>
             </div>
         """, unsafe_allow_html=True)
         
@@ -573,12 +573,12 @@ st.markdown("""
     .header-container {
         display: flex;
         align-items: center;
-        gap: 15px;
+        gap: 20px;
         margin-bottom: 5px;
     }
     .header-logo {
-        width: 65px;
-        height: 65px;
+        width: 85px;
+        height: 85px;
         object-fit: contain;
         flex-shrink: 0;
     }
@@ -590,13 +590,13 @@ st.markdown("""
     .header-title {
         margin: 0px !important;
         line-height: 1.15 !important;
-        font-size: 1.85rem !important;
+        font-size: 2.35rem !important;
         color: #1e3a8a !important;
         font-weight: 800 !important;
     }
     .header-subtitle {
         margin: 2px 0px 0px 0px !important;
-        font-size: 1.0rem !important;
+        font-size: 1.15rem !important;
         color: #0f766e !important;
         font-weight: 600 !important;
         letter-spacing: 0.5px !important;
@@ -618,7 +618,7 @@ if logo_path_found:
     img_base64 = get_image_base64(logo_path_found)
     logo_html = f'<img src="data:image/jpeg;base64,{img_base64}" class="header-logo">'
 else:
-    logo_html = '<div style="background-color: #1e3a8a; width: 65px; height: 65px; border-radius: 10px; display: flex; align-items: center; justify-content: center;"><span style="color: white; font-size: 26px; font-weight: bold;">✚</span></div>'
+    logo_html = '<div style="background-color: #1e3a8a; width: 85px; height: 85px; border-radius: 12px; display: flex; align-items: center; justify-content: center;"><span style="color: white; font-size: 34px; font-weight: bold;">✚</span></div>'
 
 st.markdown(f"""
     <div class="header-container">
