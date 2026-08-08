@@ -254,9 +254,9 @@ def ensure_google_sheets_exist():
     except Exception:
         existing_worksheets = []
     
-    if "Dashboard & Summary" not in existing_worksheets:
+    if "Hospital Information System" not in existing_worksheets:
         try:
-            ws_sum = sh.add_worksheet(title="Dashboard & Summary", rows=100, cols=4)
+            ws_sum = sh.add_worksheet(title="Hospital Information System", rows=100, cols=4)
             ws_sum.update('A1:D1', [["METRO TERESA MEDICAL CENTER (MTCMC)", "", "", ""]])
             ws_sum.update('A4:D4', [['Department / Module', 'Total Census Records', 'Active Column Count', 'Source Masterfile']])
         except Exception:
@@ -340,7 +340,7 @@ st.title("PATIENT DATA RECORDING SYSTEM")
 st.markdown("All data entries are securely stored on our hospital database.")
 
 MODULES = [
-    "Dashboard & Summary", 
+    "Hospital Information System", 
     "Emergency Care Complex (ECC)", 
     "Endoscopy Unit (ENDO)", 
     "Hemodialysis Unit (HDU)", 
@@ -348,14 +348,14 @@ MODULES = [
     "Surgical Care Complex (OR Main)", 
     "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
 ]
-selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES)
+selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
 
 st.markdown("---")
 
 # ---------------------------------------------------------
-# MODULE: HOSPITAL SUMMARY
+# MODULE: HOSPITAL INFORMATION SYSTEM (LANDING PAGE)
 # ---------------------------------------------------------
-if selected_sheet == "Dashboard & Summary":
+if selected_sheet == "Hospital Information System":
     st.header("Hospital Summary")
     st.markdown("This dashboard aggregates live data entries across all department modules from your Google Sheet.")
 
@@ -1067,7 +1067,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
             if append_record_to_google_sheet("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", row_data):
                 st.success("Successfully saved to Google Sheets `Special Care Complex (NICU-PICU-NSU/PCN-Outborn)` tab!")
 
-if selected_sheet != "Dashboard & Summary":
+if selected_sheet != "Hospital Information System":
     st.markdown("---")
     st.subheader(f"Live Sheet Preview: `{selected_sheet}` (Google Sheets)")
 
