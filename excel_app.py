@@ -909,12 +909,12 @@ if selected_sheet == "Hospital Information System":
         st.info("No patient admission records found across hospital sheets.")
 
     st.markdown("---")
-    st.subheader("Department Performance")
+    st.subheader("📊 Department Performance")
     summary_df = pd.DataFrame(summary_data)
     st.dataframe(summary_df, use_container_width=True)
 
     st.markdown("---")
-    st.subheader("Department Summary")
+    st.subheader("📑 Department Summary")
     selected_dept_view = st.selectbox("Select Department to Tally & Inspect", department_sheets)
     
     dept_df = read_google_sheet(selected_dept_view)
