@@ -1024,7 +1024,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         with c_anes2:
             anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
-        st.subheader("📋 Surgical Details")
+        st.subheader("📋 Procedure Details")
         cd1, cd2, cd3 = st.columns(3)
         with cd1:
             pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="")
