@@ -5,124 +5,13 @@ import pandas as pd
 import os
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION & AGGRESSIVE LIGHT THEME CSS OVERRIDES
+# 1. PAGE CONFIGURATION
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="PATIENT DATA RECORDING SYSTEM",
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-# Comprehensive CSS targeting Streamlit dark-mode artifacts (tables, dropdown popovers, listboxes, and arrows)
-st.markdown("""
-<style>
-    /* Force main container background and text color to clean white and slate */
-    .stApp, .main, div[data-testid="stVerticalBlock"] {
-        background-color: #ffffff !important;
-        color: #1e293b !important;
-    }
-    
-    /* Sidebar light theme */
-    section[data-testid="stSidebar"] {
-        background-color: #f8fafc !important;
-        border-right: 1px solid #e2e8f0;
-    }
-    section[data-testid="stSidebar"] * {
-        color: #1e293b !important;
-    }
-    
-    /* Headers mapped to logo Royal Blue */
-    h1, h2, h3, h4, h5, h6 {
-        color: #1e3a8a !important;
-        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    }
-    
-    /* Action Buttons */
-    .stButton > button, form button[type="submit"] {
-        background-color: #1e3a8a !important;
-        color: #ffffff !important;
-        border-radius: 6px !important;
-        border: none !important;
-        font-weight: bold !important;
-    }
-    .stButton > button:hover, form button[type="submit"]:hover {
-        background-color: #1d4ed8 !important;
-        color: #ffffff !important;
-    }
-    
-    /* --- DROPDOWN & SELECTBOX CONTROLS FIX --- */
-    div[data-baseweb="select"] > div {
-        background-color: #ffffff !important;
-        color: #1e293b !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 6px !important;
-    }
-    div[data-baseweb="select"] span, div[data-baseweb="select"] div {
-        color: #1e293b !important;
-    }
-    
-    /* Dropdown selection arrow icons */
-    div[data-baseweb="select"] svg {
-        fill: #1e3a8a !important;
-        color: #1e3a8a !important;
-    }
-    
-    /* --- DROPDOWN POPUP MENU & LISTBOX FIX (Removes black popover backgrounds) --- */
-    div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"], div[data-baseweb="select"] [role="listbox"] {
-        background-color: #ffffff !important;
-        color: #1e293b !important;
-        border: 1px solid #cbd5e1 !important;
-    }
-    
-    li[role="option"], div[data-baseweb="menu"] div, option {
-        background-color: #ffffff !important;
-        color: #1e293b !important;
-    }
-    
-    li[role="option"]:hover, div[data-baseweb="menu"] div:hover {
-        background-color: #f0fdfa !important;
-        color: #0d9488 !important;
-    }
-    
-    /* --- TABLE & DATAFRAME LIGHT MODE FIX --- */
-    .stDataFrame, [data-testid="stDataFrame"], div[data-testid="stDataFrame"] {
-        background-color: #ffffff !important;
-        color: #1e293b !important;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        padding: 4px;
-    }
-    
-    table, th, td, tr {
-        background-color: #ffffff !important;
-        color: #1e293b !important;
-    }
-    
-    /* Metric Cards */
-    div.stMetric {
-        background-color: #ffffff !important;
-        padding: 15px;
-        border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        border: 1px solid #e2e8f0;
-        border-left: 5px solid #0d9488 !important;
-    }
-    div.stMetric label {
-        color: #64748b !important;
-    }
-    div.stMetric div[data-testid="stMetricValue"] {
-        color: #1e3a8a !important;
-    }
-    
-    /* Form containers */
-    div.stForm {
-        background-color: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 20px;
-    }
-</style>
-""", unsafe_allow_html=True)
 
 REGULAR_FONT_SIZE = 10
 
