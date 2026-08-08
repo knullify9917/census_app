@@ -38,7 +38,7 @@ st.markdown("""
     }
     .stButton > button:hover, form button[type="submit"]:hover { background-color: #0f766e !important; color: #ffffff !important; }
     
-    /* Sidebar Sign Out & Download Buttons Styled to Match stMetric Cards */
+    /* Sidebar Sign Out, Refresh, & Download Buttons Styled to Match stMetric Cards */
     section[data-testid="stSidebar"] div.stButton > button, section[data-testid="stSidebar"] .stDownloadButton > button {
         background-color: #ffffff !important;
         color: #1e3a8a !important;
@@ -734,6 +734,11 @@ st.sidebar.markdown(
     "</p>", 
     unsafe_allow_html=True
 )
+
+if st.sidebar.button("🔄 Refresh Data"):
+    st.cache_resource.clear()
+    st.toast("Fetching latest census and patient records from Google Sheets...", icon="🔄")
+    st.rerun()
 
 if st.sidebar.button("Sign Out"):
     st.session_state["authenticated"] = False
