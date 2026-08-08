@@ -367,7 +367,7 @@ def get_spec_index(default_name):
     return 0
 
 # ---------------------------------------------------------
-# 4. STREAMLINED SHEET HEADERS (Sorted Alphabetically)
+# 4. STREAMLINED SHEET HEADERS
 # ---------------------------------------------------------
 GNU_SHEET_HEADER = [
     'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
@@ -652,13 +652,12 @@ st.sidebar.markdown(f"**Date & Time:** `{ph_now_display.strftime('%B %d, %Y - %I
 
 st.sidebar.markdown("---")
 
-# Role-Based Access Control (RBAC) Module Visibility (Sorted Alphabetically)
+# Role-Based Access Control (RBAC) Module Visibility (Hospital Information System fixed first, others sorted alphabetically)
 logged_user_key = st.session_state["username"]
 user_info = USER_DATABASE.get(logged_user_key, {})
 allowed_modules = user_info.get("modules", "All")
 
-all_department_modules = sorted([
-    "Hospital Information System", 
+sorted_departments = sorted([
     "Emergency Care Complex (ECC)", 
     "Endoscopy Unit (ENDO)", 
     "Hemodialysis Unit (HDU)", 
@@ -676,6 +675,8 @@ all_department_modules = sorted([
     "General Nursing Unit (GNU 4A)"
 ])
 
+all_department_modules = ["Hospital Information System"] + sorted_departments
+
 if logged_user_key in ["ecc_staff", "scc_staff", "endo_staff", "hdu_staff"]:
     dept_map = {
         "ecc_staff": "Emergency Care Complex (ECC)",
@@ -683,13 +684,13 @@ if logged_user_key in ["ecc_staff", "scc_staff", "endo_staff", "hdu_staff"]:
         "endo_staff": "Endoscopy Unit (ENDO)",
         "hdu_staff": "Hemodialysis Unit (HDU)"
     }
-    MODULES = sorted(["Hospital Information System", dept_map[logged_user_key]])
+    MODULES = ["Hospital Information System", dept_map[logged_user_key]]
 elif logged_user_key in ["nsgcon_staff", "ha_staff", "ha_staff1"]:
     MODULES = ["Hospital Information System"]
 elif allowed_modules == "All":
     MODULES = all_department_modules
 else:
-    MODULES = sorted(allowed_modules)
+    MODULES = ["Hospital Information System"] + sorted([m for m in allowed_modules if m != "Hospital Information System"])
 
 st.sidebar.markdown("### 🧭 Department Navigation")
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
