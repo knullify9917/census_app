@@ -158,7 +158,7 @@ SHEET_HEADERS = {
     "ECC TOP DISEASES": [
         'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
         'DISEASE CATEGORIES', 'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
-        'PATIENT TYPE / CLASSIFICATION', 'TRANSFERRED TO', 'CASE COUNT'
+        'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'TRANSFERRED TO', 'CASE COUNT'
     ],
     "ENDO": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
@@ -167,14 +167,13 @@ SHEET_HEADERS = {
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'SURGEON / PROCEDURALIST', 'SURGEON SPECIALIZATION',
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
-        'GASTROENTEROLOGIST', 'ENT SPECIALIST',
-        'PROCEDURE NATURE', 'SETTING', 'PAYMENT METHOD', 'CASE COUNT'
+        'PROCEDURE NATURE', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'CASE COUNT'
     ],
     "HDU": [
         'MONTH', 'DATE', 'TRUE DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'DIAGNOSIS', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-        'DIALYSIS SHIFT SLOT', 'PATIENT TYPE', 'CASE COUNT'
+        'DIALYSIS SHIFT SLOT', 'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'CASE COUNT'
     ],
     "OBGYNE CASES": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
@@ -183,7 +182,7 @@ SHEET_HEADERS = {
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'SURGEON / OBGYNE', 'SURGEON SPECIALIZATION',
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
-        'COMPLEXITY TIER', 'CARE SETTING', 'KIT USED', 'PAYMENT CHANNEL', 'CASE COUNT'
+        'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'CASE COUNT'
     ],
     "SCC CASES": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
@@ -192,14 +191,14 @@ SHEET_HEADERS = {
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'PRIMARY SURGEON', 'SURGEON SPECIALIZATION',
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
-        'COMPLEXITY TIER', 'PATIENT SETTING', 'BILLING CHANNELS', 'CASE COUNT'
+        'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'CASE COUNT'
     ],
     "SCU CASES": [
         'MONTH', 'DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AOG', 'AGE', 'DIAGNOSIS', 
         'DIAGNOSTIC FLAGS', 'ADMITTED FROM', 'ADMITTED TO', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-        'CASE COUNT'
+        'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'CASE COUNT'
     ]
 }
 
@@ -359,7 +358,7 @@ if os.path.exists(EXCEL_FILE):
 st.markdown("---")
 
 # ---------------------------------------------------------
-# FORM 1: ECC TOP DISEASES (Initial entry, no co-management)
+# FORM 1: ECC TOP DISEASES (Co-management removed for initial entry)
 # ---------------------------------------------------------
 if selected_sheet == "ECC TOP DISEASES":
     st.header("Emergency Care Center (ECC) Data Entry Form")
@@ -383,16 +382,18 @@ if selected_sheet == "ECC TOP DISEASES":
         with c7:
             age = st.number_input("Age", min_value=0, max_value=120, value=25)
         with c8:
-            case_classification = st.selectbox("Patient Type / Case Classification", ["IPD", "OPD", "Private Case", "House Case (Walk-in)"])
+            hosp_mode = st.selectbox("Hospitalization Mode", ["IPD", "OPD", "Private Case", "House Case (Walk-in)"])
 
         st.subheader("👨‍⚕️ Physician Information")
-        c_doc1, c_doc2, c_doc3 = st.columns(3)
+        c_doc1, c_doc2, c_doc3, c_doc4 = st.columns(4)
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name")
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS)
         with c_doc3:
-            transferred_to = st.selectbox("Transferred To", ["None","GNU 1C", "GNU 2A", "GNU 2B", "GNU 2C", "GNU 2D", "GNU 3A", "GNU 3B", "GNU 3C", "GNU 4A", "PICU", "OUTBORN", "ICU"])
+            payment_selected = st.multiselect("Mode of Payment", ["PHIC", "HMO", "SELF-PAY", "CHARITY"], default=["PHIC"])
+        with c_doc4:
+            transferred_to = st.selectbox("Transferred To", ["None", "GNU", "PICU", "ICU"])
 
         st.subheader("📋 Clinical Details")
         diagnosis_text = st.text_area("Clinical Diagnosis")
@@ -421,7 +422,8 @@ if selected_sheet == "ECC TOP DISEASES":
                 'DISEASE CATEGORIES': ", ".join(selected_diseases) if selected_diseases else "None",
                 'ATTENDING PHYSICIAN': attending_physician if attending_physician else "N/A",
                 'ATTENDING SPECIALIZATION': attending_spec,
-                'PATIENT TYPE / CLASSIFICATION': case_classification,
+                'HOSPITALIZATION MODE': hosp_mode,
+                'MODE OF PAYMENT': ", ".join(payment_selected) if payment_selected else "None",
                 'TRANSFERRED TO': transferred_to,
                 'CASE COUNT': 1
             }
@@ -490,12 +492,6 @@ elif selected_sheet == "ENDO":
         with c_anes2:
             anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
-        c_spec1, c_spec2 = st.columns(2)
-        with c_spec1:
-            gastro = st.text_input("Gastroenterologist (Specific)")
-        with c_spec2:
-            ent = st.text_input("ENT Specialist (Specific)")
-
         st.subheader("📋 Diagnosis & Procedure Details")
         cd1, cd2 = st.columns(2)
         with cd1:
@@ -506,10 +502,15 @@ elif selected_sheet == "ENDO":
         proc_cols = ['GASTROSCOPY', 'COLONOSCOPY', 'NASAL PROCEDURE', 'PEG PROCEDURE', 'ERCP', 'PROCTOSIGMOIDOSCOPY', 'PARACENTESIS', 'BRONCHOSCOPY', 'OTHER PROCEDURES']
         selected_procs = st.multiselect("Select Procedure Flags", proc_cols)
         
-        ca, cb, cc = st.columns(3)
-        with ca: proc_type = st.radio("Nature", ["DIAGNOSTICS", "THERAPEUTIC"])
-        with cb: setting = st.radio("Setting", ["OPD", "IPD"])
-        with cc: payment = st.radio("Payment Method", ["HMO", "PHIC", "SELF-PAY"])
+        ca, cb, cc, cd = st.columns(4)
+        with ca: 
+            proc_type = st.radio("Nature", ["DIAGNOSTICS", "THERAPEUTIC"])
+        with cb: 
+            hosp_mode = st.radio("Hospitalization Mode", ["OPD", "IPD"])
+        with cc: 
+            payment_selected = st.multiselect("Mode of Payment", ["PHIC", "HMO", "SELF-PAY"], default=["PHIC"])
+        with cd:
+            kit_package = st.checkbox("Hospital Kit Package", value=False)
 
         submitted = st.form_submit_button("Submit Record to Excel Sheet")
         if submitted:
@@ -538,11 +539,10 @@ elif selected_sheet == "ENDO":
                 'SURGEON SPECIALIZATION': surgeon_spec if surgeon else "N/A",
                 'ANESTHESIOLOGIST': anesthesiologist if anesthesiologist else "N/A",
                 'ANESTHESIOLOGIST SPECIALIZATION': anes_spec if anesthesiologist else "N/A",
-                'GASTROENTEROLOGIST': gastro if gastro else "N/A",
-                'ENT SPECIALIST': ent if ent else "N/A",
                 'PROCEDURE NATURE': proc_type,
-                'SETTING': setting,
-                'PAYMENT METHOD': payment,
+                'HOSPITALIZATION MODE': hosp_mode,
+                'HOSPITAL KIT PACKAGE': "Yes" if kit_package else "No",
+                'MODE OF PAYMENT': ", ".join(payment_selected) if payment_selected else "None",
                 'CASE COUNT': 1
             }
 
@@ -594,11 +594,13 @@ elif selected_sheet == "HDU":
                     cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_hdu_{i}")
                 cm_entries.append((cm_name, cm_spec))
 
-        c7, c8 = st.columns(2)
+        c7, c8, c9 = st.columns(3)
         with c7:
             shift_set = st.selectbox("Dialysis Shift Slot", ["1ST SET", "2ND SET", "3RD SET", "ONCALL"])
         with c8:
-            patient_type = st.radio("Patient Type", ["OPD", "IPD"])
+            hosp_mode = st.radio("Hospitalization Mode", ["OPD", "IPD"])
+        with c9:
+            payment_selected = st.multiselect("Mode of Payment", ["PHIC", "HMO", "SELF-PAY"], default=["PHIC"])
 
         submitted = st.form_submit_button("Submit Record to Excel Sheet")
         if submitted:
@@ -623,7 +625,8 @@ elif selected_sheet == "HDU":
                 'CO-MANAGEMENT PHYSICIAN': cm_names_str,
                 'CO-MANAGEMENT SPECIALIZATION': cm_specs_str,
                 'DIALYSIS SHIFT SLOT': shift_set,
-                'PATIENT TYPE': patient_type,
+                'HOSPITALIZATION MODE': hosp_mode,
+                'MODE OF PAYMENT': ", ".join(payment_selected) if payment_selected else "None",
                 'CASE COUNT': 1
             }
 
@@ -704,10 +707,10 @@ elif selected_sheet == "OBGYNE CASES":
         with cb:
             complexity = st.selectbox("Complexity Tier", ["MAJOR", "MINOR", "DIAGNOSTIC"])
         with cc:
-            setting = st.radio("Care Setting", ["IPD", "OPD"])
-            kit_used = st.checkbox("Kit Used", value=True)
+            hosp_mode = st.radio("Hospitalization Mode", ["IPD", "OPD"])
+            kit_used = st.checkbox("Hospital Kit Package", value=True)
         with cd:
-            payment = st.radio("Payment Channel", ["SELF-PAY", "HMO"])
+            payment_selected = st.multiselect("Mode of Payment", ["PHIC", "HMO", "SELF-PAY"], default=["PHIC"])
 
         submitted = st.form_submit_button("Submit Record to Excel Sheet")
         if submitted:
@@ -737,9 +740,9 @@ elif selected_sheet == "OBGYNE CASES":
                 'ANESTHESIOLOGIST': anesthesiologist if anesthesiologist else "N/A",
                 'ANESTHESIOLOGIST SPECIALIZATION': anes_spec if anesthesiologist else "N/A",
                 'COMPLEXITY TIER': complexity,
-                'CARE SETTING': setting,
-                'KIT USED': "Yes" if kit_used else "No",
-                'PAYMENT CHANNEL': payment,
+                'HOSPITALIZATION MODE': hosp_mode,
+                'HOSPITAL KIT PACKAGE': "Yes" if kit_used else "No",
+                'MODE OF PAYMENT': ", ".join(payment_selected) if payment_selected else "None",
                 'CASE COUNT': 1
             }
 
@@ -826,10 +829,15 @@ elif selected_sheet == "SCC CASES":
         ]
         selected_scc_procs = st.multiselect("Select Surgical Procedure Flags", all_scc_procs)
 
-        ca, cb, cc = st.columns(3)
-        with ca: complexity = st.selectbox("Complexity Tier", ["MAJOR", "MEDIUM", "MINOR", "DIAGNOSTICS"])
-        with cb: setting = st.radio("Patient Setting", ["OPD", "IPD"])
-        with cc: billing = st.multiselect("Billing Channels", ["PHIC", "HMO", "SELF-PAY", "KIT"])
+        ca, cb, cc, cd = st.columns(4)
+        with ca: 
+            complexity = st.selectbox("Complexity Tier", ["MAJOR", "MEDIUM", "MINOR", "DIAGNOSTICS"])
+        with cb: 
+            hosp_mode = st.radio("Hospitalization Mode", ["OPD", "IPD"])
+        with cc: 
+            kit_package = st.checkbox("Hospital Kit Package", value=True)
+        with cd: 
+            payment_selected = st.multiselect("Mode of Payment", ["PHIC", "HMO", "SELF-PAY"], default=["PHIC"])
 
         submitted = st.form_submit_button("Submit Record to Excel Sheet")
         if submitted:
@@ -859,8 +867,9 @@ elif selected_sheet == "SCC CASES":
                 'ANESTHESIOLOGIST': anesthesiologist if anesthesiologist else "N/A",
                 'ANESTHESIOLOGIST SPECIALIZATION': anes_spec if anesthesiologist else "N/A",
                 'COMPLEXITY TIER': complexity,
-                'PATIENT SETTING': setting,
-                'BILLING CHANNELS': ", ".join(billing) if billing else "None",
+                'HOSPITALIZATION MODE': hosp_mode,
+                'HOSPITAL KIT PACKAGE': "Yes" if kit_package else "No",
+                'MODE OF PAYMENT': ", ".join(payment_selected) if payment_selected else "None",
                 'CASE COUNT': 1
             }
 
@@ -917,11 +926,15 @@ elif selected_sheet == "SCU CASES":
                     cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_scu_{i}")
                 cm_entries.append((cm_name, cm_spec))
 
-        c10, c11 = st.columns(2)
+        c10, c11, c12, c13 = st.columns(4)
         with c10:
-            admitted_from = st.selectbox("Admitted From", ["ECC", "GNU 1C", "GNU 2A", "GNU 2B", "GNU 2C", "GNU 2D", "GNU 3A", "GNU 3B", "GNU 3C", "GNU 4A"])
+            admitted_from = st.selectbox("Admitted From", ["ECC", "GNU 1C", "2A", "2B", "2C", "2D", "3A", "3B", "3C", "4A"])
         with c11:
             admitted_to = st.selectbox("Admitted To", ["NICU", "NSU", "PCN", "OUTBORN", "ROOM-IN"])
+        with c12:
+            hosp_mode = st.radio("Hospitalization Mode", ["IPD", "OPD"])
+        with c13:
+            payment_selected = st.multiselect("Mode of Payment", ["PHIC", "HMO", "SELF-PAY"], default=["PHIC"])
 
         st.subheader("📋 Diagnosis & Diagnostic Flags")
         diagnosis = st.text_area("Diagnosis Text")
@@ -956,6 +969,8 @@ elif selected_sheet == "SCU CASES":
                 'ATTENDING SPECIALIZATION': attending_spec,
                 'CO-MANAGEMENT PHYSICIAN': cm_names_str,
                 'CO-MANAGEMENT SPECIALIZATION': cm_specs_str,
+                'HOSPITALIZATION MODE': hosp_mode,
+                'MODE OF PAYMENT': ", ".join(payment_selected) if payment_selected else "None",
                 'CASE COUNT': 1
             }
 
