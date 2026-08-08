@@ -5,7 +5,7 @@ import pandas as pd
 import os
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION & LOGO-MATCHED LIGHT MODE STYLING
+# 1. PAGE CONFIGURATION & AGGRESSIVE LIGHT THEME CSS OVERRIDES
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="PATIENT DATA RECORDING SYSTEM",
@@ -13,20 +13,16 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS matching the MTCMC and Mount Grace Hospital logo palette:
-# - Primary Royal Blue: #1e3a8a
-# - Calcutta Teal: #0d9488
-# - Accent Red: #dc2626
-# - Clean Light Backgrounds: #ffffff & #f8fafc
+# Comprehensive CSS targeting Streamlit dark-mode artifacts (tables, dropdown popovers, listboxes, and arrows)
 st.markdown("""
 <style>
-    /* Force main container light background */
-    .stApp {
+    /* Force main container background and text color to clean white and slate */
+    .stApp, .main, div[data-testid="stVerticalBlock"] {
         background-color: #ffffff !important;
         color: #1e293b !important;
     }
     
-    /* Sidebar styling */
+    /* Sidebar light theme */
     section[data-testid="stSidebar"] {
         background-color: #f8fafc !important;
         border-right: 1px solid #e2e8f0;
@@ -35,13 +31,13 @@ st.markdown("""
         color: #1e293b !important;
     }
     
-    /* Typography headers */
+    /* Headers mapped to logo Royal Blue */
     h1, h2, h3, h4, h5, h6 {
         color: #1e3a8a !important;
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     }
     
-    /* Buttons */
+    /* Action Buttons */
     .stButton > button, form button[type="submit"] {
         background-color: #1e3a8a !important;
         color: #ffffff !important;
@@ -54,30 +50,52 @@ st.markdown("""
         color: #ffffff !important;
     }
     
-    /* Input fields and selectboxes */
-    div[data-baseweb="select"] > div, input[type="text"], input[type="number"], textarea {
+    /* --- DROPDOWN & SELECTBOX CONTROLS FIX --- */
+    div[data-baseweb="select"] > div {
         background-color: #ffffff !important;
         color: #1e293b !important;
         border: 1px solid #cbd5e1 !important;
         border-radius: 6px !important;
     }
-    div[data-baseweb="select"] span {
+    div[data-baseweb="select"] span, div[data-baseweb="select"] div {
         color: #1e293b !important;
     }
     
-    /* Dropdown popup menus and item lists */
-    div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"] {
+    /* Dropdown selection arrow icons */
+    div[data-baseweb="select"] svg {
+        fill: #1e3a8a !important;
+        color: #1e3a8a !important;
+    }
+    
+    /* --- DROPDOWN POPUP MENU & LISTBOX FIX (Removes black popover backgrounds) --- */
+    div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"], div[data-baseweb="select"] [role="listbox"] {
         background-color: #ffffff !important;
         color: #1e293b !important;
         border: 1px solid #cbd5e1 !important;
     }
-    div[data-baseweb="menu"] div, option, li[role="option"] {
+    
+    li[role="option"], div[data-baseweb="menu"] div, option {
         background-color: #ffffff !important;
         color: #1e293b !important;
     }
-    div[data-baseweb="menu"] div:hover, li[role="option"]:hover {
+    
+    li[role="option"]:hover, div[data-baseweb="menu"] div:hover {
         background-color: #f0fdfa !important;
         color: #0d9488 !important;
+    }
+    
+    /* --- TABLE & DATAFRAME LIGHT MODE FIX --- */
+    .stDataFrame, [data-testid="stDataFrame"], div[data-testid="stDataFrame"] {
+        background-color: #ffffff !important;
+        color: #1e293b !important;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 4px;
+    }
+    
+    table, th, td, tr {
+        background-color: #ffffff !important;
+        color: #1e293b !important;
     }
     
     /* Metric Cards */
@@ -96,18 +114,12 @@ st.markdown("""
         color: #1e3a8a !important;
     }
     
-    /* Forms & Dataframe Tables */
+    /* Form containers */
     div.stForm {
         background-color: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 8px;
         padding: 20px;
-    }
-    div[data-testid="stDataFrame"] {
-        background-color: #ffffff;
-        border: 1px solid #e2e8f0;
-        border-radius: 6px;
-        padding: 5px;
     }
 </style>
 """, unsafe_allow_html=True)
