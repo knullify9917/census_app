@@ -215,9 +215,10 @@ if not st.session_state["authenticated"]:
 def get_ph_time():
     return datetime.now(ZoneInfo("Asia/Manila"))
 
-# Helper for a native time input widget returning formatted civilian time string
+# Helper for a native time input widget defaulting to current system time with AM/PM indicator
 def civilian_time_input_field(label, key_suffix=""):
-    t_val = st.time_input(label, value=None, key=f"time_widget_{key_suffix}")
+    current_default_time = get_ph_time().time()
+    t_val = st.time_input(label, value=current_default_time, key=f"time_widget_{key_suffix}")
     if t_val:
         return t_val.strftime("%I:%M %p")
     return ""
@@ -1671,7 +1672,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key="scu_att_input")
         with c_doc2:
-            attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scu_spec_input")
+            attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scu_spec_input")
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
