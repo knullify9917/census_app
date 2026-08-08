@@ -4,6 +4,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 import pandas as pd
 import os
+import hashlib
 
 # ---------------------------------------------------------
 # 1. PAGE CONFIGURATION & LOGO-MATCHED BLUE/GREEN COLORWAY
@@ -36,7 +37,7 @@ st.markdown("""
     .stButton > button:hover, form button[type="submit"]:hover { background-color: #0f766e !important; color: #ffffff !important; }
     
     /* Form Inputs, Textareas, and Dropdown Controls */
-    div[data-baseweb="select"] > div, input[type="text"], input[type="number"], textarea {
+    div[data-baseweb="select"] > div, input[type="text"], input[type="number"], input[type="password"], textarea {
         background-color: #ffffff !important; color: #1e3a8a !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important;
     }
     div[data-baseweb="select"] span { color: #1e3a8a !important; }
@@ -52,7 +53,7 @@ st.markdown("""
         box-shadow: 0 0 0 1px #0f766e !important;
     }
 
-    /* Dropdown Popover Lists & Menus (Fixes dark/black popover boxes) */
+    /* Dropdown Popover Lists & Menus */
     div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"] {
         background-color: #ffffff !important; color: #1e3a8a !important; border: 1px solid #cbd5e1 !important;
     }
@@ -77,6 +78,61 @@ st.markdown("""
 
 REGULAR_FONT_SIZE = 10
 
+# Helper function to hash passwords securely
+def hash_password(password):
+    return hashlib.sha256(password.encode()).hexdigest()
+
+# User Database with Administrator Role Only
+USER_DATABASE = {
+    "admin": {
+        "password": hash_password("admin123"),
+        "role": "Administrator",
+        "name": "System Administrator"
+    }
+}
+
+# Session State Initialization for Auth
+if "authenticated" not in st.session_state:
+    st.session_state["authenticated"] = False
+if "username" not in st.session_state:
+    st.session_state["username"] = ""
+if "role" not in st.session_state:
+    st.session_state["role"] = ""
+if "name" not in st.session_state:
+    st.session_state["name"] = ""
+
+# ---------------------------------------------------------
+# AUTHENTICATION SCREEN IF NOT LOGGED IN
+# ---------------------------------------------------------
+if not st.session_state["authenticated"]:
+    col_l1, col_l2, col_l3 = st.columns([1, 1.2, 1])
+    with col_l2:
+        st.markdown("<br><br>", unsafe_allow_html=True)
+        st.markdown("""
+            <div style="text-align: center; margin-bottom: 20px;">
+                <h2 style="color: #1e3a8a; margin-bottom: 5px;">MTCMC Secure Portal</h2>
+                <p style="color: #0f766e; font-weight: 600;">Please sign in with your hospital administrator credentials</p>
+            </div>
+        """, unsafe_allow_html=True)
+        
+        with st.form("login_form"):
+            username_input = st.text_input("Username")
+            password_input = st.text_input("Password", type="password")
+            submit_login = st.form_submit_button("Sign In")
+            
+            if submit_login:
+                user_record = USER_DATABASE.get(username_input.strip().lower())
+                if user_record and user_record["password"] == hash_password(password_input):
+                    st.session_state["authenticated"] = True
+                    st.session_state["username"] = username_input
+                    st.session_state["role"] = user_record["role"]
+                    st.session_state["name"] = user_record["name"]
+                    st.success(f"Welcome back, {user_record['name']}!")
+                    st.rerun()
+                else:
+                    st.error("Invalid username or password. Please try again.")
+    st.stop()
+
 # Helper function to get current Philippine Time
 def get_ph_time():
     return datetime.now(ZoneInfo("Asia/Manila"))
@@ -84,7 +140,7 @@ def get_ph_time():
 # Helper for a single cohesive civilian 12-hour time text entry with AM/PM default
 def civilian_time_text_field(label, key_suffix=""):
     ph_now = get_ph_time()
-    default_time_str = ph_now.strftime("%I:%M %p") # e.g. 10:35 PM
+    default_time_str = ph_now.strftime("%I:%M %p")
     val = st.text_input(label, value=default_time_str, key=f"time_txt_{key_suffix}", placeholder="e.g. 10:35 PM")
     return val
 
@@ -428,7 +484,7 @@ def check_existing_patient_ai(sheet_name, last_name, fn, curr_date_str):
 ensure_google_sheets_exist()
 
 # ---------------------------------------------------------
-# 6. STREAMLIT APP INTERFACE (LOGO_3.JPG, TITLE & SUBTITLE HEADER - PERFECTLY ALIGNED)
+# 6. STREAMLIT APP INTERFACE (HEADER & ADMIN SIDEBAR)
 # ---------------------------------------------------------
 st.markdown("""
 <style>
@@ -493,6 +549,15 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 st.markdown("All data entries are securely stored on our hospital database.")
+
+# Sidebar Profile Info & Sign Out
+st.sidebar.markdown(f"**Logged in as:** {st.session_state['name']}")
+st.sidebar.markdown(f"**Role:** `{st.session_state['role']}`")
+if st.sidebar.button("Sign Out"):
+    st.session_state["authenticated"] = False
+    st.rerun()
+
+st.sidebar.markdown("---")
 
 MODULES = [
     "Hospital Information System", 
