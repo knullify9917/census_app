@@ -6,7 +6,7 @@ import pandas as pd
 import os
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION
+# 1. PAGE CONFIGURATION (MUST BE FIRST STREAMLIT COMMAND)
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="MTCMC Direct Excel Data Entry System",
@@ -146,7 +146,7 @@ for field in sorted(SPECIALTIES_BY_FIELD.keys()):
         SPECIALTY_DROPDOWN_OPTIONS.append(spec)
 
 # ---------------------------------------------------------
-# 3. STREAMLINED EXCEL SHEET HEADERS (SEPARATED NAME & SEX)
+# 3. STREAMLINED, NON-SPARSE EXCEL SHEET HEADERS
 # ---------------------------------------------------------
 SHEET_HEADERS = {
     "ECC TOP DISEASES": [
@@ -178,7 +178,7 @@ SHEET_HEADERS = {
     ],
     "SCU CASES": [
         'MONTH', 'DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AOG', 'AGE', 'DIAGNOSIS', 
-        'DIAGNOSTIC FLAGS', 'SCU UNIT LOCATION', 'ATTENDING PHYSICIAN', 
+        'DIAGNOSTIC FLAGS', 'ADMITTED FROM', 'ADMITTED TO', 'ATTENDING PHYSICIAN', 
         'SUBSPECIALTIES', 'CASE COUNT'
     ]
 }
@@ -703,10 +703,12 @@ elif selected_sheet == "SCU CASES":
         with c9:
             physician = st.text_input("Attending Physician")
 
-        c10, c11 = st.columns(2)
+        c10, c11, c12 = st.columns(3)
         with c10:
-            scu_unit = st.selectbox("SCU Unit Location", ["NICU", "PICU", "GNU", "ER", "NSU", "OUTBORN"])
+            admitted_from = st.selectbox("Admitted From", ["ECC", "GNU 1C", "2A", "2B", "2C", "2D", "3A", "3B", "3C", "4A"])
         with c11:
+            admitted_to = st.selectbox("Admitted To", ["NICU", "NSU", "PCN", "OUTBORN", "ROOM-IN"])
+        with c12:
             subspecialties = st.multiselect("Subspecialties", SPECIALTY_DROPDOWN_OPTIONS[1:])
 
         diagnosis = st.text_area("Diagnosis Text")
@@ -731,7 +733,8 @@ elif selected_sheet == "SCU CASES":
                 'AGE': age_formatted,
                 'DIAGNOSIS': diagnosis,
                 'DIAGNOSTIC FLAGS': ", ".join(diag_flags) if diag_flags else "None",
-                'SCU UNIT LOCATION': scu_unit,
+                'ADMITTED FROM': admitted_from,
+                'ADMITTED TO': admitted_to,
                 'ATTENDING PHYSICIAN': physician,
                 'SUBSPECIALTIES': ", ".join(subspecialties) if subspecialties else "None",
                 'CASE COUNT': 1
