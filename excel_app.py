@@ -490,17 +490,17 @@ st.sidebar.markdown("### 🧭 Department Navigation")
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
 
 # ---------------------------------------------------------
-# ADMIN SEEDER TOOL WITH COMPLETE MIDDLE NAME & HDU OPTION
+# ADMIN SEEDER TOOL (5 PATIENTS, MIDDLE NAME, HDU OPTION, 30s FREQUENCY)
 # ---------------------------------------------------------
 if st.session_state["role"] == "Administrator":
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🤖 Admin Intelligent Seeder")
-    with st.sidebar.expander("✨ Generate 100 Smart Patients"):
-        st.markdown("Populate 100 realistic patient records with complete middle names and optional HDU inclusion.")
+    with st.sidebar.expander("✨ Generate 5 Smart Patients"):
+        st.markdown("Populate 5 realistic patient records with complete middle names and optional HDU inclusion.")
         include_hdu_seeder = st.checkbox("Include Hemodialysis Unit (HDU) Patients", value=True)
         seeder_freq = st.selectbox("Creation Frequency", ["Instant (0.5s Safe Delay)", "Every 30 Seconds per Batch"], index=0)
         
-        if st.button("🚀 Generate 100 Smart Patients", type="primary"):
+        if st.button("🚀 Generate 5 Smart Patients", type="primary"):
             first_names = ["JUAN", "MARIA", "JOSE", "ANA", "PEDRO", "LUIS", "CARMEN", "ROSA", "ANTONIO", "FRANCISCO", "ELENA", "SOFIA", "MIGUEL", "CARLOS", "LUCIA"]
             complete_middle_names = ["SANTOS", "REYES", "GARCIA", "TORRES", "FLORES", "RAMOS", "MENDOZA", "CASTRO", "DIZON", "BAUTISTA", "SANTIA", "VILLANUEVA", "AQUINO", "DELA CRUZ", "PASCUAL"]
             last_names = ["SANTOS", "REYES", "CRUZ", "BAUTISTA", "OCAMPO", "GARCIA", "MENDOZA", "TORRES", "FLORES", "GONZALES", "RAMOS", "AQUINO", "DEL ROSARIO", "PASCUAL"]
@@ -529,9 +529,9 @@ if st.session_state["role"] == "Administrator":
             success_count = 0
             progress_bar = st.sidebar.progress(0)
             
-            for i in range(100):
+            for i in range(5):
                 fn = random.choice(first_names)
-                mn = random.choice(complete_middle_names) # Complete middle name requirement
+                mn = random.choice(complete_middle_names)
                 ln = random.choice(last_names)
                 sex = random.choice(["MALE", "FEMALE"])
                 age = str(random.randint(1, 85))
@@ -547,7 +547,6 @@ if st.session_state["role"] == "Administrator":
                 date_str = ph_now_display.strftime("%m/%d/%Y")
                 time_str = "10:00 AM"
 
-                # 1. Register to ECC
                 ecc_data = {
                     'MONTH': get_month_str(ph_now_display.date(), "full_month"),
                     'DATE': date_str,
@@ -571,7 +570,6 @@ if st.session_state["role"] == "Administrator":
                 }
                 append_record_to_google_sheet("Emergency Care Complex (ECC)", ecc_data)
 
-                # 2. Add to Target Unit (GNU, HDU, or Special Care Complex)
                 choice_unit = random.choice(['gnu', 'scu', 'hdu'] if include_hdu_seeder else ['gnu', 'scu'])
                 
                 if choice_unit == 'gnu':
@@ -651,10 +649,10 @@ if st.session_state["role"] == "Administrator":
                     append_record_to_google_sheet("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", scu_data)
 
                 success_count += 1
-                progress_bar.progress((i + 1) / 100)
+                progress_bar.progress((i + 1) / 5)
                 
                 if seeder_freq == "Every 30 Seconds per Batch":
-                    time.sleep(0.3)
+                    time.sleep(30)
                 else:
                     time.sleep(0.05)
 
