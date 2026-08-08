@@ -6,8 +6,14 @@ import pandas as pd
 import os
 
 # ---------------------------------------------------------
-# FILE CONFIGURATION & STYLING DEFAULTS
+# 1. MUST BE FIRST STREAMLIT COMMAND
 # ---------------------------------------------------------
+st.set_page_config(
+    page_title="MTCMC Direct Excel Data Entry System",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
 EXCEL_FILE = "MTCMC_CENSUS_MASTERFILES_SYSTEM.xlsx"
 
 REGULAR_FONT = Font(name="Calibri", size=10)
@@ -21,7 +27,6 @@ THIN_BORDER = Border(
     bottom=Side(style='thin', color='D9D9D9')
 )
 
-# Column definitions for automatic worksheet initialization
 SHEET_HEADERS = {
     "ECC TOP DISEASES": ['MONTH', 'DATE', 'TIME', 'PATIENT', 'AGE', 'DIAGNOSIS', 'ACUTE GASTROENTERITIS', 'DENGUE FEVER', 'HYPERTENSION', 'GASTROESOPHAGEAL REFLUX DISEASE', 'URINARY TRACT INFECTION', 'BRONCHIAL ASTHMA', 'DIABETES MELLITUS', 'RESPIRATORY TRACT INECTION', 'ELECTROLYTE IMBALANCE', 'ACUTE TONSILLOPHARYNGITIS', 'ANIMAL BITE', 'VERTIGO', 'HYPERSENSITIVITY REACTION', 'INFECTED WOUND', 'ACUTE CORONARY SYNDROME', 'SYSTEMIC VIRAL ILLNESS', 'FRACTURE', 'OTHER CASES', 'PHYSICIAN', 'NEUROLOGY', 'IM & CARDIO', 'PULMO', 'GENERAL SURGERY', 'ORTHOPEDICS', 'NEPHROLOGY', 'UROLOGY', 'TCVS', 'OBGYNE', 'PEDIATRICS', 'FAMILY MED', 'IPD', 'OPD', 'ICU', 'PICU', 'CASE COUNT'],
     "ENDO": ['MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'PATIENT', 'AGE', 'DIAGNOSIS', 'PROCEDURE', 'PHYSICIAN', 'GASTROENTEROLOGIST', 'ENT', 'PULMONOLOGIST', 'ANESTHESIOLOGIST', 'ANESTHESIA', 'GASTROSCOPY', 'COLONOSCOPY', 'NASAL PROCEDURE', 'PEG PROCEDURE', 'ERCP', 'PROCTOSIGMOIDOSCOPY', 'PARACENTESIS', 'BRONCHOSCOPY', 'OTHER PROCEDURES', 'THERAPEUTIC', 'DIAGNOSTICS', 'IPD', 'OPD', 'HMO', 'PHIC', 'SELF-PAY', 'CASE COUNT'],
@@ -32,20 +37,16 @@ SHEET_HEADERS = {
 }
 
 def ensure_excel_and_sheets_exist():
-    """Verifies that the Excel file and all required sheets exist with proper headers."""
     if not os.path.exists(EXCEL_FILE):
         wb = openpyxl.Workbook()
-        wb.remove(wb.active)  # Remove default sheet
+        wb.remove(wb.active)
     else:
         wb = openpyxl.load_workbook(EXCEL_FILE)
 
     modified = False
-
-    # Ensure Summary sheet exists
     if "Dashboard & Summary" not in wb.sheetnames:
         ws_sum = wb.create_sheet(title="Dashboard & Summary", index=0)
         ws_sum.cell(row=1, column=1, value="METRO TERESA MEDICAL CENTER (MTCMC)").font = BOLD_FONT
-        ws_sum.cell(row=2, column=1, value="Census Masterfile Registry & Data Entry Dashboard").font = REGULAR_FONT
         headers = ['Department / Module', 'Total Census Records', 'Active Column Count', 'Source Masterfile']
         for c, h in enumerate(headers, 1):
             cell = ws_sum.cell(row=4, column=c, value=h)
@@ -53,7 +54,6 @@ def ensure_excel_and_sheets_exist():
             cell.font = HEADER_FONT
         modified = True
 
-    # Ensure each clinical module sheet exists
     for s_name, cols in SHEET_HEADERS.items():
         if s_name not in wb.sheetnames:
             ws = wb.create_sheet(title=s_name)
@@ -72,12 +72,30 @@ def ensure_excel_and_sheets_exist():
         wb.save(EXCEL_FILE)
 
 def read_excel_sheet(sheet_name):
-    """Safely reads a sheet from the Excel file, returning an empty DataFrame if missing."""
     ensure_excel_and_sheets_exist()
     try:
         xl = pd.ExcelFile(EXCEL_FILE, engine='openpyxl')
         if sheet_name in xl.sheet_names:
             return pd.read_excel(xl, sheet_name=sheet_name, skiprows=3)
     except Exception as e:
-        st.warning(f"Note: Could not load sheet '{sheet_name}' ({e}). Showing empty view.")
+        st.warning(f"Note: Could not load sheet '{sheet_name}'.")
     return pd.DataFrame()
+
+# Initialize Excel Structure
+ensure_excel_and_sheets_exist()
+
+# UI Layout
+st.title("📊 MTCMC Direct Excel Data Entry Application")
+st.markdown("Use the **left sidebar** to select a department worksheet.")
+
+MODULES = ["ECC TOP DISEASES", "ENDO", "HDU", "OBGYNE CASES", "SCC CASES", "SCU CASES"]
+selected_sheet = st.sidebar.selectbox("Select Target Excel Sheet", MODULES)
+
+st.subheader(f"Active Department Worksheet: `{selected_sheet}`")
+
+sheet_df = read_excel_sheet(selected_sheet)
+if not sheet_df.empty:
+    st.dataframe(sheet_df.tail(10), use_container_width=True)
+    st.info(f"Total Rows in Sheet `{selected_sheet}`: {len(sheet_df)}")
+else:
+    st.info(f"Sheet `{selected_sheet}` is currently empty and ready for data entry.")
