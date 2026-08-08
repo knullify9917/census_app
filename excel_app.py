@@ -6,7 +6,7 @@ import pandas as pd
 import os
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION (MUST BE FIRST STREAMLIT COMMAND)
+# 1. PAGE CONFIGURATION
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="MTCMC Direct Excel Data Entry System",
@@ -146,40 +146,40 @@ for field in sorted(SPECIALTIES_BY_FIELD.keys()):
         SPECIALTY_DROPDOWN_OPTIONS.append(spec)
 
 # ---------------------------------------------------------
-# 3. STREAMLINED, NON-SPARSE EXCEL SHEET HEADERS
+# 3. STREAMLINED EXCEL SHEET HEADERS (UNIFORM SPECIALIZATION FIELD)
 # ---------------------------------------------------------
 SHEET_HEADERS = {
     "ECC TOP DISEASES": [
         'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
-        'DISEASE CATEGORIES', 'PHYSICIAN', 'PHYSICIAN SPECIALTY', 
+        'DISEASE CATEGORIES', 'PHYSICIAN', 'SPECIALIZATION', 
         'PATIENT TYPE / CLASSIFICATION', 'TRANSFERRED TO', 'CASE COUNT'
     ],
     "ENDO": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
         'DIAGNOSIS', 'PROCEDURE', 'PROCEDURE CATEGORIES', 'PHYSICIAN', 
-        'ATTENDING SPECIALTY', 'GASTROENTEROLOGIST', 'ENT SPECIALIST', 
+        'SPECIALIZATION', 'GASTROENTEROLOGIST', 'ENT SPECIALIST', 
         'ANESTHESIOLOGIST', 'PROCEDURE NATURE', 'SETTING', 'PAYMENT METHOD', 'CASE COUNT'
     ],
     "HDU": [
         'MONTH', 'DATE', 'TRUE DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'DIAGNOSIS', 'PHYSICIAN', 
-        'PHYSICIAN SPECIALTY', 'DIALYSIS SHIFT SLOT', 'PATIENT TYPE', 'CASE COUNT'
+        'SPECIALIZATION', 'DIALYSIS SHIFT SLOT', 'PATIENT TYPE', 'CASE COUNT'
     ],
     "OBGYNE CASES": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
         'DIAGNOSIS', 'PROCEDURE', 'PROCEDURE BREAKDOWN', 'SURGEON / OBGYNE', 
-        'ATTENDING SPECIALTY', 'ANESTHESIOLOGIST', 'COMPLEXITY TIER', 
+        'SPECIALIZATION', 'ANESTHESIOLOGIST', 'COMPLEXITY TIER', 
         'CARE SETTING', 'KIT USED', 'PAYMENT CHANNEL', 'CASE COUNT'
     ],
     "SCC CASES": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
         'DIAGNOSIS', 'PROCEDURE', 'SURGICAL PROCEDURE FLAGS', 'PRIMARY SURGEON', 
-        'SURGICAL DEPARTMENT / SPECIALTY', 'ANESTHESIOLOGIST', 'COMPLEXITY TIER', 
+        'SPECIALIZATION', 'ANESTHESIOLOGIST', 'COMPLEXITY TIER', 
         'PATIENT SETTING', 'BILLING CHANNELS', 'CASE COUNT'
     ],
     "SCU CASES": [
         'MONTH', 'DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AOG', 'AGE', 'DIAGNOSIS', 
         'DIAGNOSTIC FLAGS', 'ADMITTED FROM', 'ADMITTED TO', 'ATTENDING PHYSICIAN', 
-        'SUBSPECIALTIES', 'CASE COUNT'
+        'SPECIALIZATION', 'CASE COUNT'
     ]
 }
 
@@ -354,16 +354,22 @@ if selected_sheet == "ECC TOP DISEASES":
         with c4:
             sex = st.selectbox("Sex", ["Male", "Female", "Others"])
 
-        c5, c6, c7 = st.columns(3)
+        c5, c6, c7, c8 = st.columns(4)
         with c5:
             entry_date = st.date_input("Date", datetime.today())
-            entry_time = st.time_input("Time", datetime.now().time())
         with c6:
-            age = st.number_input("Age", min_value=0, max_value=120, value=25)
-            physician = st.text_input("Attending Physician Name")
+            entry_time = st.time_input("Time", datetime.now().time())
         with c7:
-            specialty_sel = st.selectbox("Physician Specialty", SPECIALTY_DROPDOWN_OPTIONS)
+            age = st.number_input("Age", min_value=0, max_value=120, value=25)
+        with c8:
             case_classification = st.selectbox("Patient Type / Case Classification", ["IPD", "OPD", "Private Case", "House Case (Walk-in)"])
+
+        c_doc1, c_doc2, c_doc3 = st.columns(3)
+        with c_doc1:
+            physician = st.text_input("Attending Physician Name")
+        with c_doc2:
+            specialization = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS)
+        with c_doc3:
             transferred_to = st.selectbox("Transferred To", ["None", "GNU", "PICU", "ICU"])
 
         diagnosis_text = st.text_area("Clinical Diagnosis")
@@ -391,7 +397,7 @@ if selected_sheet == "ECC TOP DISEASES":
                 'DIAGNOSIS': diagnosis_text,
                 'DISEASE CATEGORIES': ", ".join(selected_diseases) if selected_diseases else "None",
                 'PHYSICIAN': physician,
-                'PHYSICIAN SPECIALTY': specialty_sel,
+                'SPECIALIZATION': specialization,
                 'PATIENT TYPE / CLASSIFICATION': case_classification,
                 'TRANSFERRED TO': transferred_to,
                 'CASE COUNT': 1
@@ -419,16 +425,18 @@ elif selected_sheet == "ENDO":
         c5, c6, c7, c8 = st.columns(4)
         with c5:
             entry_date = st.date_input("Procedure Date", datetime.today())
-            sched_time = st.time_input("Scheduled Time", datetime.now().time())
         with c6:
-            actual_time = st.time_input("Actual Time", datetime.now().time())
-            age = st.number_input("Age", min_value=0, max_value=120, value=40)
+            sched_time = st.time_input("Scheduled Time", datetime.now().time())
         with c7:
-            diagnosis_text = st.text_input("Diagnosis")
-            procedure_text = st.text_input("Procedure Name")
+            actual_time = st.time_input("Actual Time", datetime.now().time())
         with c8:
+            age = st.number_input("Age", min_value=0, max_value=120, value=40)
+
+        c_doc1, c_doc2 = st.columns(2)
+        with c_doc1:
             physician = st.text_input("Attending Physician")
-            specialty_sel = st.selectbox("Attending Specialty", SPECIALTY_DROPDOWN_OPTIONS)
+        with c_doc2:
+            specialization = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS)
 
         c9, c10, c11 = st.columns(3)
         with c9:
@@ -437,6 +445,12 @@ elif selected_sheet == "ENDO":
             ent = st.text_input("ENT Specialist")
         with c11:
             anesthesiologist = st.text_input("Anesthesiologist")
+
+        cd1, cd2 = st.columns(2)
+        with cd1:
+            diagnosis_text = st.text_input("Diagnosis")
+        with cd2:
+            procedure_text = st.text_input("Procedure Name")
 
         proc_cols = ['GASTROSCOPY', 'COLONOSCOPY', 'NASAL PROCEDURE', 'PEG PROCEDURE', 'ERCP', 'PROCTOSIGMOIDOSCOPY', 'PARACENTESIS', 'BRONCHOSCOPY', 'OTHER PROCEDURES']
         selected_procs = st.multiselect("Select Procedure Flags", proc_cols)
@@ -462,7 +476,7 @@ elif selected_sheet == "ENDO":
                 'PROCEDURE': procedure_text,
                 'PROCEDURE CATEGORIES': ", ".join(selected_procs) if selected_procs else "None",
                 'PHYSICIAN': physician,
-                'ATTENDING SPECIALTY': specialty_sel,
+                'SPECIALIZATION': specialization,
                 'GASTROENTEROLOGIST': gastro if gastro else "N/A",
                 'ENT SPECIALIST': ent if ent else "N/A",
                 'ANESTHESIOLOGIST': anesthesiologist if anesthesiologist else "N/A",
@@ -494,10 +508,14 @@ elif selected_sheet == "HDU":
         c5, c6 = st.columns(2)
         with c5:
             entry_date = st.date_input("Dialysis Date", datetime.today())
-            diagnosis = st.text_input("Diagnosis", value="CKD")
         with c6:
-            physician = st.text_input("Nephrologist", value="DR. ALEJANDRO SESE JR.")
-            specialty_sel = st.selectbox("Physician Specialty", SPECIALTY_DROPDOWN_OPTIONS)
+            diagnosis = st.text_input("Diagnosis", value="CKD")
+
+        c_doc1, c_doc2 = st.columns(2)
+        with c_doc1:
+            physician = st.text_input("Nephrologist / Physician Name", value="DR. ALEJANDRO SESE JR.")
+        with c_doc2:
+            specialization = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS)
 
         c7, c8 = st.columns(2)
         with c7:
@@ -520,7 +538,7 @@ elif selected_sheet == "HDU":
                 'SEX': sex,
                 'DIAGNOSIS': diagnosis,
                 'PHYSICIAN': physician,
-                'PHYSICIAN SPECIALTY': specialty_sel,
+                'SPECIALIZATION': specialization,
                 'DIALYSIS SHIFT SLOT': shift_set,
                 'PATIENT TYPE': patient_type,
                 'CASE COUNT': 1
@@ -548,17 +566,26 @@ elif selected_sheet == "OBGYNE CASES":
         c5, c6, c7, c8 = st.columns(4)
         with c5:
             entry_date = st.date_input("Procedure Date", datetime.today())
-            sched_time = st.time_input("Scheduled Time", datetime.now().time())
         with c6:
-            actual_time = st.time_input("Actual Time", datetime.now().time())
-            age = st.number_input("Age", min_value=10, max_value=100, value=30)
+            sched_time = st.time_input("Scheduled Time", datetime.now().time())
         with c7:
-            diagnosis = st.text_area("OBGYNE Diagnosis")
-            procedure = st.text_input("Procedure Name")
+            actual_time = st.time_input("Actual Time", datetime.now().time())
         with c8:
+            age = st.number_input("Age", min_value=10, max_value=100, value=30)
+
+        c_doc1, c_doc2, c_doc3 = st.columns(3)
+        with c_doc1:
             surgeon = st.text_input("Surgeon / OBGYNE")
-            specialty_sel = st.selectbox("Attending Specialty", SPECIALTY_DROPDOWN_OPTIONS)
+        with c_doc2:
+            specialization = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS)
+        with c_doc3:
             anesthesiologist = st.text_input("Anesthesiologist")
+
+        cd1, cd2 = st.columns(2)
+        with cd1:
+            diagnosis = st.text_area("OBGYNE Diagnosis")
+        with cd2:
+            procedure = st.text_input("Procedure Name")
 
         ca, cb, cc, cd = st.columns(4)
         with ca:
@@ -587,7 +614,7 @@ elif selected_sheet == "OBGYNE CASES":
                 'PROCEDURE': procedure,
                 'PROCEDURE BREAKDOWN': ", ".join(ob_procs) if ob_procs else "None",
                 'SURGEON / OBGYNE': surgeon,
-                'ATTENDING SPECIALTY': specialty_sel,
+                'SPECIALIZATION': specialization,
                 'ANESTHESIOLOGIST': anesthesiologist if anesthesiologist else "N/A",
                 'COMPLEXITY TIER': complexity,
                 'CARE SETTING': setting,
@@ -618,17 +645,26 @@ elif selected_sheet == "SCC CASES":
         c5, c6, c7, c8 = st.columns(4)
         with c5:
             entry_date = st.date_input("Surgery Date", datetime.today())
-            sched_time = st.time_input("Scheduled Time", datetime.now().time())
         with c6:
-            actual_time = st.time_input("Actual Time", datetime.now().time())
-            age = st.number_input("Age", min_value=0, max_value=120, value=35)
+            sched_time = st.time_input("Scheduled Time", datetime.now().time())
         with c7:
-            diagnosis = st.text_area("Pre/Post-Op Diagnosis")
-            procedure = st.text_area("Surgical Procedure")
+            actual_time = st.time_input("Actual Time", datetime.now().time())
         with c8:
+            age = st.number_input("Age", min_value=0, max_value=120, value=35)
+
+        c_doc1, c_doc2, c_doc3 = st.columns(3)
+        with c_doc1:
             surgeon = st.text_input("Primary Surgeon")
-            specialty_sel = st.selectbox("Surgical Department / Specialty", SPECIALTY_DROPDOWN_OPTIONS)
+        with c_doc2:
+            specialization = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS)
+        with c_doc3:
             anesthesiologist = st.text_input("Anesthesiologist")
+
+        cd1, cd2 = st.columns(2)
+        with cd1:
+            diagnosis = st.text_area("Pre/Post-Op Diagnosis")
+        with cd2:
+            procedure = st.text_area("Surgical Procedure")
 
         all_scc_procs = [
             'EXCISION BIOPSY', 'INCISION AND DRAINAGE', 'WOUND SUTURING & CLOSING AND CHANGE OF DRESSING',
@@ -663,7 +699,7 @@ elif selected_sheet == "SCC CASES":
                 'PROCEDURE': procedure,
                 'SURGICAL PROCEDURE FLAGS': ", ".join(selected_scc_procs) if selected_scc_procs else "None",
                 'PRIMARY SURGEON': surgeon,
-                'SURGICAL DEPARTMENT / SPECIALTY': specialty_sel,
+                'SPECIALIZATION': specialization,
                 'ANESTHESIOLOGIST': anesthesiologist if anesthesiologist else "N/A",
                 'COMPLEXITY TIER': complexity,
                 'PATIENT SETTING': setting,
@@ -690,7 +726,7 @@ elif selected_sheet == "SCU CASES":
         with c4:
             sex = st.selectbox("Sex", ["Male", "Female", "Others"])
 
-        c5, c6, c7, c8, c9 = st.columns(5)
+        c5, c6, c7, c8 = st.columns(4)
         with c5:
             entry_date = st.date_input("Admission Date", datetime.today())
             aog = st.text_input("Age of Gestation (AOG)", value="38 WEEKS")
@@ -700,16 +736,18 @@ elif selected_sheet == "SCU CASES":
             age_m = st.number_input("Age (Months)", min_value=0, max_value=11, value=0)
         with c8:
             age_d = st.number_input("Age (Days)", min_value=0, max_value=31, value=0)
-        with c9:
-            physician = st.text_input("Attending Physician")
 
-        c10, c11, c12 = st.columns(3)
+        c_doc1, c_doc2 = st.columns(2)
+        with c_doc1:
+            physician = st.text_input("Attending Physician")
+        with c_doc2:
+            specialization = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS)
+
+        c10, c11 = st.columns(2)
         with c10:
             admitted_from = st.selectbox("Admitted From", ["ECC", "GNU 1C", "2A", "2B", "2C", "2D", "3A", "3B", "3C", "4A"])
         with c11:
             admitted_to = st.selectbox("Admitted To", ["NICU", "NSU", "PCN", "OUTBORN", "ROOM-IN"])
-        with c12:
-            subspecialties = st.multiselect("Subspecialties", SPECIALTY_DROPDOWN_OPTIONS[1:])
 
         diagnosis = st.text_area("Diagnosis Text")
         diag_flags = st.multiselect("Diagnostic Flags", ["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY"])
@@ -736,7 +774,7 @@ elif selected_sheet == "SCU CASES":
                 'ADMITTED FROM': admitted_from,
                 'ADMITTED TO': admitted_to,
                 'ATTENDING PHYSICIAN': physician,
-                'SUBSPECIALTIES': ", ".join(subspecialties) if subspecialties else "None",
+                'SPECIALIZATION': specialization,
                 'CASE COUNT': 1
             }
 
