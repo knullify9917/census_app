@@ -1043,7 +1043,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             'ULTRASOUND GUIDED', 'MIS', 'AVF', 'IJ CATH', 'PERM CATH/ FEMORAL CATH', 'PROCTOSCOPY',
             'CHOLEDOSCOPY', 'DENTAL PROCEDURES', 'OTHER PROCEDURES'
         ]
-        selected_scc_procs = st.multiselect("Select Surgical Procedure Flags", all_scc_procs)
+        selected_scc_procs = st.multiselect("Procedure Census", all_scc_procs)
 
         ca, cb, cc, cd = st.columns(4)
         with ca: 
