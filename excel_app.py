@@ -826,7 +826,6 @@ if selected_sheet == "Hospital Information System":
     
     gnu_sheets = [d for d in department_sheets if d.startswith("General Nursing Unit (GNU")]
     
-    # Tally total active & may go home patients strictly from General Nursing Units to avoid overlaps
     total_active_patients = 0
     daily_active_patients = 0
     monthly_active_patients = 0
@@ -854,7 +853,6 @@ if selected_sheet == "Hospital Information System":
                 ]
                 monthly_count = len(monthly_subset)
 
-        # If department is a General Nursing Unit, filter strictly for Active & May Go Home for summary metrics
         if dept in gnu_sheets and not df.empty and 'PATIENT STATUS' in df.columns:
             df['PATIENT STATUS'] = df['PATIENT STATUS'].fillna("Active")
             active_subset = df[
@@ -962,7 +960,7 @@ if selected_sheet == "Hospital Information System":
                 dept_df = dept_df[dept_df['ADMITTED TO'] == selected_area]
                 st.write(f"Filtered to **{selected_area}** ({len(dept_df)} records)")
 
-        preferred_cols = ['DATE', 'PATIENT & STATUS', 'LAST NAME', 'FIRST NAME', 'DIAGNOSIS', 'PATIENT STATUS', 'HOSPITALIZATION MODE', 'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION', 'ATTENDING PHYSICIAN', 'MODE OF PAYMENT']
+        preferred_cols = ['DATE', 'PATIENT & STATUS', 'ROOM NO', 'LAST NAME', 'FIRST NAME', 'DIAGNOSIS', 'PATIENT STATUS', 'HOSPITALIZATION MODE', 'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION', 'ATTENDING PHYSICIAN', 'MODE OF PAYMENT']
         display_cols = [c for c in preferred_cols if c in dept_df.columns]
         if not display_cols:
             display_cols = dept_df.columns.tolist()
@@ -989,25 +987,25 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
     with st.form(f"gnu_form_{form_key_slug}", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
-        c0, c1, c2, c3, c4, c5 = st.columns([1.5, 2, 2, 2, 1, 1.5])
-        with c0:
-            room_no = st.text_input("Room No.", value="").strip().upper()
+        c1, c2, c3, c4 = st.columns([1.5, 2, 2, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value="").strip().upper()
-        with c2:
-            first_name = st.text_input("First Name", value="").strip().upper()
-        with c3:
-            middle_name = st.text_input("Middle Name", value="").strip().upper()
-        with c4:
-            age = st.number_input("Age", min_value=0, max_value=120, value=0)
-        with c5:
-            sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
-
-        c_d1, c_d2 = st.columns(2)
-        with c_d1:
             entry_date = st.date_input("Date", ph_now.date())
-        with c_d2:
+        with c2:
             entry_time_str = civilian_time_input_field("Time", key_suffix=f"gnu_{form_key_slug}_time")
+        with c3:
+            room_no = st.text_input("Room No.", value="").strip().upper()
+
+        c_n1, c_n2, c_n3, c_n4, c_n5 = st.columns([2, 2, 2, 1, 1.5])
+        with c_n1:
+            last_name = st.text_input("Last Name", value="").strip().upper()
+        with c_n2:
+            first_name = st.text_input("First Name", value="").strip().upper()
+        with c_n3:
+            middle_name = st.text_input("Middle Name", value="").strip().upper()
+        with c_n4:
+            age = st.number_input("Age", min_value=0, max_value=120, value=0)
+        with c_n5:
+            sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
 
         c_h1, c_h2, c_h3 = st.columns(3)
         with c_h1:
