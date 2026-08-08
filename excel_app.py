@@ -6,7 +6,7 @@ import pandas as pd
 import os
 
 # ---------------------------------------------------------
-# 1. MUST BE THE VERY FIRST STREAMLIT COMMAND
+# 1. PAGE CONFIGURATION
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="MTCMC Direct Excel Data Entry System",
@@ -26,6 +26,60 @@ THIN_BORDER = Border(
     top=Side(style='thin', color='D9D9D9'),
     bottom=Side(style='thin', color='D9D9D9')
 )
+
+# ---------------------------------------------------------
+# 2. UNIFIED SPECIALTIES SORTED BY FIELD OF MEDICINE THEN ALPHABETICALLY
+# ---------------------------------------------------------
+SPECIALTIES_BY_FIELD = {
+    "Anesthesiology & Pain Medicine": [
+        "ANESTHESIOLOGY"
+    ],
+    "Dental & Oral Surgery": [
+        "DENTAL SURGERY"
+    ],
+    "Diagnostic & Interventional Medicine": [
+        "INTERVENTIONAL RADIOLOGY"
+    ],
+    "Internal Medicine & Subspecialties": [
+        "GASTROENTEROLOGY",
+        "HEMATOLOGY / ONCOLOGY",
+        "INTERNAL MEDICINE & CARDIOLOGY",
+        "NEPHROLOGY",
+        "NEUROLOGY",
+        "PULMONOLOGY"
+    ],
+    "Obstetrics & Gynecology": [
+        "OBSTETRICS & GYNECOLOGY (OBGYNE)"
+    ],
+    "Pediatrics & Neonatology": [
+        "NEONATOLOGY",
+        "PEDIATRICS"
+    ],
+    "Primary Care & Community Medicine": [
+        "FAMILY MEDICINE"
+    ],
+    "Surgical Specialties": [
+        "COLORECTAL SURGERY",
+        "EENT / ENT",
+        "GENERAL SURGERY",
+        "NEUROSURGERY",
+        "OPHTHALMOLOGY",
+        "ORTHOPEDICS",
+        "PEDIATRIC SURGERY",
+        "THORACIC & CARDIOVASCULAR SURGERY (TCVS)",
+        "UROLOGY"
+    ]
+}
+
+# Build sorted lists for Streamlit dropdowns
+SPECIALTY_DROPDOWN_OPTIONS = ["None / Unspecified"]
+SPECIALTY_NAME_MAP = {}
+
+for field in sorted(SPECIALTIES_BY_FIELD.keys()):
+    for spec in sorted(SPECIALTIES_BY_FIELD[field]):
+        label = f"[{field}] {spec}"
+        SPECIALTY_DROPDOWN_OPTIONS.append(label)
+        SPECIALTY_NAME_MAP[label] = spec
 
 SHEET_HEADERS = {
     "ECC TOP DISEASES": ['MONTH', 'DATE', 'TIME', 'PATIENT', 'AGE', 'DIAGNOSIS', 'ACUTE GASTROENTERITIS', 'DENGUE FEVER', 'HYPERTENSION', 'GASTROESOPHAGEAL REFLUX DISEASE', 'URINARY TRACT INFECTION', 'BRONCHIAL ASTHMA', 'DIABETES MELLITUS', 'RESPIRATORY TRACT INECTION', 'ELECTROLYTE IMBALANCE', 'ACUTE TONSILLOPHARYNGITIS', 'ANIMAL BITE', 'VERTIGO', 'HYPERSENSITIVITY REACTION', 'INFECTED WOUND', 'ACUTE CORONARY SYNDROME', 'SYSTEMIC VIRAL ILLNESS', 'FRACTURE', 'OTHER CASES', 'PHYSICIAN', 'NEUROLOGY', 'IM & CARDIO', 'PULMO', 'GENERAL SURGERY', 'ORTHOPEDICS', 'NEPHROLOGY', 'UROLOGY', 'TCVS', 'OBGYNE', 'PEDIATRICS', 'FAMILY MED', 'IPD', 'OPD', 'ICU', 'PICU', 'CASE COUNT'],
@@ -167,10 +221,7 @@ if selected_sheet == "ECC TOP DISEASES":
         with c2:
             age = st.number_input("Age", min_value=0, max_value=120, value=25)
             physician = st.text_input("Attending Physician Name")
-            specialty = st.selectbox("Physician Specialty", [
-                "None", "NEUROLOGY", "IM & CARDIO", "PULMO", "GENERAL SURGERY", 
-                "ORTHOPEDICS", "NEPHROLOGY", "UROLOGY", "TCVS", "OBGYNE", "PEDIATRICS", "FAMILY MED"
-            ])
+            specialty_sel = st.selectbox("Physician Specialty (Sorted by Field of Medicine)", SPECIALTY_DROPDOWN_OPTIONS)
         with c3:
             location = st.selectbox("Care Location", ["OPD", "IPD", "ICU", "PICU"])
             diagnosis_text = st.text_area("Clinical Diagnosis")
@@ -202,8 +253,24 @@ if selected_sheet == "ECC TOP DISEASES":
             }
             for d in selected_diseases:
                 row_data[d] = 1.0
-            if specialty != "None":
-                row_data[specialty] = 1.0
+
+            # Map specialty to ECC column names
+            spec_name = SPECIALTY_NAME_MAP.get(specialty_sel, "")
+            ecc_map = {
+                "NEUROLOGY": "NEUROLOGY",
+                "INTERNAL MEDICINE & CARDIOLOGY": "IM & CARDIO",
+                "PULMONOLOGY": "PULMO",
+                "GENERAL SURGERY": "GENERAL SURGERY",
+                "ORTHOPEDICS": "ORTHOPEDICS",
+                "NEPHROLOGY": "NEPHROLOGY",
+                "UROLOGY": "UROLOGY",
+                "THORACIC & CARDIOVASCULAR SURGERY (TCVS)": "TCVS",
+                "OBSTETRICS & GYNECOLOGY (OBGYNE)": "OBGYNE",
+                "PEDIATRICS": "PEDIATRICS",
+                "FAMILY MEDICINE": "FAMILY MED"
+            }
+            if spec_name in ecc_map:
+                row_data[ecc_map[spec_name]] = 1.0
 
             if append_record_to_excel("ECC TOP DISEASES", row_data):
                 st.success("Successfully saved to `ECC TOP DISEASES` sheet!")
@@ -226,6 +293,7 @@ elif selected_sheet == "ENDO":
             procedure_text = st.text_input("Procedure Name")
             physician = st.text_input("Attending Physician")
         with c3:
+            specialty_sel = st.selectbox("Attending Specialty (Sorted by Field of Medicine)", SPECIALTY_DROPDOWN_OPTIONS)
             gastro = st.text_input("Gastroenterologist")
             ent = st.text_input("ENT Specialist")
             anesthesiologist = st.text_input("Anesthesiologist")
@@ -278,6 +346,7 @@ elif selected_sheet == "HDU":
             diagnosis = st.text_input("Diagnosis", value="CKD")
         with c2:
             physician = st.text_input("Nephrologist", value="DR. ALEJANDRO SESE JR.")
+            specialty_sel = st.selectbox("Physician Specialty (Sorted by Field of Medicine)", SPECIALTY_DROPDOWN_OPTIONS)
             shift_set = st.selectbox("Dialysis Shift Slot", ["1ST SET", "2ND SET", "3RD SET", "ONCALL"])
             patient_type = st.radio("Patient Type", ["OPD", "IPD"])
 
@@ -320,6 +389,7 @@ elif selected_sheet == "OBGYNE CASES":
             procedure = st.text_input("Procedure Name")
         with c3:
             surgeon = st.text_input("Surgeon / OBGYNE")
+            specialty_sel = st.selectbox("Attending Specialty (Sorted by Field of Medicine)", SPECIALTY_DROPDOWN_OPTIONS)
             anesthesiologist = st.text_input("Anesthesiologist")
 
         ca, cb, cc = st.columns(3)
@@ -377,11 +447,7 @@ elif selected_sheet == "SCC CASES":
             procedure = st.text_area("Surgical Procedure")
         with c3:
             surgeon = st.text_input("Primary Surgeon")
-            specialty = st.selectbox("Surgical Department", [
-                'GENERAL SURGERY', 'OPHTHALMOLOGY', 'NEUROSURGERY', 'INTERVENTIONAL RADIOLOGY', 
-                'ORTHOPEDICS', 'EENT', 'COLORECTAL', 'UROLOGY', 'DENTAL SURGERY', 'TCVS', 
-                'PEDIATRIC SURGERY', 'OBGYNE'
-            ])
+            specialty_sel = st.selectbox("Surgical Department / Specialty (Sorted by Field of Medicine)", SPECIALTY_DROPDOWN_OPTIONS)
             anesthesiologist = st.text_input("Anesthesiologist")
 
         all_scc_procs = [
@@ -413,11 +479,30 @@ elif selected_sheet == "SCC CASES":
                 'DIAGNOSIS': diagnosis,
                 'PROCEDURE': procedure,
                 'SURGEON': surgeon,
-                specialty: specialty,
                 complexity: 1.0,
                 setting: 1.0,
                 'CASE COUNT': 1.0
             }
+
+            # Map specialty selection to SCC column
+            spec_name = SPECIALTY_NAME_MAP.get(specialty_sel, "")
+            scc_map = {
+                "GENERAL SURGERY": "GENERAL SURGERY",
+                "OPHTHALMOLOGY": "OPHTHALMOLOGY",
+                "NEUROSURGERY": "NEUROSURGERY",
+                "INTERVENTIONAL RADIOLOGY": "INTERVENTIONAL RADIOLOGY",
+                "ORTHOPEDICS": "ORTHOPEDICS",
+                "EENT / ENT": "EENT",
+                "COLORECTAL SURGERY": "COLORECTAL",
+                "UROLOGY": "UROLOGY",
+                "DENTAL SURGERY": "DENTAL SURGERY",
+                "THORACIC & CARDIOVASCULAR SURGERY (TCVS)": "TCVS",
+                "PEDIATRIC SURGERY": "PEDIATRIC SURGERY",
+                "OBSTETRICS & GYNECOLOGY (OBGYNE)": "OBGYNE"
+            }
+            if spec_name in scc_map:
+                row_data[scc_map[spec_name]] = scc_map[spec_name]
+
             if anesthesiologist:
                 row_data['ANESTHESIOLOGIST'] = anesthesiologist
                 row_data['ANESTHESIA'] = "ANESTHESIA"
@@ -447,10 +532,7 @@ elif selected_sheet == "SCU CASES":
         with c3:
             diagnosis = st.text_area("Diagnosis Text")
             scu_unit = st.selectbox("SCU Unit", ["NICU", "PICU", "GNU", "ER", "NSU", "OUTBORN"])
-            subspecialties = st.multiselect("Subspecialties", [
-                "PEDIATRICS", "NEONATOLOGY", "PULMONOLOGY", 
-                "HEMETOLOGY / ONCOLOGY", "NEUROSURGERY", "GENERAL SURGERY"
-            ], default=["PEDIATRICS"])
+            subspecialties = st.multiselect("Subspecialties (Sorted by Field of Medicine)", SPECIALTY_DROPDOWN_OPTIONS[1:])
 
         diag_flags = st.multiselect("Diagnostic Flags", ["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY"])
 
@@ -474,7 +556,19 @@ elif selected_sheet == "SCU CASES":
             else: row_data['FEMALE'] = 1.0
             
             for d in diag_flags: row_data[d] = 1.0
-            for s in subspecialties: row_data[s] = s
+            
+            scu_map = {
+                "PEDIATRICS": "PEDIATRICS",
+                "NEONATOLOGY": "NEONATOLOGY",
+                "PULMONOLOGY": "PULMONOLOGY",
+                "HEMATOLOGY / ONCOLOGY": "HEMETOLOGY / ONCOLOGY",
+                "NEUROSURGERY": "NEUROSURGERY",
+                "GENERAL SURGERY": "GENERAL SURGERY"
+            }
+            for s_label in subspecialties:
+                s_name = SPECIALTY_NAME_MAP.get(s_label, "")
+                if s_name in scu_map:
+                    row_data[scu_map[s_name]] = scu_map[s_name]
 
             if append_record_to_excel("SCU CASES", row_data):
                 st.success("Successfully saved to `SCU CASES` sheet!")
