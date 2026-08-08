@@ -7,6 +7,7 @@ import os
 import hashlib
 import io
 import base64
+import random
 
 # ---------------------------------------------------------
 # 1. PAGE CONFIGURATION & LOGO-MATCHED BLUE/GREEN COLORWAY
@@ -97,11 +98,9 @@ st.markdown("""
 
 REGULAR_FONT_SIZE = 10
 
-# Helper function to hash passwords securely
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# User Database with Administrator and Department Staff Accounts
 USER_DATABASE = {
     "admin": {
         "password": hash_password("admin123"),
@@ -165,7 +164,6 @@ USER_DATABASE = {
     }
 }
 
-# Session State Initialization for Auth
 if "authenticated" not in st.session_state:
     st.session_state["authenticated"] = False
 if "username" not in st.session_state:
@@ -175,14 +173,10 @@ if "role" not in st.session_state:
 if "name" not in st.session_state:
     st.session_state["name"] = ""
 
-# Session state initialization for co-management dynamic list storage per form context
 for form_key in ["ecc", "endo", "hdu", "ob", "scc", "scu", "1c", "2a", "2b", "2c", "2d", "3a", "3b", "3c", "4a"]:
     if f"cm_list_{form_key}" not in st.session_state:
         st.session_state[f"cm_list_{form_key}"] = []
 
-# ---------------------------------------------------------
-# AUTHENTICATION SCREEN IF NOT LOGGED IN
-# ---------------------------------------------------------
 if not st.session_state["authenticated"]:
     col_l1, col_l2, col_l3 = st.columns([0.2, 2.6, 0.2])
     with col_l2:
@@ -212,11 +206,9 @@ if not st.session_state["authenticated"]:
                     st.error("Invalid username or password. Please try again.")
     st.stop()
 
-# Helper function to get current Philippine Time
 def get_ph_time():
     return datetime.now(ZoneInfo("Asia/Manila"))
 
-# Helper for a native time input widget defaulting to current system time with AM/PM indicator
 def civilian_time_input_field(label, key_suffix=""):
     current_default_time = get_ph_time().time()
     t_val = st.time_input(label, value=current_default_time, key=f"time_widget_{key_suffix}")
@@ -224,7 +216,6 @@ def civilian_time_input_field(label, key_suffix=""):
         return t_val.strftime("%I:%M %p")
     return ""
 
-# Helper for rendering inline custom image icon matching emoji schema sizing
 def get_custom_icon_html(filename, width=32):
     if os.path.exists(filename):
         with open(filename, "rb") as f:
@@ -232,9 +223,6 @@ def get_custom_icon_html(filename, width=32):
         return f'<img src="data:image/png;base64,{b64_str}" style="width: {width}px; height: {width}px; vertical-align: middle; margin-right: 8px;">'
     return ""
 
-# ---------------------------------------------------------
-# 2. SORTED HOSPITAL UNIT AREAS LIST
-# ---------------------------------------------------------
 HOSPITAL_UNIT_AREAS = sorted([
     "None",
     "ECC",
@@ -254,118 +242,17 @@ HOSPITAL_UNIT_AREAS = sorted([
     "OUTBORN"
 ])
 
-# ---------------------------------------------------------
-# 3. EXACT SPECIALTIES SORTED BY FIELD OF MEDICINE THEN ALPHABETICALLY
-# ---------------------------------------------------------
 SPECIALTIES_BY_FIELD = {
-    "Anaesthesiology": [
-        "GENERAL ANAESTHESIOLOGY",
-        "NEURO - ANAESTHESIOLOGY",
-        "PEDIA - ANAESTHESIOLOGY"
-    ],
-    "Emergency & Family Medicine": [
-        "EMERGNCY MEDICINE",
-        "FAMILY MEDICINE"
-    ],
-    "Internal Medicine & Subspecialties": [
-        "CARDIOLOGY",
-        "CLINICAL HAEMATOLOGY",
-        "DERMATOLOGY",
-        "ENDOCRINOLOGY",
-        "GASTROENTEROLOGY",
-        "HEPATOLOGY",
-        "GERIATRIC MEDICINE",
-        "INFECTIOUS DISEASES",
-        "INFECTIOUS DISEASES MEDICINE",
-        "INTENSIVE CARE MEDICINE",
-        "INTERNAL MEDICINE",
-        "MEDICAL ONCOLOGY",
-        "NEPHROLOGY",
-        "NEUROLOGY",
-        "PALLIATIVE MEDICINE",
-        "RESPIRATORY MEDICINE",
-        "RHEUMATOLOGY"
-    ],
-    "Obstetrics & Gynaecology": [
-        "GYNAE-ONCOLOGY",
-        "MATERNAL FETAL MEDICINE",
-        "OBSTETRICS & GYNAECOLOGY",
-        "REPRODUCTIVE MEDICINE",
-        "URO-GYNAECOLOGY"
-    ],
-    "Oncology, Radiology & Physical Medicine": [
-        "CLINICAL ONCOLOGY",
-        "CLINICAL RADIOLOGY",
-        "NUCLEAR MEDICINE",
-        "ONCOLOGY",
-        "RADIATION ONCOLOGY",
-        "REHABILITATION MEDICINE",
-        "SPORTS MEDICINE"
-    ],
-    "Paediatrics & Subspecialties": [
-        "ADOLESCENT MEDICINE",
-        "CLINICAL GENETICS",
-        "DEVELOPMENTAL PAEDIATRICS",
-        "GENERAL PAEDIATRICS",
-        "NEONATOLOGY",
-        "PAEDIATRIC CARDIOLOGY",
-        "PAEDIATRIC DERMATOLOGY",
-        "PAEDIATRIC ENDOCRINOLOGY",
-        "PAEDIATRIC GASTROENTEROLOGY",
-        "PAEDIATRIC HAEMATOLOGY & ONCOLOGY",
-        "PAEDIATRIC INFECTIOUS DISEASES",
-        "PAEDIATRIC INTENSIVE CARE",
-        "PAEDIATRIC NEPHROLOGY",
-        "PAEDIATRIC NEUROLOGY",
-        "PAEDIATRIC RESPIRATORY MEDICINE",
-        "PAEDIATRIC RHEUMATOLOGY",
-        "PAEDIATRICS AND CHILD HEALTH"
-    ],
-    "Pathology": [
-        "ANATOMICAL PATHOLOGY",
-        "CHEMICAL PATHOLOGY",
-        "CHEMICAL PATHOLOGY (METABOLIC MEDICINE)",
-        "FORENSIC PATHOLOGY",
-        "GENERAL PATHOLOGY",
-        "GENETIC PATHOLOGY",
-        "HAEMATOLOGY",
-        "TRANSFUSION MEDICINE"
-    ],
-    "Psychiatry": [
-        "CHILD AND ADOLESCENT PSYCHIATRY",
-        "FORENSIC PSYCHIATRY",
-        "PSYCHIATRY"
-    ],
-    "Public, Occupational & Military Health": [
-        "COMMUNICABLE DISEASE EPIDEMIOLOGY",
-        "MILITARY MEDICINE",
-        "NON-COMMUNICABLE DISEASE EPIDEMIOLOGY",
-        "OCCUPATIONAL HEALTH",
-        "PUBLIC HEALTH MEDICINE"
-    ],
-    "Surgical Specialties & Subspecialties": [
-        "ADVANCED MUSCOSKELETAL TRAUMA",
-        "ARTHOPLASTY",
-        "ARTHROSCOPY & SPORT SURGERY",
-        "BREAST / AND ENDOCRINE SURGERY",
-        "COLORECTAL SURGERY",
-        "GENERAL SURGERY",
-        "HEPATOBILIARY SURGERY",
-        "NEUROSURGERY",
-        "OPHTHALMOLOGY",
-        "ORTHOPAEDIC ONCOLOGY",
-        "ORTHOPAEDIC SURGERY",
-        "OTORHINOLARYNGOLOGY (ENT)",
-        "PAEDIATRIC ORTHOPAEDICS",
-        "PAEDIATRIC SURGERY",
-        "PLASTIC SURGERY",
-        "SPINE SURGERY",
-        "THORACIC / CARDIOTHORACIC SURGERY",
-        "UPPER GIT SURGERY",
-        "UPPER LIMB & MICROSURGERY",
-        "UROLOGY",
-        "VASCULAR SURGERY"
-    ]
+    "Anaesthesiology": ["GENERAL ANAESTHESIOLOGY", "NEURO - ANAESTHESIOLOGY", "PEDIA - ANAESTHESIOLOGY"],
+    "Emergency & Family Medicine": ["EMERGNCY MEDICINE", "FAMILY MEDICINE"],
+    "Internal Medicine & Subspecialties": ["CARDIOLOGY", "CLINICAL HAEMATOLOGY", "DERMATOLOGY", "ENDOCRINOLOGY", "GASTROENTEROLOGY", "HEPATOLOGY", "GERIATRIC MEDICINE", "INFECTIOUS DISEASES", "INTENSIVE CARE MEDICINE", "INTERNAL MEDICINE", "MEDICAL ONCOLOGY", "NEPHROLOGY", "NEUROLOGY", "PALLIATIVE MEDICINE", "RESPIRATORY MEDICINE", "RHEUMATOLOGY"],
+    "Obstetrics & Gynaecology": ["GYNAE-ONCOLOGY", "MATERNAL FETAL MEDICINE", "OBSTETRICS & GYNAECOLOGY", "REPRODUCTIVE MEDICINE", "URO-GYNAECOLOGY"],
+    "Oncology, Radiology & Physical Medicine": ["CLINICAL ONCOLOGY", "CLINICAL RADIOLOGY", "NUCLEAR MEDICINE", "ONCOLOGY", "RADIATION ONCOLOGY", "REHABILITATION MEDICINE", "SPORTS MEDICINE"],
+    "Paediatrics & Subspecialties": ["ADOLESCENT MEDICINE", "CLINICAL GENETICS", "DEVELOPMENTAL PAEDIATRICS", "GENERAL PAEDIATRICS", "NEONATOLOGY", "PAEDIATRIC CARDIOLOGY", "PAEDIATRIC DERMATOLOGY", "PAEDIATRIC ENDOCRINOLOGY", "PAEDIATRIC GASTROENTEROLOGY", "PAEDIATRIC HAEMATOLOGY & ONCOLOGY", "PAEDIATRIC INFECTIOUS DISEASES", "PAEDIATRIC INTENSIVE CARE", "PAEDIATRIC NEPHROLOGY", "PAEDIATRIC NEUROLOGY", "PAEDIATRIC RESPIRATORY MEDICINE", "PAEDIATRIC RHEUMATOLOGY", "PAEDIATRICS AND CHILD HEALTH"],
+    "Pathology": ["ANATOMICAL PATHOLOGY", "CHEMICAL PATHOLOGY", "FORENSIC PATHOLOGY", "GENERAL PATHOLOGY", "GENETIC PATHOLOGY", "HAEMATOLOGY", "TRANSFUSION MEDICINE"],
+    "Psychiatry": ["CHILD AND ADOLESCENT PSYCHIATRY", "FORENSIC PSYCHIATRY", "PSYCHIATRY"],
+    "Public, Occupational & Military Health": ["COMMUNICABLE DISEASE EPIDEMIOLOGY", "MILITARY MEDICINE", "NON-COMMUNICABLE DISEASE EPIDEMIOLOGY", "OCCUPATIONAL HEALTH", "PUBLIC HEALTH MEDICINE"],
+    "Surgical Specialties & Subspecialties": ["GENERAL SURGERY", "NEUROSURGERY", "OPHTHALMOLOGY", "ORTHOPAEDIC SURGERY", "OTORHINOLARYNGOLOGY (ENT)", "PLASTIC SURGERY", "UROLOGY", "VASCULAR SURGERY"]
 }
 
 SPECIALTY_DROPDOWN_OPTIONS = ["None", "OTHERS"]
@@ -373,14 +260,6 @@ for field in sorted(SPECIALTIES_BY_FIELD.keys()):
     for spec in sorted(SPECIALTIES_BY_FIELD[field]):
         SPECIALTY_DROPDOWN_OPTIONS.append(spec)
 
-def get_spec_index(default_name):
-    if default_name in SPECIALTY_DROPDOWN_OPTIONS:
-        return SPECIALTY_DROPDOWN_OPTIONS.index(default_name)
-    return 0
-
-# ---------------------------------------------------------
-# 4. STREAMLINED SHEET HEADERS
-# ---------------------------------------------------------
 GNU_SHEET_HEADER = [
     'MONTH', 'DATE', 'TIME', 'ROOM NO', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
     'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
@@ -460,47 +339,32 @@ def get_month_str(date_obj, fmt_style="numeric_prefix"):
         return f"{month_num}.{date_obj.strftime('%B')} "
     return month_name
 
-# ---------------------------------------------------------
-# 5. GOOGLE SHEETS CONNECTION & SETUP
-# ---------------------------------------------------------
 @st.cache_resource
 def init_google_sheets():
     from google.oauth2.service_account import Credentials
-    scope = [
-        "https://www.googleapis.com/auth/spreadsheets",
-        "https://www.googleapis.com/auth/drive"
-    ]
-    
+    scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
     if "gcp_service_account" in st.secrets:
         try:
             creds_dict = dict(st.secrets["gcp_service_account"])
             if "private_key" in creds_dict:
-                pk = str(creds_dict["private_key"])
-                pk = pk.strip("'\" \n\r")
-                pk = pk.replace("\\n", "\n")
-                
+                pk = str(creds_dict["private_key"]).strip("'\" \n\r").replace("\\n", "\n")
                 if "-----BEGIN PRIVATE KEY-----" in pk and "-----END PRIVATE KEY-----" in pk:
-                    start_idx = pk.find("-----BEGIN PRIVATE KEY-----")
-                    end_idx = pk.find("-----END PRIVATE KEY-----") + len("-----END PRIVATE KEY-----")
-                    pk = pk[start_idx:end_idx]
-                
+                    pk = pk[pk.find("-----BEGIN PRIVATE KEY-----"):pk.find("-----END PRIVATE KEY-----") + len("-----END PRIVATE KEY-----")]
                 creds_dict["private_key"] = pk
             creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
         except Exception as e:
-            st.error(f"Error parsing Streamlit Secrets credentials: {e}")
+            st.error(f"Error parsing credentials: {e}")
             st.stop()
     elif os.path.exists("credentials.json"):
         creds = Credentials.from_service_account_file("credentials.json", scopes=scope)
     else:
-        st.error("Google Cloud credentials not found! Please configure Streamlit Secrets (`gcp_service_account`) in your Streamlit Cloud app settings.")
+        st.error("Google Cloud credentials not found!")
         st.stop()
-        
     client = gspread.authorize(creds)
-    spreadsheet_title = "MTCMC_CENSUS_MASTERFILES_SYSTEM"
     try:
-        sh = client.open(spreadsheet_title)
+        sh = client.open("MTCMC_CENSUS_MASTERFILES_SYSTEM")
     except gspread.SpreadsheetNotFound:
-        sh = client.create(spreadsheet_title)
+        sh = client.create("MTCMC_CENSUS_MASTERFILES_SYSTEM")
     return sh
 
 sh = init_google_sheets()
@@ -510,7 +374,6 @@ def ensure_google_sheets_exist():
         existing_worksheets = [ws.title for ws in sh.worksheets()]
     except Exception:
         existing_worksheets = []
-    
     if "Hospital Information System" not in existing_worksheets:
         try:
             ws_sum = sh.add_worksheet(title="Hospital Information System", rows=100, cols=4)
@@ -518,7 +381,6 @@ def ensure_google_sheets_exist():
             ws_sum.update('A4:D4', [['Department / Module', 'Total Census Records', 'Daily Patient Census', 'Monthly Patient Census']])
         except Exception:
             pass
-
     for s_name, cols in SHEET_HEADERS.items():
         if s_name not in existing_worksheets:
             try:
@@ -536,12 +398,10 @@ def append_record_to_google_sheet(sheet_name, row_dict):
         if not headers:
             headers = SHEET_HEADERS.get(sheet_name, [])
             ws.update('A4', [headers])
-            
         row_values = []
         for h in headers:
             val = row_dict.get(h, "")
             row_values.append("" if (val is None or pd.isna(val)) else str(val).upper())
-            
         ws.append_row(row_values)
         return True
     except Exception as e:
@@ -557,77 +417,23 @@ def read_google_sheet(sheet_name):
             headers = data[3]
             rows = data[4:]
             if rows:
-                df = pd.DataFrame(rows, columns=headers[:len(rows[0])])
-                return df
+                return pd.DataFrame(rows, columns=headers[:len(rows[0])])
     except Exception as e:
-        st.warning(f"Note: Could not load sheet '{sheet_name}' from Google Sheets.")
+        st.warning(f"Note: Could not load sheet '{sheet_name}'.")
     return pd.DataFrame()
-
-def check_existing_patient_ai(sheet_name, last_name, fn, curr_date_str):
-    df = read_google_sheet(sheet_name)
-    if df.empty or 'LAST NAME' not in df.columns:
-        return None
-    
-    ln = str(last_name).strip().upper()
-    first = str(fn).strip().upper()
-    
-    if not ln or not first:
-        return None
-        
-    matches = df[
-        (df['LAST NAME'].astype(str).str.strip().str.upper() == ln) &
-        (df['FIRST NAME'].astype(str).str.strip().str.upper() == first)
-    ]
-    
-    if matches.empty:
-        return None
-        
-    same_date_match = matches[matches['DATE'].astype(str).str.strip() == curr_date_str]
-    if not same_date_match.empty:
-        return same_date_match.iloc[-1].to_dict()
-        
-    return None
 
 ensure_google_sheets_exist()
 
 # ---------------------------------------------------------
-# 6. STREAMLIT APP INTERFACE (HEADER & RBAC SIDEBAR)
+# UI HEADER & SIDEBAR NAVIGATION
 # ---------------------------------------------------------
 st.markdown("""
 <style>
-    .header-container {
-        display: flex;
-        align-items: center;
-        gap: 20px;
-        margin-bottom: 5px;
-    }
-    .header-logo {
-        width: 85px;
-        height: 85px;
-        object-fit: contain;
-        flex-shrink: 0;
-    }
-    .header-text-group {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-    }
-    .header-title {
-        margin: 0px !important;
-        line-height: 1.0 !important;
-        font-size: 2.35rem !important;
-        color: #1e3a8a !important;
-        font-weight: 800 !important;
-        padding-bottom: 0px !important;
-    }
-    .header-subtitle {
-        margin: -4px 0px 0px 0px !important;
-        font-size: 1.15rem !important;
-        color: #0f766e !important;
-        font-weight: 600 !important;
-        letter-spacing: 0.5px !important;
-        padding-top: 0px !important;
-    }
+    .header-container { display: flex; align-items: center; gap: 20px; margin-bottom: 5px; }
+    .header-logo { width: 85px; height: 85px; object-fit: contain; flex-shrink: 0; }
+    .header-text-group { display: flex; flex-direction: column; justify-content: center; }
+    .header-title { margin: 0px !important; line-height: 1.0 !important; font-size: 2.35rem !important; color: #1e3a8a !important; font-weight: 800 !important; }
+    .header-subtitle { margin: -4px 0px 0px 0px !important; font-size: 1.15rem !important; color: #0f766e !important; font-weight: 600 !important; letter-spacing: 0.5px !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -638,11 +444,7 @@ for logo_filename in ["logo_3.jpg", "logo_3.png", "logo.png", "logo_2.png", "ass
         break
 
 if logo_path_found:
-    import base64
-    def get_image_base64(path):
-        with open(path, "rb") as img_file:
-            return base64.b64encode(img_file.read()).decode()
-    img_base64 = get_image_base64(logo_path_found)
+    img_base64 = base64.b64encode(open(logo_path_found, "rb").read()).decode()
     logo_html = f'<img src="data:image/jpeg;base64,{img_base64}" class="header-logo">'
 else:
     logo_html = '<div style="background-color: #1e3a8a; width: 85px; height: 85px; border-radius: 12px; display: flex; align-items: center; justify-content: center;"><span style="color: white; font-size: 34px; font-weight: bold;">✚</span></div>'
@@ -657,15 +459,12 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Sidebar Profile Info, Dynamic Date & Time (Without seconds, updates every min), Database Security Notice & Sign Out
 st.sidebar.markdown(f"**Logged in as:** {st.session_state['name']}")
 st.sidebar.markdown(f"**Role:** `{st.session_state['role']}`")
 ph_now_display = get_ph_time()
 st.sidebar.markdown(f"**Date & Time:** `{ph_now_display.strftime('%B %d, %Y - %I:%M %p')}`")
-
 st.sidebar.markdown("---")
 
-# Role-Based Access Control (RBAC) Module Visibility (Hospital Information System fixed first, others sorted alphabetically)
 logged_user_key = st.session_state["username"]
 user_info = USER_DATABASE.get(logged_user_key, {})
 allowed_modules = user_info.get("modules", "All")
@@ -689,28 +488,124 @@ sorted_departments = sorted([
 ])
 
 all_department_modules = ["Hospital Information System"] + sorted_departments
-
-if logged_user_key in ["ecc_staff", "scc_staff", "endo_staff", "hdu_staff"]:
-    dept_map = {
-        "ecc_staff": "Emergency Care Complex (ECC)",
-        "scc_staff": "Surgical Care Complex (OR Main)",
-        "endo_staff": "Endoscopy Unit (ENDO)",
-        "hdu_staff": "Hemodialysis Unit (HDU)"
-    }
-    MODULES = ["Hospital Information System", dept_map[logged_user_key]]
-elif logged_user_key in ["nsgcon_staff", "ha_staff", "ha_staff1"]:
-    MODULES = ["Hospital Information System"]
-elif allowed_modules == "All":
-    MODULES = all_department_modules
-else:
-    MODULES = ["Hospital Information System"] + sorted([m for m in allowed_modules if m != "Hospital Information System"])
+MODULES = all_department_modules if allowed_modules == "All" else ["Hospital Information System"] + sorted([m for m in allowed_modules if m != "Hospital Information System"])
 
 st.sidebar.markdown("### 🧭 Department Navigation")
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
 
 # ---------------------------------------------------------
-# ADMIN WIPE DATA TOOL (Restricted to Administrator)
+# ADMIN GENERATE 100 PATIENT SEEDER FUNCTION
 # ---------------------------------------------------------
+if st.session_state["role"] == "Administrator":
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 🤖 Admin Seeder Tool")
+    with st.sidebar.expander("✨ Generate 100 ECC & Unit Patients"):
+        st.markdown("Click below to automatically populate 100 patient records registered to ECC and distributed across General Nursing Units and Special Care Complex.")
+        if st.button("🚀 Generate 100 Patient Records", type="primary"):
+            first_names = ["JUAN", "MARIA", "JOSE", "ANA", "PEDRO", "LUIS", "CARMEN", "ROSA", "ANTONIO", "FRANCISCO", "ELENA", "SOFIA", "MIGUEL", "CARLOS", "LUCIA"]
+            last_names = ["SANTOS", "REYES", "CRUZ", "BAUTISTA", "OCAMPO", "GARCIA", "MENDOZA", "TORRES", "SANTOS", "FLORES", "GONZALES", "RAMOS", "AQUINO", "DEL ROSARIO", "PASCUAL"]
+            diagnoses = ["ACUTE GASTROENTERITIS", "DENGUE FEVER", "HYPERTENSION", "URINARY TRACT INFECTION", "BRONCHIAL ASTHMA", "DIABETES MELLITUS", "COMMUNITY ACQUIRED PNEUMONIA", "ACUTE CORONARY SYNDROME"]
+            physicians = ["DR. E. SANTOS", "DR. M. REYES", "DR. A. CRUZ", "DR. J. BAUTISTA", "DR. R. OCAMPO"]
+            statuses = ["ACTIVE", "MGH", "DISCHARGED", "CAB"]
+            gnu_list = ["General Nursing Unit (GNU 1C)", "General Nursing Unit (GNU 2A)", "General Nursing Unit (GNU 2B)", "General Nursing Unit (GNU 2C)", "General Nursing Unit (GNU 2D)", "General Nursing Unit (GNU 3A)", "General Nursing Unit (GNU 3B)", "General Nursing Unit (GNU 3C)", "General Nursing Unit (GNU 4A)"]
+            scu_areas = ["NICU", "PICU", "NSU", "PCN", "OUTBORN"]
+
+            success_count = 0
+            for i in range(100):
+                fn = random.choice(first_names)
+                ln = random.choice(last_names)
+                sex = random.choice(["MALE", "FEMALE"])
+                age = str(random.randint(1, 85))
+                diag = random.choice(diagnoses)
+                doc = random.choice(physicians)
+                stat = random.choice(statuses)
+                room = f"RM-{random.randint(101, 499)}"
+                date_str = ph_now_display.strftime("%m/%d/%Y")
+                time_str = "10:00 AM"
+
+                # 1. Register to ECC
+                ecc_data = {
+                    'MONTH': get_month_str(ph_now_display.date(), "full_month"),
+                    'DATE': date_str,
+                    'TIME': time_str,
+                    'LAST NAME': ln,
+                    'FIRST NAME': fn,
+                    'MIDDLE NAME': "A",
+                    'SEX': sex,
+                    'AGE': age,
+                    'DIAGNOSIS': diag,
+                    'DISEASE CATEGORY': "OTHER CASES",
+                    'ATTENDING PHYSICIAN': doc,
+                    'ATTENDING SPECIALIZATION': "INTERNAL MEDICINE",
+                    'CO-MANAGEMENT PHYSICIAN': "N/A",
+                    'CO-MANAGEMENT SPECIALIZATION': "N/A",
+                    'HOSPITALIZATION MODE': "INPATIENT",
+                    'CASE TYPE': "PRIVATE CASE",
+                    'MODE OF PAYMENT': "PHIC",
+                    'ADMITTED TO': random.choice(GNU_LIST_AREAS if 'GNU_LIST_AREAS' in locals() else ["GNU 1C", "NSU"]),
+                    'CASE COUNT': 1
+                }
+                append_record_to_google_sheet("Emergency Care Complex (ECC)", ecc_data)
+
+                # 2. Add to Target Unit (GNU or Special Care Complex)
+                if random.choice([True, False]):
+                    target_gnu = random.choice(gnu_list)
+                    gnu_data = {
+                        'MONTH': get_month_str(ph_now_display.date(), "full_month"),
+                        'DATE': date_str,
+                        'TIME': time_str,
+                        'ROOM NO': room,
+                        'LAST NAME': ln,
+                        'FIRST NAME': fn,
+                        'MIDDLE NAME': "A",
+                        'SEX': sex,
+                        'AGE': age,
+                        'DIAGNOSIS': diag,
+                        'ATTENDING PHYSICIAN': doc,
+                        'ATTENDING SPECIALIZATION': "INTERNAL MEDICINE",
+                        'CO-MANAGEMENT PHYSICIAN': "N/A",
+                        'CO-MANAGEMENT SPECIALIZATION': "N/A",
+                        'HOSPITALIZATION MODE': "INPATIENT",
+                        'MODE OF PAYMENT': "PHIC",
+                        'PATIENT STATUS': stat,
+                        'PROCEDURES': "ROUTINE CARE",
+                        'DIAGNOSTIC EXAMINATIONS': "CBC, CBC-PLATELET",
+                        'MEDICATIONS': "PARACETAMOL",
+                        'SPECIAL ENDORSEMENTS': "NONE",
+                        'CASE COUNT': 1
+                    }
+                    append_record_to_google_sheet(target_gnu, gnu_data)
+                else:
+                    scu_data = {
+                        'MONTH': get_month_str(ph_now_display.date(), "numeric_prefix"),
+                        'DATE': date_str,
+                        'LAST NAME': ln,
+                        'FIRST NAME': fn,
+                        'MIDDLE NAME': "A",
+                        'SEX': sex,
+                        'AOG': "38 WKS",
+                        'AGE': f"{age} YRS",
+                        'DIAGNOSIS': diag,
+                        'DIAGNOSIS CATEGORY': "SEPSIS",
+                        'ADMITTED FROM': "ECC",
+                        'ADMITTED TO': random.choice(scu_areas),
+                        'TRANSFERRED TO': "NONE",
+                        'ATTENDING PHYSICIAN': doc,
+                        'ATTENDING SPECIALIZATION': "PAEDIATRICS",
+                        'CO-MANAGEMENT PHYSICIAN': "N/A",
+                        'CO-MANAGEMENT SPECIALIZATION': "N/A",
+                        'HOSPITALIZATION MODE': "INPATIENT",
+                        'MODE OF PAYMENT': "PHIC",
+                        'PATIENT STATUS': stat,
+                        'CASE COUNT': 1
+                    }
+                    append_record_to_google_sheet("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", scu_data)
+
+                success_count += 1
+            st.sidebar.success(f"Successfully generated {success_count} patient records!")
+            st.rerun()
+
+# Admin Wipe Data Tool
 if st.session_state["role"] == "Administrator":
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🛠️ Admin Developer Tools")
@@ -722,15 +617,13 @@ if st.session_state["role"] == "Administrator":
         if st.button("Execute Data Wipe", type="primary"):
             if confirm_wipe:
                 try:
-                    department_sheets_all = sorted(list(SHEET_HEADERS.keys()))
-                    for s_name in department_sheets_all:
+                    for s_name in SHEET_HEADERS.keys():
                         if wipe_sheets_toggle:
                             try:
                                 ws = sh.worksheet(s_name)
                                 ws.clear()
-                                headers = SHEET_HEADERS.get(s_name, [])
                                 ws.update('A1', [[f"MTCMC CLINICAL CENSUS - {s_name} MASTERFILE"]])
-                                ws.update('A4', [headers])
+                                ws.update('A4', [SHEET_HEADERS[s_name]])
                             except Exception:
                                 pass
                     st.sidebar.success("Successfully wiped app data!")
@@ -743,12 +636,8 @@ if st.session_state["role"] == "Administrator":
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📥 Export Reports")
 
-# ---------------------------------------------------------
-# EXPORT TO EXCEL & PDF UTILITIES ON SIDEBAR
-# ---------------------------------------------------------
 active_export_df = read_google_sheet(selected_sheet) if selected_sheet != "Hospital Information System" else read_google_sheet("Emergency Care Complex (ECC)")
 
-# Excel Export
 excel_buffer = io.BytesIO()
 with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
     if not active_export_df.empty:
@@ -764,49 +653,29 @@ st.sidebar.download_button(
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 )
 
-# PDF Export (HTML-based robust fallback for Streamlit Cloud)
 def convert_df_to_pdf_html(df, title):
     html_content = f"""
-    <html>
-    <head>
-        <title>{title}</title>
-        <style>
-            body {{ font-family: Helvetica, Arial, sans-serif; color: #1e293b; margin: 20px; }}
-            h2 {{ color: #1e3a8a; }}
-            p {{ color: #0f766e; font-size: 12px; }}
-            table {{ border-collapse: collapse; width: 100%; margin-top: 15px; font-size: 9px; }}
-            th {{ background-color: #1e3a8a; color: white; padding: 6px; border: 1px solid #cbd5e1; text-align: left; }}
-            td {{ padding: 5px; border: 1px solid #cbd5e1; }}
-        </style>
-    </head>
-    <body>
-        <h2>MOTHER TERESA OF CALCUTTA MEDICAL CENTER</h2>
-        <p><strong>Module:</strong> {title} | Generated: {datetime.now().strftime('%Y-%m-%d %I:%M %p')}</p>
-        <hr>
+    <html><head><title>{title}</title>
+    <style>body {{ font-family: Helvetica, Arial, sans-serif; color: #1e293b; margin: 20px; }}
+    h2 {{ color: #1e3a8a; }} p {{ color: #0f766e; font-size: 12px; }}
+    table {{ border-collapse: collapse; width: 100%; margin-top: 15px; font-size: 9px; }}
+    th {{ background-color: #1e3a8a; color: white; padding: 6px; border: 1px solid #cbd5e1; text-align: left; }}
+    td {{ padding: 5px; border: 1px solid #cbd5e1; }}</style></head>
+    <body><h2>MOTHER TERESA OF CALCUTTA MEDICAL CENTER</h2>
+    <p><strong>Module:</strong> {title} | Generated: {datetime.now().strftime('%Y-%m-%d %I:%M %p')}</p><hr>
     """
-    if not df.empty:
-        html_content += df.head(100).to_html(index=False, border=0)
-    else:
-        html_content += "<p>No records available for export.</p>"
-    html_content += "</body></html>"
-    return html_content.encode('utf-8')
-
-pdf_data = convert_df_to_pdf_html(active_export_df, selected_sheet)
+    html_content += df.head(100).to_html(index=False, border=0) if not df.empty else "<p>No records available.</p>"
+    return (html_content + "</body></html>").encode('utf-8')
 
 st.sidebar.download_button(
     label="📄 Export as PDF",
-    data=pdf_data,
+    data=convert_df_to_pdf_html(active_export_df, selected_sheet),
     file_name=f"MTCMC_{selected_sheet.replace(' ', '_')}_Report.html",
     mime="text/html"
 )
 
 st.sidebar.markdown("---")
-st.sidebar.markdown(
-    "<p style='font-size: 0.85rem; color: #0f766e; font-style: italic; margin-bottom: 10px;'>"
-    "All data entries are securely stored on our hospital database."
-    "</p>", 
-    unsafe_allow_html=True
-)
+st.sidebar.markdown("<p style='font-size: 0.85rem; color: #0f766e; font-style: italic; margin-bottom: 10px;'>All data entries are securely stored on our hospital database.</p>", unsafe_allow_html=True)
 
 if st.sidebar.button("🔄 Refresh Data"):
     st.cache_resource.clear()
@@ -817,11 +686,6 @@ if st.sidebar.button("Sign Out"):
     st.session_state["authenticated"] = False
     st.rerun()
 
-# ---------------------------------------------------------
-# CONDITIONAL AUTO-REFRESH (Every 1 minute)
-# Only active on the Hospital Information System dashboard.
-# Bypassed on department tabs while users are actively encoding data.
-# ---------------------------------------------------------
 if selected_sheet == "Hospital Information System":
     try:
         from streamlit_autorefresh import st_autorefresh
@@ -839,21 +703,12 @@ if selected_sheet == "Hospital Information System":
     st.markdown("This is the current active census summary today.")
 
     department_sheets = sorted([
-        "Emergency Care Complex (ECC)", 
-        "Endoscopy Unit (ENDO)", 
-        "Hemodialysis Unit (HDU)", 
-        "OBGYNE Care Complex (LRDR-OB Surgery)", 
-        "Surgical Care Complex (OR Main)", 
+        "Emergency Care Complex (ECC)", "Endoscopy Unit (ENDO)", "Hemodialysis Unit (HDU)", 
+        "OBGYNE Care Complex (LRDR-OB Surgery)", "Surgical Care Complex (OR Main)", 
         "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
-        "General Nursing Unit (GNU 1C)",
-        "General Nursing Unit (GNU 2A)",
-        "General Nursing Unit (GNU 2B)",
-        "General Nursing Unit (GNU 2C)",
-        "General Nursing Unit (GNU 2D)",
-        "General Nursing Unit (GNU 3A)",
-        "General Nursing Unit (GNU 3B)",
-        "General Nursing Unit (GNU 3C)",
-        "General Nursing Unit (GNU 4A)"
+        "General Nursing Unit (GNU 1C)", "General Nursing Unit (GNU 2A)", "General Nursing Unit (GNU 2B)", 
+        "General Nursing Unit (GNU 2C)", "General Nursing Unit (GNU 2D)", "General Nursing Unit (GNU 3A)", 
+        "General Nursing Unit (GNU 3B)", "General Nursing Unit (GNU 3C)", "General Nursing Unit (GNU 4A)"
     ])
     
     gnu_sheets = [d for d in department_sheets if d.startswith("General Nursing Unit (GNU")]
@@ -873,9 +728,7 @@ if selected_sheet == "Hospital Information System":
     for dept in department_sheets:
         df = read_google_sheet(dept)
         record_count = len(df) if not df.empty else 0
-        
-        daily_count = 0
-        monthly_count = 0
+        daily_count, monthly_count = 0, 0
         
         if not df.empty and 'DATE' in df.columns:
             daily_count = len(df[df['DATE'].astype(str).str.strip() == today_str])
@@ -939,9 +792,6 @@ if selected_sheet == "Hospital Information System":
 
     st.markdown("---")
 
-    # ---------------------------------------------------------
-    # ACTIVE PATIENT ROSTER (Derived from General Nursing Units - Active & MGH only)
-    # ---------------------------------------------------------
     st.subheader("📋 Active Patient Roster")
     st.markdown("Aggregated live roster displaying active & MGH patient records from General Nursing Units.")
 
@@ -955,7 +805,6 @@ if selected_sheet == "Hospital Information System":
 
     if gnu_roster_frames:
         master_gnu_df = pd.concat(gnu_roster_frames, ignore_index=True)
-        
         if 'PATIENT STATUS' in master_gnu_df.columns:
             master_gnu_df['PATIENT STATUS'] = master_gnu_df['PATIENT STATUS'].fillna("ACTIVE")
             gnu_filtered = master_gnu_df[
@@ -1001,7 +850,6 @@ if selected_sheet == "Hospital Information System":
     dept_df = read_google_sheet(selected_dept_view)
     if not dept_df.empty:
         st.write(f"Showing all records for **{selected_dept_view}** (Total: {len(dept_df)} records)")
-        
         if selected_dept_view.startswith("General Nursing Unit (GNU") and 'LAST NAME' in dept_df.columns and 'PATIENT STATUS' in dept_df.columns:
             dept_df['PATIENT & STATUS'] = dept_df['LAST NAME'].astype(str).str.strip() + ", " + dept_df['FIRST NAME'].astype(str).str.strip() + " [" + dept_df['PATIENT STATUS'].astype(str).str.strip() + "]"
 
@@ -1009,7 +857,6 @@ if selected_sheet == "Hospital Information System":
             st.markdown("##### 📍 Sort & Filter by Admitted Area")
             admit_areas = sorted(dept_df['ADMITTED TO'].dropna().unique().tolist())
             selected_area = st.selectbox("Select Admitted To Area", ["All Areas"] + admit_areas)
-            
             if selected_area != "All Areas":
                 dept_df = dept_df[dept_df['ADMITTED TO'] == selected_area]
                 st.write(f"Filtered to **{selected_area}** ({len(dept_df)} records)")
