@@ -140,13 +140,13 @@ def get_spec_index(default_name):
     return 0
 
 # ---------------------------------------------------------
-# 3. STREAMLINED SHEET HEADERS
+# 3. STREAMLINED SHEET HEADERS (UPDATED ECC & SCU HEADERS)
 # ---------------------------------------------------------
 SHEET_HEADERS = {
     "Emergency Care Complex (ECC)": [
         'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
         'DISEASE CATEGORIES', 'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
-        'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'TRANSFERRED TO', 'CASE COUNT'
+        'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'ADMITTED TO', 'CASE COUNT'
     ],
     "Endoscopy Unit (ENDO)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
@@ -183,7 +183,7 @@ SHEET_HEADERS = {
     ],
     "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)": [
         'MONTH', 'DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AOG', 'AGE', 'DIAGNOSIS', 
-        'DIAGNOSTIC FLAGS', 'ADMITTED FROM', 'ADMITTED TO', 
+        'DIAGNOSTIC FLAGS', 'ADMITTED FROM', 'ADMITTED TO', 'TRANSFERRED TO', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'CASE COUNT'
@@ -417,9 +417,8 @@ if selected_sheet == "Hospital Information System":
     if not dept_df.empty:
         st.write(f"Showing all records for **{selected_dept_view}** (Total: {len(dept_df)} records)")
         
-        # If reviewing Special Care Complex, add sorting/filtering by Admitted To area
         if selected_dept_view == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)" and 'ADMITTED TO' in dept_df.columns:
-            st.markdown("##### 📍 Filter & Sort Census by Admitted Area")
+            st.markdown("##### 📍 Sort & Filter by Admitted Area")
             admit_areas = sorted(dept_df['ADMITTED TO'].dropna().unique().tolist())
             selected_area = st.selectbox("Select Admitted To Area", ["All Areas"] + admit_areas)
             
@@ -427,8 +426,8 @@ if selected_sheet == "Hospital Information System":
                 dept_df = dept_df[dept_df['ADMITTED TO'] == selected_area]
                 st.write(f"Filtered to **{selected_area}** ({len(dept_df)} records)")
 
-        # Specific columns to highlight if available
-        display_cols = [c for c in ['DATE', 'LAST NAME', 'FIRST NAME', 'DIAGNOSIS', 'DIAGNOSTIC FLAGS', 'ATTENDING PHYSICIAN', 'ADMITTED TO', 'MODE OF PAYMENT'] if c in dept_df.columns]
+        preferred_cols = ['DATE', 'LAST NAME', 'FIRST NAME', 'DIAGNOSIS', 'DIAGNOSTIC FLAGS', 'ATTENDING PHYSICIAN', 'PRIMARY SURGEON', 'SURGEON / PROCEDURALIST', 'SURGEON / OBGYNE', 'ADMITTED TO', 'TRANSFERRED TO', 'MODE OF PAYMENT']
+        display_cols = [c for c in preferred_cols if c in dept_df.columns]
         if not display_cols:
             display_cols = dept_df.columns.tolist()
 
@@ -480,7 +479,11 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         with c_doc3:
             payment_selected = st.selectbox("Mode of Payment", ["PHIC", "HMO", "SELF-PAY", "CHARITY"])
         with c_doc4:
-            transferred_to = st.selectbox("Transferred To", ["None", "GNU", "PICU", "ICU"])
+            unit_areas_list = [
+                "None", "GNU 1C", "GNU 2A", "GNU 2B", "GNU 2C", "GNU 2D", 
+                "GNU 3A", "GNU 3B", "GNU 3C", "GNU 4A", "ICU", "PICU", "OUTBORN"
+            ]
+            admitted_to = st.selectbox("Admitted to", unit_areas_list)
 
         st.subheader("📋 Clinical Details")
         diagnosis_text = st.text_area("Clinical Diagnosis")
@@ -515,7 +518,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
                 'ATTENDING SPECIALIZATION': attending_spec,
                 'HOSPITALIZATION MODE': hosp_mode,
                 'MODE OF PAYMENT': payment_selected,
-                'TRANSFERRED TO': transferred_to,
+                'ADMITTED TO': admitted_to,
                 'CASE COUNT': 1
             }
 
@@ -1049,9 +1052,15 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         with c11:
             admitted_to = st.selectbox("Admitted To", ["NICU", "PICU", "NSU", "PCN", "OUTBORN", "ROOM-IN"])
         with c12:
-            hosp_mode = st.radio("Hospitalization Mode", ["IPD", "OPD"])
+            unit_areas_list = [
+                "None", "GNU 1C", "GNU 2A", "GNU 2B", "GNU 2C", "GNU 2D", 
+                "GNU 3A", "GNU 3B", "GNU 3C", "GNU 4A", "ICU", "PICU", "OUTBORN"
+            ]
+            transferred_to = st.selectbox("Transferred To", unit_areas_list)
         with c13:
-            payment_selected = st.selectbox("Mode of Payment", ["PHIC", "HMO", "SELF-PAY"])
+            hosp_mode = st.radio("Hospitalization Mode", ["IPD", "OPD"])
+
+        payment_selected = st.selectbox("Mode of Payment", ["PHIC", "HMO", "SELF-PAY"])
 
         st.subheader("📋 Diagnosis & Diagnostic Flags")
         diagnosis = st.text_area("Diagnosis Text")
@@ -1086,6 +1095,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
                 'DIAGNOSTIC FLAGS': ", ".join(diag_flags) if diag_flags else "None",
                 'ADMITTED FROM': admitted_from,
                 'ADMITTED TO': admitted_to,
+                'TRANSFERRED TO': transferred_to,
                 'ATTENDING PHYSICIAN': attending_physician if attending_physician else "N/A",
                 'ATTENDING SPECIALIZATION': attending_spec,
                 'CO-MANAGEMENT PHYSICIAN': cm_names_str,
