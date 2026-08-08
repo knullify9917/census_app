@@ -28,58 +28,124 @@ THIN_BORDER = Border(
 )
 
 # ---------------------------------------------------------
-# 2. UNIFIED SPECIALTIES SORTED BY FIELD OF MEDICINE THEN ALPHABETICALLY
+# 2. EXACT SPECIALTIES SORTED BY FIELD OF MEDICINE THEN ALPHABETICALLY
 # ---------------------------------------------------------
 SPECIALTIES_BY_FIELD = {
-    "Anesthesiology & Pain Medicine": [
-        "ANESTHESIOLOGY"
+    "Anaesthesiology": [
+        "GENERAL ANAESTHESIOLOGY",
+        "NEURO - ANAESTHESIOLOGY",
+        "PEDIA - ANAESTHESIOLOGY"
     ],
-    "Dental & Oral Surgery": [
-        "DENTAL SURGERY"
-    ],
-    "Diagnostic & Interventional Medicine": [
-        "INTERVENTIONAL RADIOLOGY"
-    ],
-    "Internal Medicine & Subspecialties": [
-        "GASTROENTEROLOGY",
-        "HEMATOLOGY / ONCOLOGY",
-        "INTERNAL MEDICINE & CARDIOLOGY",
-        "NEPHROLOGY",
-        "NEUROLOGY",
-        "PULMONOLOGY"
-    ],
-    "Obstetrics & Gynecology": [
-        "OBSTETRICS & GYNECOLOGY (OBGYNE)"
-    ],
-    "Pediatrics & Neonatology": [
-        "NEONATOLOGY",
-        "PEDIATRICS"
-    ],
-    "Primary Care & Community Medicine": [
+    "Emergency & Family Medicine": [
+        "EMERGNCY MEDICINE",
         "FAMILY MEDICINE"
     ],
-    "Surgical Specialties": [
+    "Internal Medicine & Subspecialties": [
+        "CARDIOLOGY",
+        "CLINICAL HAEMATOLOGY",
+        "DERMATOLOGY",
+        "ENDOCRINOLOGY",
+        "GASTROENTEROLOGY & HEPATOLOGY",
+        "GERIATRIC MEDICINE",
+        "INFECTIOUS DISEASES",
+        "INFECTIOUS DISEASES MEDICINE",
+        "INTENSIVE CARE MEDICINE",
+        "INTERNAL MEDICINE",
+        "MEDICAL ONCOLOGY",
+        "NEPHROLOGY",
+        "NEUROLOGY",
+        "PALLIATIVE MEDICINE",
+        "RESPIRATORY MEDICINE",
+        "RHEUMATOLOGY"
+    ],
+    "Obstetrics & Gynaecology": [
+        "GYNAE-ONCOLOGY",
+        "MATERNAL FETAL MEDICINE",
+        "OBSTETRICS & GYNAECOLOGY",
+        "REPRODUCTIVE MEDICINE",
+        "URO-GYNAECOLOGY"
+    ],
+    "Oncology, Radiology & Physical Medicine": [
+        "CLINICAL ONCOLOGY",
+        "CLINICAL RADIOLOGY",
+        "NUCLEAR MEDICINE",
+        "ONCOLOGY",
+        "RADIATION ONCOLOGY",
+        "REHABILITATION MEDICINE",
+        "SPORTS MEDICINE"
+    ],
+    "Paediatrics & Subspecialties": [
+        "ADOLESCENT MEDICINE",
+        "CLINICAL GENETICS",
+        "DEVELOPMENTAL PAEDIATRICS",
+        "GENERAL PAEDIATRICS",
+        "NEONATOLOGY",
+        "PAEDIATRIC CARDIOLOGY",
+        "PAEDIATRIC DERMATOLOGY",
+        "PAEDIATRIC ENDOCRINOLOGY",
+        "PAEDIATRIC GASTROENTEROLOGY",
+        "PAEDIATRIC HAEMATOLOGY & ONCOLOGY",
+        "PAEDIATRIC INFECTIOUS DISEASES",
+        "PAEDIATRIC INTENSIVE CARE",
+        "PAEDIATRIC NEPHROLOGY",
+        "PAEDIATRIC NEUROLOGY",
+        "PAEDIATRIC RESPIRATORY MEDICINE",
+        "PAEDIATRIC RHEUMATOLOGY",
+        "PAEDIATRICS AND CHILD HEALTH"
+    ],
+    "Pathology": [
+        "ANATOMICAL PATHOLOGY",
+        "CHEMICAL PATHOLOGY",
+        "CHEMICAL PATHOLOGY (METABOLIC MEDICINE)",
+        "FORENSIC PATHOLOGY",
+        "GENERAL PATHOLOGY",
+        "GENETIC PATHOLOGY",
+        "HAEMATOLOGY",
+        "TRANSFUSION MEDICINE"
+    ],
+    "Psychiatry": [
+        "CHILD AND ADOLESCENT PSYCHIATRY",
+        "FORENSIC PSYCHIATRY",
+        "PSYCHIATRY"
+    ],
+    "Public, Occupational & Military Health": [
+        "COMMUNICABLE DISEASE EPIDEMIOLOGY",
+        "MILITARY MEDICINE",
+        "NON-COMMUNICABLE DISEASE EPIDEMIOLOGY",
+        "OCCUPATIONAL HEALTH",
+        "PUBLIC HEALTH MEDICINE"
+    ],
+    "Surgical Specialties & Subspecialties": [
+        "ADVANCED MUSCOSKELETAL TRAUMA",
+        "ARTHOPLASTY",
+        "ARTHROSCOPY & SPORT SURGERY",
+        "BREAST / AND ENDOCRINE SURGERY",
         "COLORECTAL SURGERY",
-        "EENT / ENT",
         "GENERAL SURGERY",
+        "HEPATOBILIARY SURGERY",
         "NEUROSURGERY",
         "OPHTHALMOLOGY",
-        "ORTHOPEDICS",
-        "PEDIATRIC SURGERY",
-        "THORACIC & CARDIOVASCULAR SURGERY (TCVS)",
-        "UROLOGY"
+        "ORTHOPAEDIC ONCOLOGY",
+        "ORTHOPAEDIC SURGERY",
+        "OTORHINOLARYNGOLOGY (ENT)",
+        "PAEDIATRIC ORTHOPAEDICS",
+        "PAEDIATRIC SURGERY",
+        "PLASTIC SURGERY",
+        "SPINE SURGERY",
+        "THORACIC / CARDIOTHORACIC SURGERY",
+        "UPPER GIT SURGERY",
+        "UPPER LIMB & MICROSURGERY",
+        "UROLOGY",
+        "VASCULAR SURGERY"
     ]
 }
 
-# Build sorted lists for Streamlit dropdowns
-SPECIALTY_DROPDOWN_OPTIONS = ["None / Unspecified"]
-SPECIALTY_NAME_MAP = {}
+# Build sorted plain dropdown options exactly as written
+SPECIALTY_DROPDOWN_OPTIONS = ["OTHERS"]
 
 for field in sorted(SPECIALTIES_BY_FIELD.keys()):
     for spec in sorted(SPECIALTIES_BY_FIELD[field]):
-        label = f"[{field}] {spec}"
-        SPECIALTY_DROPDOWN_OPTIONS.append(label)
-        SPECIALTY_NAME_MAP[label] = spec
+        SPECIALTY_DROPDOWN_OPTIONS.append(spec)
 
 SHEET_HEADERS = {
     "ECC TOP DISEASES": ['MONTH', 'DATE', 'TIME', 'PATIENT', 'AGE', 'DIAGNOSIS', 'ACUTE GASTROENTERITIS', 'DENGUE FEVER', 'HYPERTENSION', 'GASTROESOPHAGEAL REFLUX DISEASE', 'URINARY TRACT INFECTION', 'BRONCHIAL ASTHMA', 'DIABETES MELLITUS', 'RESPIRATORY TRACT INECTION', 'ELECTROLYTE IMBALANCE', 'ACUTE TONSILLOPHARYNGITIS', 'ANIMAL BITE', 'VERTIGO', 'HYPERSENSITIVITY REACTION', 'INFECTED WOUND', 'ACUTE CORONARY SYNDROME', 'SYSTEMIC VIRAL ILLNESS', 'FRACTURE', 'OTHER CASES', 'PHYSICIAN', 'NEUROLOGY', 'IM & CARDIO', 'PULMO', 'GENERAL SURGERY', 'ORTHOPEDICS', 'NEPHROLOGY', 'UROLOGY', 'TCVS', 'OBGYNE', 'PEDIATRICS', 'FAMILY MED', 'IPD', 'OPD', 'ICU', 'PICU', 'CASE COUNT'],
@@ -221,7 +287,7 @@ if selected_sheet == "ECC TOP DISEASES":
         with c2:
             age = st.number_input("Age", min_value=0, max_value=120, value=25)
             physician = st.text_input("Attending Physician Name")
-            specialty_sel = st.selectbox("Physician Specialty (Sorted by Field of Medicine)", SPECIALTY_DROPDOWN_OPTIONS)
+            specialty_sel = st.selectbox("Physician Specialty", SPECIALTY_DROPDOWN_OPTIONS)
         with c3:
             location = st.selectbox("Care Location", ["OPD", "IPD", "ICU", "PICU"])
             diagnosis_text = st.text_area("Clinical Diagnosis")
@@ -255,22 +321,22 @@ if selected_sheet == "ECC TOP DISEASES":
                 row_data[d] = 1.0
 
             # Map specialty to ECC column names
-            spec_name = SPECIALTY_NAME_MAP.get(specialty_sel, "")
             ecc_map = {
                 "NEUROLOGY": "NEUROLOGY",
-                "INTERNAL MEDICINE & CARDIOLOGY": "IM & CARDIO",
-                "PULMONOLOGY": "PULMO",
+                "INTERNAL MEDICINE": "IM & CARDIO",
+                "CARDIOLOGY": "IM & CARDIO",
+                "RESPIRATORY MEDICINE": "PULMO",
                 "GENERAL SURGERY": "GENERAL SURGERY",
-                "ORTHOPEDICS": "ORTHOPEDICS",
+                "ORTHOPAEDIC SURGERY": "ORTHOPEDICS",
                 "NEPHROLOGY": "NEPHROLOGY",
                 "UROLOGY": "UROLOGY",
-                "THORACIC & CARDIOVASCULAR SURGERY (TCVS)": "TCVS",
-                "OBSTETRICS & GYNECOLOGY (OBGYNE)": "OBGYNE",
-                "PEDIATRICS": "PEDIATRICS",
+                "THORACIC / CARDIOTHORACIC SURGERY": "TCVS",
+                "OBSTETRICS & GYNAECOLOGY": "OBGYNE",
+                "GENERAL PAEDIATRICS": "PEDIATRICS",
                 "FAMILY MEDICINE": "FAMILY MED"
             }
-            if spec_name in ecc_map:
-                row_data[ecc_map[spec_name]] = 1.0
+            if specialty_sel in ecc_map:
+                row_data[ecc_map[specialty_sel]] = 1.0
 
             if append_record_to_excel("ECC TOP DISEASES", row_data):
                 st.success("Successfully saved to `ECC TOP DISEASES` sheet!")
@@ -293,7 +359,7 @@ elif selected_sheet == "ENDO":
             procedure_text = st.text_input("Procedure Name")
             physician = st.text_input("Attending Physician")
         with c3:
-            specialty_sel = st.selectbox("Attending Specialty (Sorted by Field of Medicine)", SPECIALTY_DROPDOWN_OPTIONS)
+            specialty_sel = st.selectbox("Attending Specialty", SPECIALTY_DROPDOWN_OPTIONS)
             gastro = st.text_input("Gastroenterologist")
             ent = st.text_input("ENT Specialist")
             anesthesiologist = st.text_input("Anesthesiologist")
@@ -346,7 +412,7 @@ elif selected_sheet == "HDU":
             diagnosis = st.text_input("Diagnosis", value="CKD")
         with c2:
             physician = st.text_input("Nephrologist", value="DR. ALEJANDRO SESE JR.")
-            specialty_sel = st.selectbox("Physician Specialty (Sorted by Field of Medicine)", SPECIALTY_DROPDOWN_OPTIONS)
+            specialty_sel = st.selectbox("Physician Specialty", SPECIALTY_DROPDOWN_OPTIONS)
             shift_set = st.selectbox("Dialysis Shift Slot", ["1ST SET", "2ND SET", "3RD SET", "ONCALL"])
             patient_type = st.radio("Patient Type", ["OPD", "IPD"])
 
@@ -389,7 +455,7 @@ elif selected_sheet == "OBGYNE CASES":
             procedure = st.text_input("Procedure Name")
         with c3:
             surgeon = st.text_input("Surgeon / OBGYNE")
-            specialty_sel = st.selectbox("Attending Specialty (Sorted by Field of Medicine)", SPECIALTY_DROPDOWN_OPTIONS)
+            specialty_sel = st.selectbox("Attending Specialty", SPECIALTY_DROPDOWN_OPTIONS)
             anesthesiologist = st.text_input("Anesthesiologist")
 
         ca, cb, cc = st.columns(3)
@@ -447,7 +513,7 @@ elif selected_sheet == "SCC CASES":
             procedure = st.text_area("Surgical Procedure")
         with c3:
             surgeon = st.text_input("Primary Surgeon")
-            specialty_sel = st.selectbox("Surgical Department / Specialty (Sorted by Field of Medicine)", SPECIALTY_DROPDOWN_OPTIONS)
+            specialty_sel = st.selectbox("Surgical Department / Specialty", SPECIALTY_DROPDOWN_OPTIONS)
             anesthesiologist = st.text_input("Anesthesiologist")
 
         all_scc_procs = [
@@ -485,23 +551,22 @@ elif selected_sheet == "SCC CASES":
             }
 
             # Map specialty selection to SCC column
-            spec_name = SPECIALTY_NAME_MAP.get(specialty_sel, "")
             scc_map = {
                 "GENERAL SURGERY": "GENERAL SURGERY",
                 "OPHTHALMOLOGY": "OPHTHALMOLOGY",
                 "NEUROSURGERY": "NEUROSURGERY",
                 "INTERVENTIONAL RADIOLOGY": "INTERVENTIONAL RADIOLOGY",
-                "ORTHOPEDICS": "ORTHOPEDICS",
-                "EENT / ENT": "EENT",
+                "ORTHOPAEDIC SURGERY": "ORTHOPEDICS",
+                "OTORHINOLARYNGOLOGY (ENT)": "EENT",
                 "COLORECTAL SURGERY": "COLORECTAL",
                 "UROLOGY": "UROLOGY",
                 "DENTAL SURGERY": "DENTAL SURGERY",
-                "THORACIC & CARDIOVASCULAR SURGERY (TCVS)": "TCVS",
-                "PEDIATRIC SURGERY": "PEDIATRIC SURGERY",
-                "OBSTETRICS & GYNECOLOGY (OBGYNE)": "OBGYNE"
+                "THORACIC / CARDIOTHORACIC SURGERY": "TCVS",
+                "PAEDIATRIC SURGERY": "PEDIATRIC SURGERY",
+                "OBSTETRICS & GYNAECOLOGY": "OBGYNE"
             }
-            if spec_name in scc_map:
-                row_data[scc_map[spec_name]] = scc_map[spec_name]
+            if specialty_sel in scc_map:
+                row_data[scc_map[specialty_sel]] = scc_map[specialty_sel]
 
             if anesthesiologist:
                 row_data['ANESTHESIOLOGIST'] = anesthesiologist
@@ -532,7 +597,7 @@ elif selected_sheet == "SCU CASES":
         with c3:
             diagnosis = st.text_area("Diagnosis Text")
             scu_unit = st.selectbox("SCU Unit", ["NICU", "PICU", "GNU", "ER", "NSU", "OUTBORN"])
-            subspecialties = st.multiselect("Subspecialties (Sorted by Field of Medicine)", SPECIALTY_DROPDOWN_OPTIONS[1:])
+            subspecialties = st.multiselect("Subspecialties", SPECIALTY_DROPDOWN_OPTIONS[1:])
 
         diag_flags = st.multiselect("Diagnostic Flags", ["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY"])
 
@@ -558,15 +623,19 @@ elif selected_sheet == "SCU CASES":
             for d in diag_flags: row_data[d] = 1.0
             
             scu_map = {
-                "PEDIATRICS": "PEDIATRICS",
+                "GENERAL PAEDIATRICS": "PEDIATRICS",
+                "PAEDIATRICS AND CHILD HEALTH": "PEDIATRICS",
                 "NEONATOLOGY": "NEONATOLOGY",
-                "PULMONOLOGY": "PULMONOLOGY",
-                "HEMATOLOGY / ONCOLOGY": "HEMETOLOGY / ONCOLOGY",
+                "RESPIRATORY MEDICINE": "PULMONOLOGY",
+                "PAEDIATRIC RESPIRATORY MEDICINE": "PULMONOLOGY",
+                "CLINICAL HAEMATOLOGY": "HEMETOLOGY / ONCOLOGY",
+                "MEDICAL ONCOLOGY": "HEMETOLOGY / ONCOLOGY",
+                "PAEDIATRIC HAEMATOLOGY & ONCOLOGY": "HEMETOLOGY / ONCOLOGY",
                 "NEUROSURGERY": "NEUROSURGERY",
-                "GENERAL SURGERY": "GENERAL SURGERY"
+                "GENERAL SURGERY": "GENERAL SURGERY",
+                "PAEDIATRIC SURGERY": "GENERAL SURGERY"
             }
-            for s_label in subspecialties:
-                s_name = SPECIALTY_NAME_MAP.get(s_label, "")
+            for s_name in subspecialties:
                 if s_name in scu_map:
                     row_data[scu_map[s_name]] = scu_map[s_name]
 
