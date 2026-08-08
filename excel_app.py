@@ -383,10 +383,7 @@ if selected_sheet == "Hospital Information System":
         monthly_count = 0
         
         if not df.empty and 'DATE' in df.columns:
-            # Calculate Daily Census (matches current date)
             daily_count = len(df[df['DATE'].astype(str).str.strip() == today_str])
-            
-            # Calculate Monthly Census (matches current month name or numeric prefix format)
             if 'MONTH' in df.columns:
                 monthly_subset = df[
                     df['MONTH'].astype(str).str.contains(current_month_name, case=False, na=False) |
@@ -420,13 +417,28 @@ if selected_sheet == "Hospital Information System":
     if not dept_df.empty:
         st.write(f"Showing all records for **{selected_dept_view}** (Total: {len(dept_df)} records)")
         
-        if 'MODE OF PAYMENT' in dept_df.columns:
+        # If reviewing Special Care Complex, add sorting/filtering by Admitted To area
+        if selected_dept_view == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)" and 'ADMITTED TO' in dept_df.columns:
+            st.markdown("##### 📍 Filter & Sort Census by Admitted Area")
+            admit_areas = sorted(dept_df['ADMITTED TO'].dropna().unique().tolist())
+            selected_area = st.selectbox("Select Admitted To Area", ["All Areas"] + admit_areas)
+            
+            if selected_area != "All Areas":
+                dept_df = dept_df[dept_df['ADMITTED TO'] == selected_area]
+                st.write(f"Filtered to **{selected_area}** ({len(dept_df)} records)")
+
+        # Specific columns to highlight if available
+        display_cols = [c for c in ['DATE', 'LAST NAME', 'FIRST NAME', 'DIAGNOSIS', 'DIAGNOSTIC FLAGS', 'ATTENDING PHYSICIAN', 'ADMITTED TO', 'MODE OF PAYMENT'] if c in dept_df.columns]
+        if not display_cols:
+            display_cols = dept_df.columns.tolist()
+
+        if 'MODE OF PAYMENT' in dept_df.columns and selected_dept_view != "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
             st.markdown("##### 💳 Breakdown by Mode of Payment")
             payment_counts = dept_df['MODE OF PAYMENT'].value_counts().reset_index()
             payment_counts.columns = ['Mode of Payment', 'Count']
             st.bar_chart(payment_counts.set_index('Mode of Payment'))
             
-        st.dataframe(dept_df, use_container_width=True)
+        st.dataframe(dept_df[display_cols], use_container_width=True)
     else:
         st.info(f"No records found yet for {selected_dept_view}.")
 
@@ -1035,7 +1047,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         with c10:
             admitted_from = st.selectbox("Admitted From", ["ECC", "GNU 1C", "2A", "2B", "2C", "2D", "3A", "3B", "3C", "4A"])
         with c11:
-            admitted_to = st.selectbox("Admitted To", ["NICU", "NSU", "PCN", "OUTBORN", "ROOM-IN"])
+            admitted_to = st.selectbox("Admitted To", ["NICU", "PICU", "NSU", "PCN", "OUTBORN", "ROOM-IN"])
         with c12:
             hosp_mode = st.radio("Hospitalization Mode", ["IPD", "OPD"])
         with c13:
