@@ -5,7 +5,7 @@ import pandas as pd
 import os
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION & LIGHT MODE BRANDING STYLING
+# 1. PAGE CONFIGURATION & COMPLETE LIGHT MODE UI STYLING
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="PATIENT DATA RECORDING SYSTEM",
@@ -13,16 +13,16 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS enforcing a strict hospital light mode palette (White backgrounds, dark slate text, royal blue/teal highlights)
+# Custom CSS ensuring all selectboxes, dropdowns, input fields, tables, and containers match a clean hospital light mode
 st.markdown("""
 <style>
-    /* Force main app background to clean white/off-white */
+    /* Main app background and text color */
     .stApp {
         background-color: #ffffff !important;
         color: #1e293b !important;
     }
     
-    /* Force sidebar background and text to clean light theme */
+    /* Sidebar background and text */
     section[data-testid="stSidebar"] {
         background-color: #f8fafc !important;
         border-right: 1px solid #e2e8f0;
@@ -50,6 +50,19 @@ st.markdown("""
         color: white !important;
     }
     
+    /* Input fields and selectbox dropdown containers in light mode */
+    div[data-baseweb="select"] > div, input[type="text"], input[type="number"], textarea {
+        background-color: #ffffff !important;
+        color: #1e293b !important;
+        border-color: #cbd5e1 !important;
+    }
+    
+    /* Dropdown text and menu items background in light mode */
+    div[data-baseweb="popover"] div, div[data-baseweb="menu"] div {
+        background-color: #ffffff !important;
+        color: #1e293b !important;
+    }
+    
     /* Metric cards in light mode */
     div.stMetric {
         background-color: #f8fafc !important;
@@ -72,6 +85,14 @@ st.markdown("""
         border: 1px solid #e2e8f0;
         border-radius: 8px;
         padding: 20px;
+    }
+    
+    /* Dataframe tables in light mode */
+    div[data-testid="stDataFrame"] {
+        background-color: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 6px;
+        padding: 5px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -710,7 +731,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
                 'SEX': sex,
                 'AGE': age,
                 'DIAGNOSIS': diagnosis_text,
-                'PROCEDURE': procedure_text,
+                'PROCEDURE': procedure,
                 'PROCEDURE CATEGORIES': ", ".join(selected_procs) if selected_procs else "None",
                 'ATTENDING PHYSICIAN': attending_physician if attending_physician else "N/A",
                 'ATTENDING SPECIALIZATION': attending_spec,
