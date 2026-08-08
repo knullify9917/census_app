@@ -825,11 +825,13 @@ if selected_sheet == "Hospital Information System":
     ])
     
     gnu_sheets = [d for d in department_sheets if d.startswith("General Nursing Unit (GNU")]
+    scu_sheet = "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
     
-    total_active_patients = 0
-    daily_active_patients = 0
-    monthly_active_patients = 0
-    
+    # Separate tallies for General Nursing Units: Active, MGH, CAB
+    count_active_gnu = 0
+    count_mgh_gnu = 0
+    count_cab_gnu = 0
+
     ph_now_summary = get_ph_time()
     today_str = ph_now_summary.strftime("%m/%d/%Y")
     current_month_num = str(ph_now_summary.month)
@@ -853,21 +855,16 @@ if selected_sheet == "Hospital Information System":
                 ]
                 monthly_count = len(monthly_subset)
 
-        # For Hospital Summary metrics & roster: Count ONLY active & MGH patients from General Nursing Units (excluding Discharged / CAB)
         if dept in gnu_sheets and not df.empty and 'PATIENT STATUS' in df.columns:
             df['PATIENT STATUS'] = df['PATIENT STATUS'].fillna("ACTIVE")
-            active_subset = df[
-                df['PATIENT STATUS'].astype(str).str.strip().str.upper().isin(['ACTIVE', 'MGH'])
-            ]
-            total_active_patients += len(active_subset)
-            if 'DATE' in active_subset.columns:
-                daily_active_patients += len(active_subset[active_subset['DATE'].astype(str).str.strip() == today_str])
-            if 'MONTH' in active_subset.columns:
-                m_active = active_subset[
-                    active_subset['MONTH'].astype(str).str.contains(current_month_name, case=False, na=False) |
-                    active_subset['MONTH'].astype(str).str.startswith(f"{current_month_num}.", na=False)
-                ]
-                monthly_active_patients += len(m_active)
+            for st_val in df['PATIENT STATUS']:
+                cleaned_st = str(st_val).strip().upper()
+                if cleaned_st == "ACTIVE":
+                    count_active_gnu += 1
+                elif cleaned_st == "MGH":
+                    count_mgh_gnu += 1
+                elif cleaned_st == "CAB":
+                    count_cab_gnu += 1
 
         summary_data.append({
             "Department Module": dept,
@@ -876,13 +873,41 @@ if selected_sheet == "Hospital Information System":
             "Monthly Patient Census": monthly_count
         })
 
-    m1, m2, m3 = st.columns(3)
-    with m1:
-        st.metric(label="Total Active Inpatients (GNU)", value=total_active_patients)
-    with m2:
-        st.metric(label="Today's Active Census (GNU)", value=daily_active_patients)
-    with m3:
-        st.metric(label="Monthly Active Census (GNU)", value=monthly_active_patients)
+    # Special Care Complex breakdown tally (NICU, PICU, NSU, PCN, Outborn)
+    scu_df = read_google_sheet(scu_sheet)
+    nic_count, pic_count, nsu_count, pcn_count, out_count = 0, 0, 0, 0, 0
+    if not scu_df.empty and 'ADMITTED TO' in scu_df.columns:
+        scu_df['ADMITTED TO_UP'] = scu_df['ADMITTED TO'].astype(str).str.strip().str.upper()
+        nic_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'NICU'])
+        pic_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'PICU'])
+        nsu_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'NSU'])
+        pcn_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'PCN'])
+        out_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'OUTBORN'])
+
+    # Hospital Summary Widgets Top Row: Active, MGH, CAB (Separately tallied from GNU)
+    w1, w2, w3 = st.columns(3)
+    with w1:
+        st.metric(label="Active Patients (GNU)", value=count_active_gnu)
+    with w2:
+        st.metric(label="MGH Patients (GNU)", value=count_mgh_gnu)
+    with w3:
+        st.metric(label="CAB Patients (GNU)", value=count_cab_gnu)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # Special Care Complex breakdown widget row
+    st.markdown("##### ⭐ Special Care Complex Census Breakdown")
+    s1, s2, s3, s4, s5 = st.columns(5)
+    with s1:
+        st.metric(label="NICU", value=nic_count)
+    with s2:
+        st.metric(label="PICU", value=pic_count)
+    with s3:
+        st.metric(label="NSU", value=nsu_count)
+    with s4:
+        st.metric(label="PCN", value=pcn_count)
+    with s5:
+        st.metric(label="Outborn", value=out_count)
 
     st.markdown("---")
 
