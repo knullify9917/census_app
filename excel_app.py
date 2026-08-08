@@ -104,7 +104,7 @@ REGULAR_FONT_SIZE = 10
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# User Database with Administrator and Department Staff Accounts (Strictly restricted module access)
+# User Database with Administrator and Department Staff Accounts
 USER_DATABASE = {
     "admin": {
         "password": hash_password("admin123"),
@@ -229,8 +229,9 @@ def civilian_time_text_field(label, key_suffix=""):
 # ---------------------------------------------------------
 # 2. SORTED HOSPITAL UNIT AREAS LIST
 # ---------------------------------------------------------
-HOSPITAL_UNIT_AREAS = [
+HOSPITAL_UNIT_AREAS = sorted([
     "None",
+    "ECC",
     "GNU 1C",
     "GNU 2A",
     "GNU 2B",
@@ -245,7 +246,7 @@ HOSPITAL_UNIT_AREAS = [
     "PCN",
     "PICU",
     "OUTBORN"
-]
+])
 
 # ---------------------------------------------------------
 # 3. EXACT SPECIALTIES SORTED BY FIELD OF MEDICINE THEN ALPHABETICALLY
@@ -642,7 +643,17 @@ logged_user_key = st.session_state["username"]
 user_info = USER_DATABASE.get(logged_user_key, {})
 allowed_modules = user_info.get("modules", "All")
 
-if allowed_modules == "All":
+if logged_user_key in ["ecc_staff", "scc_staff", "endo_staff", "hdu_staff"]:
+    dept_map = {
+        "ecc_staff": "Emergency Care Complex (ECC)",
+        "scc_staff": "Surgical Care Complex (OR Main)",
+        "endo_staff": "Endoscopy Unit (ENDO)",
+        "hdu_staff": "Hemodialysis Unit (HDU)"
+    }
+    MODULES = ["Hospital Information System", dept_map[logged_user_key]]
+elif logged_user_key in ["nsgcon_staff", "ha_staff", "ha_staff1"]:
+    MODULES = ["Hospital Information System"]
+elif allowed_modules == "All":
     MODULES = [
         "Hospital Information System", 
         "Emergency Care Complex (ECC)", 
@@ -1483,7 +1494,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         with c4:
             sex = st.selectbox("Sex", ["None", "Male", "Female", "Others"])
         with c5:
-            aog = st.text_input("Age of Gestation (AOG)", value="38 WEEKS")
+            aog = st.text_input("Age of Gestation (AOG)", value="")
 
         c5_d, c6, c7, c8 = st.columns(4)
         with c5_d:
