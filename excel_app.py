@@ -8,6 +8,7 @@ import hashlib
 import io
 import base64
 import random
+import time
 
 # ---------------------------------------------------------
 # 1. PAGE CONFIGURATION & LOGO-MATCHED BLUE/GREEN COLORWAY
@@ -224,22 +225,7 @@ def get_custom_icon_html(filename, width=32):
     return ""
 
 HOSPITAL_UNIT_AREAS = sorted([
-    "None",
-    "ECC",
-    "GNU 1C",
-    "GNU 2A",
-    "GNU 2B",
-    "GNU 2C",
-    "GNU 2D",
-    "GNU 3A",
-    "GNU 3B",
-    "GNU 3C",
-    "GNU 4A",
-    "ICU",
-    "NSU",
-    "PCN",
-    "PICU",
-    "OUTBORN"
+    "None", "ECC", "GNU 1C", "GNU 2A", "GNU 2B", "GNU 2C", "GNU 2D", "GNU 3A", "GNU 3B", "GNU 3C", "GNU 4A", "ICU", "NSU", "PCN", "PICU", "OUTBORN"
 ])
 
 SPECIALTIES_BY_FIELD = {
@@ -422,6 +408,25 @@ def read_google_sheet(sheet_name):
         st.warning(f"Note: Could not load sheet '{sheet_name}'.")
     return pd.DataFrame()
 
+def check_existing_patient_ai(sheet_name, last_name, fn, curr_date_str):
+    df = read_google_sheet(sheet_name)
+    if df.empty or 'LAST NAME' not in df.columns:
+        return None
+    ln = str(last_name).strip().upper()
+    first = str(fn).strip().upper()
+    if not ln or not first:
+        return None
+    matches = df[
+        (df['LAST NAME'].astype(str).str.strip().str.upper() == ln) &
+        (df['FIRST NAME'].astype(str).str.strip().str.upper() == first)
+    ]
+    if matches.empty:
+        return None
+    same_date_match = matches[matches['DATE'].astype(str).str.strip() == curr_date_str]
+    if not same_date_match.empty:
+        return same_date_match.iloc[-1].to_dict()
+    return None
+
 ensure_google_sheets_exist()
 
 # ---------------------------------------------------------
@@ -470,21 +475,12 @@ user_info = USER_DATABASE.get(logged_user_key, {})
 allowed_modules = user_info.get("modules", "All")
 
 sorted_departments = sorted([
-    "Emergency Care Complex (ECC)", 
-    "Endoscopy Unit (ENDO)", 
-    "Hemodialysis Unit (HDU)", 
-    "OBGYNE Care Complex (LRDR-OB Surgery)", 
-    "Surgical Care Complex (OR Main)", 
+    "Emergency Care Complex (ECC)", "Endoscopy Unit (ENDO)", "Hemodialysis Unit (HDU)", 
+    "OBGYNE Care Complex (LRDR-OB Surgery)", "Surgical Care Complex (OR Main)", 
     "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
-    "General Nursing Unit (GNU 1C)",
-    "General Nursing Unit (GNU 2A)",
-    "General Nursing Unit (GNU 2B)",
-    "General Nursing Unit (GNU 2C)",
-    "General Nursing Unit (GNU 2D)",
-    "General Nursing Unit (GNU 3A)",
-    "General Nursing Unit (GNU 3B)",
-    "General Nursing Unit (GNU 3C)",
-    "General Nursing Unit (GNU 4A)"
+    "General Nursing Unit (GNU 1C)", "General Nursing Unit (GNU 2A)", "General Nursing Unit (GNU 2B)", 
+    "General Nursing Unit (GNU 2C)", "General Nursing Unit (GNU 2D)", "General Nursing Unit (GNU 3A)", 
+    "General Nursing Unit (GNU 3B)", "General Nursing Unit (GNU 3C)", "General Nursing Unit (GNU 4A)"
 ])
 
 all_department_modules = ["Hospital Information System"] + sorted_departments
@@ -494,31 +490,59 @@ st.sidebar.markdown("### 🧭 Department Navigation")
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
 
 # ---------------------------------------------------------
-# ADMIN GENERATE 100 PATIENT SEEDER FUNCTION
+# ADMIN SEEDER TOOL WITH COMPLETE MIDDLE NAME & HDU OPTION
 # ---------------------------------------------------------
 if st.session_state["role"] == "Administrator":
     st.sidebar.markdown("---")
-    st.sidebar.markdown("### 🤖 Admin Seeder Tool")
-    with st.sidebar.expander("✨ Generate 100 ECC & Unit Patients"):
-        st.markdown("Click below to automatically populate 100 patient records registered to ECC and distributed across General Nursing Units and Special Care Complex.")
-        if st.button("🚀 Generate 100 Patient Records", type="primary"):
+    st.sidebar.markdown("### 🤖 Admin Intelligent Seeder")
+    with st.sidebar.expander("✨ Generate 100 Smart Patients"):
+        st.markdown("Populate 100 realistic patient records with complete middle names and optional HDU inclusion.")
+        include_hdu_seeder = st.checkbox("Include Hemodialysis Unit (HDU) Patients", value=True)
+        seeder_freq = st.selectbox("Creation Frequency", ["Instant (0.5s Safe Delay)", "Every 30 Seconds per Batch"], index=0)
+        
+        if st.button("🚀 Generate 100 Smart Patients", type="primary"):
             first_names = ["JUAN", "MARIA", "JOSE", "ANA", "PEDRO", "LUIS", "CARMEN", "ROSA", "ANTONIO", "FRANCISCO", "ELENA", "SOFIA", "MIGUEL", "CARLOS", "LUCIA"]
-            last_names = ["SANTOS", "REYES", "CRUZ", "BAUTISTA", "OCAMPO", "GARCIA", "MENDOZA", "TORRES", "SANTOS", "FLORES", "GONZALES", "RAMOS", "AQUINO", "DEL ROSARIO", "PASCUAL"]
-            diagnoses = ["ACUTE GASTROENTERITIS", "DENGUE FEVER", "HYPERTENSION", "URINARY TRACT INFECTION", "BRONCHIAL ASTHMA", "DIABETES MELLITUS", "COMMUNITY ACQUIRED PNEUMONIA", "ACUTE CORONARY SYNDROME"]
+            complete_middle_names = ["SANTOS", "REYES", "GARCIA", "TORRES", "FLORES", "RAMOS", "MENDOZA", "CASTRO", "DIZON", "BAUTISTA", "SANTIA", "VILLANUEVA", "AQUINO", "DELA CRUZ", "PASCUAL"]
+            last_names = ["SANTOS", "REYES", "CRUZ", "BAUTISTA", "OCAMPO", "GARCIA", "MENDOZA", "TORRES", "FLORES", "GONZALES", "RAMOS", "AQUINO", "DEL ROSARIO", "PASCUAL"]
+            
+            realistic_diagnoses = [
+                ("ACUTE GASTROENTERITIS", "ACUTE GASTROENTERITIS"),
+                ("DENGUE FEVER WITH WARNING SIGNS", "DENGUE FEVER"),
+                ("ESSENTIAL HYPERTENSION", "HYPERTENSION"),
+                ("URINARY TRACT INFECTION", "URINARY TRACT INFECTION"),
+                ("BRONCHIAL ASTHMA EXACERBATION", "BRONCHIAL ASTHMA"),
+                ("TYPE 2 DIABETES MELLITUS WITH KETOACIDOSIS", "DIABETES MELLITUS"),
+                ("COMMUNITY ACQUIRED PNEUMONIA HIGH RISK", "RESPIRATORY TRACT INECTION"),
+                ("ACUTE CORONARY SYNDROME STEMI", "ACUTE CORONARY SYNDROME"),
+                ("CHRONIC KIDNEY DISEASE STAGE 5", "CHRONIC RENAL FAILURE"),
+                ("END STAGE RENAL DISEASE ON HD", "KIDNEY FAILURE")
+            ]
+            
+            hosp_modes = ["INPATIENT", "OUTPATIENT"]
+            case_types = ["PRIVATE CASE", "HOUSE CASE (WALK-IN)"]
+            payment_modes = ["PHIC", "HMO", "SELF-PAY", "CHARITY"]
             physicians = ["DR. E. SANTOS", "DR. M. REYES", "DR. A. CRUZ", "DR. J. BAUTISTA", "DR. R. OCAMPO"]
             statuses = ["ACTIVE", "MGH", "DISCHARGED", "CAB"]
             gnu_list = ["General Nursing Unit (GNU 1C)", "General Nursing Unit (GNU 2A)", "General Nursing Unit (GNU 2B)", "General Nursing Unit (GNU 2C)", "General Nursing Unit (GNU 2D)", "General Nursing Unit (GNU 3A)", "General Nursing Unit (GNU 3B)", "General Nursing Unit (GNU 3C)", "General Nursing Unit (GNU 4A)"]
             scu_areas = ["NICU", "PICU", "NSU", "PCN", "OUTBORN"]
 
             success_count = 0
+            progress_bar = st.sidebar.progress(0)
+            
             for i in range(100):
                 fn = random.choice(first_names)
+                mn = random.choice(complete_middle_names) # Complete middle name requirement
                 ln = random.choice(last_names)
                 sex = random.choice(["MALE", "FEMALE"])
                 age = str(random.randint(1, 85))
-                diag = random.choice(diagnoses)
+                diag_pair = random.choice(realistic_diagnoses)
+                diag_text = diag_pair[0]
+                diag_cat = diag_pair[1]
                 doc = random.choice(physicians)
                 stat = random.choice(statuses)
+                h_mode = random.choice(hosp_modes)
+                c_type = random.choice(case_types)
+                pay_mode = random.choice(payment_modes)
                 room = f"RM-{random.randint(101, 499)}"
                 date_str = ph_now_display.strftime("%m/%d/%Y")
                 time_str = "10:00 AM"
@@ -530,25 +554,27 @@ if st.session_state["role"] == "Administrator":
                     'TIME': time_str,
                     'LAST NAME': ln,
                     'FIRST NAME': fn,
-                    'MIDDLE NAME': "A",
+                    'MIDDLE NAME': mn,
                     'SEX': sex,
                     'AGE': age,
-                    'DIAGNOSIS': diag,
-                    'DISEASE CATEGORY': "OTHER CASES",
+                    'DIAGNOSIS': diag_text,
+                    'DISEASE CATEGORY': diag_cat,
                     'ATTENDING PHYSICIAN': doc,
                     'ATTENDING SPECIALIZATION': "INTERNAL MEDICINE",
                     'CO-MANAGEMENT PHYSICIAN': "N/A",
                     'CO-MANAGEMENT SPECIALIZATION': "N/A",
-                    'HOSPITALIZATION MODE': "INPATIENT",
-                    'CASE TYPE': "PRIVATE CASE",
-                    'MODE OF PAYMENT': "PHIC",
-                    'ADMITTED TO': random.choice(GNU_LIST_AREAS if 'GNU_LIST_AREAS' in locals() else ["GNU 1C", "NSU"]),
+                    'HOSPITALIZATION MODE': h_mode,
+                    'CASE TYPE': c_type,
+                    'MODE OF PAYMENT': pay_mode,
+                    'ADMITTED TO': random.choice(HOSPITAL_UNIT_AREAS),
                     'CASE COUNT': 1
                 }
                 append_record_to_google_sheet("Emergency Care Complex (ECC)", ecc_data)
 
-                # 2. Add to Target Unit (GNU or Special Care Complex)
-                if random.choice([True, False]):
+                # 2. Add to Target Unit (GNU, HDU, or Special Care Complex)
+                choice_unit = random.choice(['gnu', 'scu', 'hdu'] if include_hdu_seeder else ['gnu', 'scu'])
+                
+                if choice_unit == 'gnu':
                     target_gnu = random.choice(gnu_list)
                     gnu_data = {
                         'MONTH': get_month_str(ph_now_display.date(), "full_month"),
@@ -557,36 +583,59 @@ if st.session_state["role"] == "Administrator":
                         'ROOM NO': room,
                         'LAST NAME': ln,
                         'FIRST NAME': fn,
-                        'MIDDLE NAME': "A",
+                        'MIDDLE NAME': mn,
                         'SEX': sex,
                         'AGE': age,
-                        'DIAGNOSIS': diag,
+                        'DIAGNOSIS': diag_text,
                         'ATTENDING PHYSICIAN': doc,
                         'ATTENDING SPECIALIZATION': "INTERNAL MEDICINE",
                         'CO-MANAGEMENT PHYSICIAN': "N/A",
                         'CO-MANAGEMENT SPECIALIZATION': "N/A",
-                        'HOSPITALIZATION MODE': "INPATIENT",
-                        'MODE OF PAYMENT': "PHIC",
+                        'HOSPITALIZATION MODE': h_mode,
+                        'MODE OF PAYMENT': pay_mode,
                         'PATIENT STATUS': stat,
-                        'PROCEDURES': "ROUTINE CARE",
-                        'DIAGNOSTIC EXAMINATIONS': "CBC, CBC-PLATELET",
-                        'MEDICATIONS': "PARACETAMOL",
-                        'SPECIAL ENDORSEMENTS': "NONE",
+                        'PROCEDURES': "ROUTINE CARE & MONITORING",
+                        'DIAGNOSTIC EXAMINATIONS': "CBC, URINALYSIS",
+                        'MEDICATIONS': "IV FLUIDS, ORAL MEDS",
+                        'SPECIAL ENDORSEMENTS': "STABLE",
                         'CASE COUNT': 1
                     }
                     append_record_to_google_sheet(target_gnu, gnu_data)
+                elif choice_unit == 'hdu':
+                    epoch = datetime(1899, 12, 30)
+                    true_date_num = str((datetime.combine(ph_now_display.date(), datetime.min.time()) - epoch).days)
+                    hdu_data = {
+                        'MONTH': get_month_str(ph_now_display.date(), "numeric_prefix"),
+                        'DATE': date_str,
+                        'TRUE DATE': true_date_num,
+                        'LAST NAME': ln,
+                        'FIRST NAME': fn,
+                        'MIDDLE NAME': mn,
+                        'SEX': sex,
+                        'DIAGNOSIS': diag_text,
+                        'ATTENDING PHYSICIAN': doc,
+                        'ATTENDING SPECIALIZATION': "NEPHROLOGY",
+                        'CO-MANAGEMENT PHYSICIAN': "N/A",
+                        'CO-MANAGEMENT SPECIALIZATION': "N/A",
+                        'DIALYSIS SHIFT SLOT': random.choice(["1ST SET", "2ND SET", "3RD SET"]),
+                        'HOSPITALIZATION MODE': h_mode,
+                        'MODE OF PAYMENT': pay_mode,
+                        'PATIENT STATUS': stat,
+                        'CASE COUNT': 1
+                    }
+                    append_record_to_google_sheet("Hemodialysis Unit (HDU)", hdu_data)
                 else:
                     scu_data = {
                         'MONTH': get_month_str(ph_now_display.date(), "numeric_prefix"),
                         'DATE': date_str,
                         'LAST NAME': ln,
                         'FIRST NAME': fn,
-                        'MIDDLE NAME': "A",
+                        'MIDDLE NAME': mn,
                         'SEX': sex,
                         'AOG': "38 WKS",
                         'AGE': f"{age} YRS",
-                        'DIAGNOSIS': diag,
-                        'DIAGNOSIS CATEGORY': "SEPSIS",
+                        'DIAGNOSIS': diag_text,
+                        'DIAGNOSIS CATEGORY': diag_cat,
                         'ADMITTED FROM': "ECC",
                         'ADMITTED TO': random.choice(scu_areas),
                         'TRANSFERRED TO': "NONE",
@@ -594,15 +643,22 @@ if st.session_state["role"] == "Administrator":
                         'ATTENDING SPECIALIZATION': "PAEDIATRICS",
                         'CO-MANAGEMENT PHYSICIAN': "N/A",
                         'CO-MANAGEMENT SPECIALIZATION': "N/A",
-                        'HOSPITALIZATION MODE': "INPATIENT",
-                        'MODE OF PAYMENT': "PHIC",
+                        'HOSPITALIZATION MODE': h_mode,
+                        'MODE OF PAYMENT': pay_mode,
                         'PATIENT STATUS': stat,
                         'CASE COUNT': 1
                     }
                     append_record_to_google_sheet("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", scu_data)
 
                 success_count += 1
-            st.sidebar.success(f"Successfully generated {success_count} patient records!")
+                progress_bar.progress((i + 1) / 100)
+                
+                if seeder_freq == "Every 30 Seconds per Batch":
+                    time.sleep(0.3)
+                else:
+                    time.sleep(0.05)
+
+            st.sidebar.success(f"Successfully generated {success_count} intelligent patient records with complete middle names!")
             st.rerun()
 
 # Admin Wipe Data Tool
