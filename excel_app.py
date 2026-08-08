@@ -256,7 +256,7 @@ SHEET_HEADERS = {
     ],
     "OBGYNE Care Complex (LRDR-OB Surgery)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
-        'PRE-OP DIAGNOSIS', 'POST-OP DIAGNOSIS', 'PROCEDURE', 'PROCEDURE BREAKDOWN', 
+        'PRE-OP DIAGNOSIS', 'POST-OP DIAGNOSIS', 'PROCEDURE NAME', 'SURGICAL PROCEDURE', 'PROCEDURE BREAKDOWN', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'SURGEON / OBGYNE', 'SURGEON SPECIALIZATION',
@@ -903,15 +903,19 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 
         st.subheader("📋 OBGYNE Diagnosis & Procedure Details")
         
-        # Row 1: Pre-Op Diagnosis & Post-Op Diagnosis (Matched 100% with Surgical Care Complex)
+        # Row 1: Pre-Op Diagnosis & Post-Op Diagnosis
         cd1, cd2 = st.columns(2)
         with cd1:
             pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="")
         with cd2:
             post_op_diagnosis = st.text_area("Post-Op Diagnosis", value="")
 
-        # Row 2: Procedure Name
-        procedure = st.text_area("Procedure Name", value="")
+        # Row 2: Procedure Name & Surgical Procedure
+        cp1, cp2 = st.columns(2)
+        with cp1:
+            procedure_name = st.text_input("Procedure Name", value="")
+        with cp2:
+            surgical_procedure = st.text_area("Surgical Procedure", value="")
 
         # Row 3: Procedure Breakdown | Complexity Tier | Hospitalization Mode & Kit Package | Mode of Payment
         ca, cb, cc, cd = st.columns(4)
@@ -947,7 +951,8 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
                 'AGE': float(age),
                 'PRE-OP DIAGNOSIS': pre_op_diagnosis,
                 'POST-OP DIAGNOSIS': post_op_diagnosis,
-                'PROCEDURE': procedure,
+                'PROCEDURE NAME': procedure_name,
+                'SURGICAL PROCEDURE': surgical_procedure,
                 'PROCEDURE BREAKDOWN': ", ".join(ob_procs) if ob_procs else "None",
                 'ATTENDING PHYSICIAN': attending_physician if attending_physician else "N/A",
                 'ATTENDING SPECIALIZATION': attending_spec,
