@@ -540,7 +540,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
     st.header("Emergency Care Complex (ECC) Data Entry Form")
     ph_now = get_ph_time()
     with st.form("ecc_form", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics & AI Checker")
+        st.subheader("👤 Patient Demographics")
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
@@ -630,7 +630,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_endo")
 
     with st.form("endo_form", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics & AI Checker")
+        st.subheader("👤 Patient Demographics")
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
@@ -725,7 +725,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
                 'SEX': sex,
                 'AGE': age,
                 'DIAGNOSIS': diagnosis_text,
-                'PROCEDURE': procedure_text,
+                'PROCEDURE': procedure,
                 'PROCEDURE CATEGORIES': ", ".join(selected_procs) if selected_procs else "None",
                 'ATTENDING PHYSICIAN': attending_physician if attending_physician else "N/A",
                 'ATTENDING SPECIALIZATION': attending_spec,
@@ -755,7 +755,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_hdu")
 
     with st.form("hdu_form", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics & AI Checker")
+        st.subheader("👤 Patient Demographics")
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
@@ -847,7 +847,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_obgyne")
 
     with st.form("obgyne_form", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics & AI Checker")
+        st.subheader("👤 Patient Demographics")
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
@@ -901,7 +901,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         with c_anes2:
             anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
-        st.subheader("📋 Procedure Details")
+        st.subheader("📋 OBGYNE Diagnosis & Procedure Details")
         cd1, cd2 = st.columns(2)
         with cd1:
             diagnosis = st.text_area("OBGYNE Diagnosis", value="")
@@ -970,7 +970,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_scc")
 
     with st.form("scc_form", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics & AI Checker")
+        st.subheader("👤 Patient Demographics")
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
@@ -1024,7 +1024,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         with c_anes2:
             anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
-        st.subheader("📋 Procedure Details")
+        st.subheader("📋 Surgical Details")
         cd1, cd2, cd3 = st.columns(3)
         with cd1:
             pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="")
@@ -1107,7 +1107,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_scu")
 
     with st.form("scu_form", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics & AI Checker")
+        st.subheader("👤 Patient Demographics")
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
