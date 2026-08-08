@@ -1,6 +1,6 @@
 import streamlit as st
 import gspread
-from datetime import datetime
+from datetime import datetime, time
 from zoneinfo import ZoneInfo
 import pandas as pd
 import os
@@ -215,10 +215,12 @@ if not st.session_state["authenticated"]:
 def get_ph_time():
     return datetime.now(ZoneInfo("Asia/Manila"))
 
-# Helper for a single cohesive civilian 12-hour time text entry with blank default
-def civilian_time_text_field(label, key_suffix=""):
-    val = st.text_input(label, value="", key=f"time_txt_{key_suffix}", placeholder="e.g. 10:35 PM")
-    return val
+# Helper for a native time input widget returning formatted civilian time string
+def civilian_time_input_field(label, key_suffix=""):
+    t_val = st.time_input(label, value=None, key=f"time_widget_{key_suffix}")
+    if t_val:
+        return t_val.strftime("%I:%M %p")
+    return ""
 
 # ---------------------------------------------------------
 # 2. SORTED HOSPITAL UNIT AREAS LIST
@@ -867,7 +869,6 @@ if selected_sheet == "Hospital Information System":
         if not dept_df.empty:
             df_copy = dept_df.copy()
             df_copy.insert(0, "DEPARTMENT UNIT", dept)
-            # For GNU units, combine patient name and status for clear tracking
             if dept.startswith("General Nursing Unit (GNU") and 'LAST NAME' in df_copy.columns and 'FIRST NAME' in df_copy.columns and 'PATIENT STATUS' in df_copy.columns:
                 df_copy['PATIENT & STATUS'] = df_copy['LAST NAME'].astype(str).str.strip() + ", " + df_copy['FIRST NAME'].astype(str).str.strip() + " [" + df_copy['PATIENT STATUS'].astype(str).str.strip() + "]"
             all_roster_frames.append(df_copy)
@@ -972,7 +973,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
         with c_d1:
             entry_date = st.date_input("Date", ph_now.date())
         with c_d2:
-            entry_time_str = civilian_time_text_field("Time", key_suffix=f"gnu_{form_key_slug}_time")
+            entry_time_str = civilian_time_input_field("Time", key_suffix=f"gnu_{form_key_slug}_time")
 
         c_h1, c_h2, c_h3 = st.columns(3)
         with c_h1:
@@ -1075,7 +1076,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         with c_d1:
             entry_date = st.date_input("Date", ph_now.date())
         with c_d2:
-            entry_time_str = civilian_time_text_field("Time", key_suffix="ecc_time")
+            entry_time_str = civilian_time_input_field("Time", key_suffix="ecc_time")
 
         c_h1, c_h2, c_h3, c_h4 = st.columns(4)
         with c_h1:
@@ -1181,9 +1182,9 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         with c_d1:
             entry_date = st.date_input("Procedure Date", ph_now.date())
         with c_d2:
-            sched_time_str = civilian_time_text_field("Scheduled Time", key_suffix="endo_sched")
+            sched_time_str = civilian_time_input_field("Scheduled Time", key_suffix="endo_sched")
         with c_d3:
-            actual_time_str = civilian_time_text_field("Actual Time", key_suffix="endo_actual")
+            actual_time_str = civilian_time_input_field("Actual Time", key_suffix="endo_actual")
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
@@ -1394,9 +1395,9 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         with c_d1:
             entry_date = st.date_input("Procedure Date", ph_now.date())
         with c_d2:
-            sched_time_str = civilian_time_text_field("Scheduled Time", key_suffix="ob_sched")
+            sched_time_str = civilian_time_input_field("Scheduled Time", key_suffix="ob_sched")
         with c_d3:
-            actual_time_str = civilian_time_text_field("Actual Time", key_suffix="ob_actual")
+            actual_time_str = civilian_time_input_field("Actual Time", key_suffix="ob_actual")
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
@@ -1525,9 +1526,9 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         with c_d1:
             entry_date = st.date_input("Surgery Date", ph_now.date())
         with c_d2:
-            sched_time_str = civilian_time_text_field("Scheduled Time", key_suffix="scc_sched")
+            sched_time_str = civilian_time_input_field("Scheduled Time", key_suffix="scc_sched")
         with c_d3:
-            actual_time_str = civilian_time_text_field("Actual Time", key_suffix="scc_actual")
+            actual_time_str = civilian_time_input_field("Actual Time", key_suffix="scc_actual")
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
@@ -1670,7 +1671,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key="scu_att_input")
         with c_doc2:
-            attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scu_spec_input")
+            attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scu_spec_input")
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
