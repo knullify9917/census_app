@@ -5,6 +5,7 @@ from zoneinfo import ZoneInfo
 import pandas as pd
 import os
 import hashlib
+import io
 
 # ---------------------------------------------------------
 # 1. PAGE CONFIGURATION & LOGO-MATCHED BLUE/GREEN COLORWAY
@@ -37,8 +38,8 @@ st.markdown("""
     }
     .stButton > button:hover, form button[type="submit"]:hover { background-color: #0f766e !important; color: #ffffff !important; }
     
-    /* Sidebar Sign Out Button Styled to Match stMetric Cards */
-    section[data-testid="stSidebar"] div.stButton > button {
+    /* Sidebar Sign Out & Download Buttons Styled to Match stMetric Cards */
+    section[data-testid="stSidebar"] div.stButton > button, section[data-testid="stSidebar"] .stDownloadButton > button {
         background-color: #ffffff !important;
         color: #1e3a8a !important;
         border: 1px solid #cbd5e1 !important;
@@ -50,7 +51,7 @@ st.markdown("""
         text-align: left !important;
         padding: 10px 15px !important;
     }
-    section[data-testid="stSidebar"] div.stButton > button:hover {
+    section[data-testid="stSidebar"] div.stButton > button:hover, section[data-testid="stSidebar"] .stDownloadButton > button:hover {
         background-color: #f0fdf4 !important;
         color: #0f766e !important;
         border-color: #0f766e !important;
@@ -649,6 +650,66 @@ else:
     MODULES = allowed_modules
 
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
+
+st.sidebar.markdown("---")
+st.sidebar.subheader("📥 Export Reports")
+
+# ---------------------------------------------------------
+# EXPORT TO EXCEL & PDF UTILITIES ON SIDEBAR
+# ---------------------------------------------------------
+active_export_df = read_google_sheet(selected_sheet) if selected_sheet != "Hospital Information System" else read_google_sheet("Emergency Care Complex (ECC)")
+
+# Excel Export
+excel_buffer = io.BytesIO()
+with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
+    if not active_export_df.empty:
+        active_export_df.to_excel(writer, index=False, sheet_name=selected_sheet[:30])
+    else:
+        pd.DataFrame(["No records found"]).to_excel(writer, index=False, sheet_name="Sheet1")
+excel_data = excel_buffer.getvalue()
+
+st.sidebar.download_button(
+    label="📊 Export to Excel",
+    data=excel_data,
+    file_name=f"MTCMC_{selected_sheet.replace(' ', '_')}_Census.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+)
+
+# PDF Export (HTML-based robust fallback for Streamlit Cloud)
+def convert_df_to_pdf_html(df, title):
+    html_content = f"""
+    <html>
+    <head>
+        <title>{title}</title>
+        <style>
+            body {{ font-family: Helvetica, Arial, sans-serif; color: #1e293b; margin: 20px; }}
+            h2 {{ color: #1e3a8a; }}
+            p {{ color: #0f766e; font-size: 12px; }}
+            table {{ border-collapse: collapse; width: 100%; margin-top: 15px; font-size: 9px; }}
+            th {{ background-color: #1e3a8a; color: white; padding: 6px; border: 1px solid #cbd5e1; text-align: left; }}
+            td {{ padding: 5px; border: 1px solid #cbd5e1; }}
+        </style>
+    </head>
+    <body>
+        <h2>MOTHER TERESA OF CALCUTTA MEDICAL CENTER</h2>
+        <p><strong>Module:</strong> {title} | Generated: {datetime.now().strftime('%Y-%m-%d %I:%M %p')}</p>
+        <hr>
+    """
+    if not df.empty:
+        html_content += df.head(100).to_html(index=False, border=0)
+    else:
+        html_content += "<p>No records available for export.</p>"
+    html_content += "</body></html>"
+    return html_content.encode('utf-8')
+
+pdf_data = convert_df_to_pdf_html(active_export_df, selected_sheet)
+
+st.sidebar.download_button(
+    label="📄 Export as PDF",
+    data=pdf_data,
+    file_name=f"MTCMC_{selected_sheet.replace(' ', '_')}_Report.html",
+    mime="text/html"
+)
 
 st.markdown("---")
 
