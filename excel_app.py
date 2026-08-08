@@ -794,7 +794,7 @@ st.markdown("---")
 # MODULE: HOSPITAL INFORMATION SYSTEM (LANDING PAGE)
 # ---------------------------------------------------------
 if selected_sheet == "Hospital Information System":
-    st.header("Hospital Summary")
+    st.header("🏥 Hospital Summary")
     st.markdown("This is the census summary of the departments of MTCMC.")
 
     department_sheets = sorted([
@@ -856,7 +856,6 @@ if selected_sheet == "Hospital Information System":
 
     # ---------------------------------------------------------
     # ACTIVE PATIENT ROSTER (Condition: Active & May Go Home Inpatients)
-    # Placed above Department Performance per user request
     # ---------------------------------------------------------
     st.subheader("📋 Active Patient Roster")
     st.markdown("Aggregated live roster displaying **Inpatient** records currently tagged as **Active** or **May Go Home** across all hospital departments.")
@@ -953,7 +952,7 @@ if selected_sheet == "Hospital Information System":
 # ---------------------------------------------------------
 elif selected_sheet.startswith("General Nursing Unit (GNU"):
     gnu_title = selected_sheet
-    st.header(f"{gnu_title} Patient Registration")
+    st.header(f"🛏️ {gnu_title} Patient Registration")
     ph_now = get_ph_time()
     form_key_slug = gnu_title.replace("General Nursing Unit (", "").replace(")", "").strip().lower()
     
@@ -1058,7 +1057,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
 # FORM 1: Emergency Care Complex (ECC)
 # ---------------------------------------------------------
 elif selected_sheet == "Emergency Care Complex (ECC)":
-    st.header("Emergency Care Complex Patient Registration")
+    st.header("🚑 Emergency Care Complex Patient Registration")
     ph_now = get_ph_time()
     with st.form("ecc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
@@ -1163,7 +1162,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 # FORM 2: Endoscopy Unit (ENDO)
 # ---------------------------------------------------------
 elif selected_sheet == "Endoscopy Unit (ENDO)":
-    st.header("Endoscopy Unit Patient Registration")
+    st.header("🔬 Endoscopy Unit Patient Registration")
     ph_now = get_ph_time()
     
     with st.form("endo_form", clear_on_submit=True):
@@ -1283,7 +1282,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 # FORM 3: Hemodialysis Unit (HDU)
 # ---------------------------------------------------------
 elif selected_sheet == "Hemodialysis Unit (HDU)":
-    st.header("Hemodialysis Unit Patient Registration")
+    st.header("💧 Hemodialysis Unit Patient Registration")
 
     with st.form("hdu_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
@@ -1376,7 +1375,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
 # FORM 4: OBGYNE Care Complex (LRDR-OB Surgery)
 # ---------------------------------------------------------
 elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
-    st.header("OBGYNE Care Complex Patient Registration")
+    st.header("👶 OBGYNE Care Complex Patient Registration")
     ph_now = get_ph_time()
     
     with st.form("obgyne_form", clear_on_submit=True):
@@ -1507,7 +1506,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 # FORM 5: Surgical Care Complex (OR Main)
 # ---------------------------------------------------------
 elif selected_sheet == "Surgical Care Complex (OR Main)":
-    st.header("Surgical Care Complex Patient Registration")
+    st.header("🔪 Surgical Care Complex Patient Registration")
     ph_now = get_ph_time()
     
     with st.form("scc_form", clear_on_submit=True):
@@ -1640,7 +1639,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 # FORM 6: Special Care Complex (NICU-PICU-NSU/PCN-Outborn)
 # ---------------------------------------------------------
 elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
-    st.header("Special Care Unit Patient Registration")
+    st.header("⭐ Special Care Unit Patient Registration")
 
     with st.form("scu_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
@@ -1674,7 +1673,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key="scu_att_input").strip().upper()
         with c_doc2:
-            attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scu_spec_input")
+            attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scu_spec_input")
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
@@ -1751,7 +1750,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
 
 if selected_sheet != "Hospital Information System":
     st.markdown("---")
-    st.subheader(f"Active Patient Census: {selected_sheet}")
+    st.subheader(f"📋 Active Patient Census: {selected_sheet}")
 
     sheet_df = read_google_sheet(selected_sheet)
     if not sheet_df.empty:
