@@ -687,7 +687,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         st.subheader("📋 Clinical & Diagnostic Details")
         cd1, cd2 = st.columns(2)
         with cd1:
-            diagnosis_text = st.text_input("Diagnosis", value="")
+            diagnosis_text = st.text_input("Clinical Diagnosis", value="")
         with cd2:
             procedure_text = st.text_input("Procedure Name", value="")
 
@@ -696,7 +696,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         
         ca, cb, cc, cd = st.columns(4)
         with ca: 
-            proc_type = st.selectbox("Nature", ["None", "DIAGNOSTICS", "THERAPEUTIC", "DIAGNOSTICS & THERAPEUTIC"])
+            proc_type = st.selectbox("Procedure Classification", ["None", "DIAGNOSTICS", "THERAPEUTICS", "DIAGNOSTICS & THERAPEUTIC"])
         with cb: 
             hosp_mode = st.selectbox("Hospitalization Mode", ["None", "Outpatient", "Inpatient"])
         with cc: 
