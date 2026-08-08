@@ -708,6 +708,38 @@ else:
 st.sidebar.markdown("### 🧭 Department Navigation")
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
 
+# ---------------------------------------------------------
+# ADMIN WIPE DATA TOOL (Restricted to Administrator)
+# ---------------------------------------------------------
+if st.session_state["role"] == "Administrator":
+    st.sidebar.markdown("---")
+    st.sidebar.markdown("### 🛠️ Admin Developer Tools")
+    with st.sidebar.expander("🗑️ Wipe Data Tool"):
+        st.markdown("Clear all test records. Option to also wipe online Google Sheets worksheets.")
+        wipe_sheets_toggle = st.checkbox("Also delete from Google Sheets", value=False)
+        confirm_wipe = st.checkbox("Confirm Wipe Action", value=False)
+        
+        if st.button("Execute Data Wipe", type="primary"):
+            if confirm_wipe:
+                try:
+                    department_sheets_all = sorted(list(SHEET_HEADERS.keys()))
+                    for s_name in department_sheets_all:
+                        if wipe_sheets_toggle:
+                            try:
+                                ws = sh.worksheet(s_name)
+                                ws.clear()
+                                headers = SHEET_HEADERS.get(s_name, [])
+                                ws.update('A1', [[f"MTCMC CLINICAL CENSUS - {s_name} MASTERFILE"]])
+                                ws.update('A4', [headers])
+                            except Exception:
+                                pass
+                    st.sidebar.success("Successfully wiped app data!")
+                    st.rerun()
+                except Exception as e:
+                    st.sidebar.error(f"Wipe failed: {e}")
+            else:
+                st.sidebar.warning("Please check 'Confirm Wipe Action' to proceed.")
+
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📥 Export Reports")
 
@@ -827,7 +859,6 @@ if selected_sheet == "Hospital Information System":
     gnu_sheets = [d for d in department_sheets if d.startswith("General Nursing Unit (GNU")]
     scu_sheet = "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
     
-    # Separate tallies for General Nursing Units: Active, MGH, CAB
     count_active_gnu = 0
     count_mgh_gnu = 0
     count_cab_gnu = 0
@@ -873,18 +904,16 @@ if selected_sheet == "Hospital Information System":
             "Monthly Patient Census": monthly_count
         })
 
-    # Special Care Complex breakdown tally (NICU, PICU, NSU, PCN, Outborn)
     scu_df = read_google_sheet(scu_sheet)
     nic_count, pic_count, nsu_count, pcn_count, out_count = 0, 0, 0, 0, 0
     if not scu_df.empty and 'ADMITTED TO' in scu_df.columns:
-        scu_df['ADMITTED TO_UP'] = scu_df['ADMITTED TO'].astype(str).str.strip().str.upper()
+        scu_df['ADMITTED_TO_UP'] = scu_df['ADMITTED TO'].astype(str).str.strip().str.upper()
         nic_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'NICU'])
         pic_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'PICU'])
         nsu_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'NSU'])
         pcn_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'PCN'])
         out_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'OUTBORN'])
 
-    # Hospital Summary Widgets Top Row: Active, MGH, CAB (Separately tallied from GNU)
     w1, w2, w3 = st.columns(3)
     with w1:
         st.metric(label="Active Patients (GNU)", value=count_active_gnu)
@@ -895,7 +924,6 @@ if selected_sheet == "Hospital Information System":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # Special Care Complex breakdown widget row
     st.markdown("##### ⭐ Special Care Complex Census Breakdown")
     s1, s2, s3, s4, s5 = st.columns(5)
     with s1:
