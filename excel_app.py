@@ -545,11 +545,11 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         # Row 1: Name / Age / Sex aligned
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name (Blank)")
+            last_name = st.text_input("Last Name", value="")
         with c2:
-            first_name = st.text_input("First Name (Blank)")
+            first_name = st.text_input("First Name", value="")
         with c3:
-            middle_name = st.text_input("Middle Name (Blank)")
+            middle_name = st.text_input("Middle Name", value="")
         with c4:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c5:
@@ -560,7 +560,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         with c_d1:
             entry_date = st.date_input("Date", ph_now.date())
         with c_d2:
-            entry_time_str = civilian_time_text_field("Time of Entry (e.g. 10:35 PM)", key_suffix="ecc_time")
+            entry_time_str = civilian_time_text_field("Time of Entry", key_suffix="ecc_time")
 
         # Row 3: Hospitalization Mode / Case Type / Mode of Payment aligned
         c_h1, c_h2, c_h3 = st.columns(3)
@@ -576,14 +576,14 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         st.subheader("👨‍⚕️ Physician Information")
         c_doc1, c_doc2, c_doc3 = st.columns(3)
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name (Blank)")
+            attending_physician = st.text_input("Attending Physician Name", value="")
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS)
         with c_doc3:
             admitted_to = st.selectbox("Admitted to", HOSPITAL_UNIT_AREAS)
 
         st.subheader("📋 Clinical Details")
-        diagnosis_text = st.text_area("Clinical Diagnosis (Blank)")
+        diagnosis_text = st.text_area("Clinical Diagnosis", value="")
 
         disease_options = [
             'ACUTE GASTROENTERITIS', 'DENGUE FEVER', 'HYPERTENSION', 'GASTROESOPHAGEAL REFLUX DISEASE',
@@ -638,11 +638,11 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         # Row 1: Name / Age / Sex aligned
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name (Blank)")
+            last_name = st.text_input("Last Name", value="")
         with c2:
-            first_name = st.text_input("First Name (Blank)")
+            first_name = st.text_input("First Name", value="")
         with c3:
-            middle_name = st.text_input("Middle Name (Blank)")
+            middle_name = st.text_input("Middle Name", value="")
         with c4:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c5:
@@ -662,7 +662,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         st.subheader("👨‍⚕️ Medical & Surgical Care Team")
         c_att1, c_att2 = st.columns(2)
         with c_att1:
-            attending_physician = st.text_input("Attending Physician Name (Blank)")
+            attending_physician = st.text_input("Attending Physician Name", value="")
         with c_att2:
             attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS)
 
@@ -672,29 +672,29 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
             for i in range(int(num_comanage)):
                 cm1, cm2 = st.columns(2)
                 with cm1:
-                    cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", key=f"cm_name_endo_{i}")
+                    cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", value="", key=f"cm_name_endo_{i}")
                 with cm2:
                     cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_endo_{i}")
                 cm_entries.append((cm_name, cm_spec))
 
         c_surg1, c_surg2 = st.columns(2)
         with c_surg1:
-            surgeon = st.text_input("Surgeon / Endoscopist / Proceduralist (Blank)")
+            surgeon = st.text_input("Surgeon / Endoscopist / Proceduralist", value="")
         with c_surg2:
             surgeon_spec = st.selectbox("Surgeon / Proceduralist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GASTROENTEROLOGY"))
 
         c_anes1, c_anes2 = st.columns(2)
         with c_anes1:
-            anesthesiologist = st.text_input("Anesthesiologist Name (Blank)")
+            anesthesiologist = st.text_input("Anesthesiologist Name", value="")
         with c_anes2:
             anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
         st.subheader("📋 Diagnosis & Procedure Details")
         cd1, cd2 = st.columns(2)
         with cd1:
-            diagnosis_text = st.text_input("Diagnosis (Blank)")
+            diagnosis_text = st.text_input("Diagnosis", value="")
         with cd2:
-            procedure_text = st.text_input("Procedure Name (Blank)")
+            procedure_text = st.text_input("Procedure Name", value="")
 
         proc_cols = ['GASTROSCOPY', 'COLONOSCOPY', 'NASAL PROCEDURE', 'PEG PROCEDURE', 'ERCP', 'PROCTOSIGMOIDOSCOPY', 'PARACENTESIS', 'BRONCHOSCOPY', 'OTHER PROCEDURES']
         selected_procs = st.multiselect("Select Procedure Flags", proc_cols)
@@ -765,11 +765,11 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         # Row 1: Name / Age / Sex aligned
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name (Blank)")
+            last_name = st.text_input("Last Name", value="")
         with c2:
-            first_name = st.text_input("First Name (Blank)")
+            first_name = st.text_input("First Name", value="")
         with c3:
-            middle_name = st.text_input("Middle Name (Blank)")
+            middle_name = st.text_input("Middle Name", value="")
         with c4:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c5:
@@ -796,7 +796,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
             for i in range(int(num_comanage)):
                 cm1, cm2 = st.columns(2)
                 with cm1:
-                    cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", key=f"cm_name_hdu_{i}")
+                    cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", value="", key=f"cm_name_hdu_{i}")
                 with cm2:
                     cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_hdu_{i}")
                 cm_entries.append((cm_name, cm_spec))
@@ -857,14 +857,14 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
     with st.form("obgyne_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics & AI Checker")
         
-        # Row 1: Name / Age / Sex aligned (Fixed min_value=10 and value=10 to resolve StreamlitValueBelowMinError)
+        # Row 1: Name / Age / Sex aligned
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name (Blank)")
+            last_name = st.text_input("Last Name", value="")
         with c2:
-            first_name = st.text_input("First Name (Blank)")
+            first_name = st.text_input("First Name", value="")
         with c3:
-            middle_name = st.text_input("Middle Name (Blank)")
+            middle_name = st.text_input("Middle Name", value="")
         with c4:
             age = st.number_input("Age", min_value=10, max_value=100, value=10)
         with c5:
@@ -884,7 +884,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         st.subheader("👨‍⚕️ Medical & Surgical Care Team")
         c_att1, c_att2 = st.columns(2)
         with c_att1:
-            attending_physician = st.text_input("Attending Physician Name (Blank)")
+            attending_physician = st.text_input("Attending Physician Name", value="")
         with c_att2:
             attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("OBSTETRICS & GYNAECOLOGY"))
 
@@ -894,29 +894,29 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             for i in range(int(num_comanage)):
                 cm1, cm2 = st.columns(2)
                 with cm1:
-                    cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", key=f"cm_name_ob_{i}")
+                    cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", value="", key=f"cm_name_ob_{i}")
                 with cm2:
                     cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_ob_{i}")
                 cm_entries.append((cm_name, cm_spec))
 
         c_surg1, c_surg2 = st.columns(2)
         with c_surg1:
-            surgeon = st.text_input("Surgeon / OBGYNE Primary Operator (Blank)")
+            surgeon = st.text_input("Surgeon / OBGYNE Primary Operator", value="")
         with c_surg2:
             surgeon_spec = st.selectbox("Surgeon Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("OBSTETRICS & GYNAECOLOGY"))
 
         c_anes1, c_anes2 = st.columns(2)
         with c_anes1:
-            anesthesiologist = st.text_input("Anesthesiologist Name (Blank)")
+            anesthesiologist = st.text_input("Anesthesiologist Name", value="")
         with c_anes2:
             anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
         st.subheader("📋 OBGYNE Diagnosis & Procedure Details")
         cd1, cd2 = st.columns(2)
         with cd1:
-            diagnosis = st.text_area("OBGYNE Diagnosis (Blank)")
+            diagnosis = st.text_area("OBGYNE Diagnosis", value="")
         with cd2:
-            procedure = st.text_input("Procedure Name (Blank)")
+            procedure = st.text_input("Procedure Name", value="")
 
         ca, cb, cc, cd = st.columns(4)
         with ca:
@@ -985,11 +985,11 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         # Row 1: Name / Age / Sex aligned
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name (Blank)")
+            last_name = st.text_input("Last Name", value="")
         with c2:
-            first_name = st.text_input("First Name (Blank)")
+            first_name = st.text_input("First Name", value="")
         with c3:
-            middle_name = st.text_input("Middle Name (Blank)")
+            middle_name = st.text_input("Middle Name", value="")
         with c4:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c5:
@@ -1009,7 +1009,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         st.subheader("👨‍⚕️ Medical & Surgical Care Team")
         c_att1, c_att2 = st.columns(2)
         with c_att1:
-            attending_physician = st.text_input("Attending Physician Name (Blank)")
+            attending_physician = st.text_input("Attending Physician Name", value="")
         with c_att2:
             attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS)
 
@@ -1019,29 +1019,29 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             for i in range(int(num_comanage)):
                 cm1, cm2 = st.columns(2)
                 with cm1:
-                    cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", key=f"cm_name_scc_{i}")
+                    cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", value="", key=f"cm_name_scc_{i}")
                 with cm2:
                     cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_scc_{i}")
                 cm_entries.append((cm_name, cm_spec))
 
         c_surg1, c_surg2 = st.columns(2)
         with c_surg1:
-            surgeon = st.text_input("Primary Surgeon (Blank)")
+            surgeon = st.text_input("Primary Surgeon", value="")
         with c_surg2:
             surgeon_spec = st.selectbox("Surgeon Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL SURGERY"))
 
         c_anes1, c_anes2 = st.columns(2)
         with c_anes1:
-            anesthesiologist = st.text_input("Anesthesiologist Name (Blank)")
+            anesthesiologist = st.text_input("Anesthesiologist Name", value="")
         with c_anes2:
             anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
         st.subheader("📋 Pre/Post-Op & Surgical Details")
         cd1, cd2 = st.columns(2)
         with cd1:
-            diagnosis = st.text_area("Pre/Post-Op Diagnosis (Blank)")
+            diagnosis = st.text_area("Pre/Post-Op Diagnosis", value="")
         with cd2:
-            procedure = st.text_area("Surgical Procedure (Blank)")
+            procedure = st.text_area("Surgical Procedure", value="")
 
         all_scc_procs = [
             'EXCISION BIOPSY', 'INCISION AND DRAINAGE', 'WOUND SUTURING & CLOSING AND CHANGE OF DRESSING',
@@ -1121,11 +1121,11 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         # Row 1: Name / Age / Sex aligned
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name (Blank)")
+            last_name = st.text_input("Last Name", value="")
         with c2:
-            first_name = st.text_input("First Name (Blank)")
+            first_name = st.text_input("First Name", value="")
         with c3:
-            middle_name = st.text_input("Middle Name (Blank)")
+            middle_name = st.text_input("Middle Name", value="")
         with c4:
             sex = st.selectbox("Sex", ["None", "Male", "Female", "Others"])
 
@@ -1145,7 +1145,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         st.subheader("👨‍⚕️ Medical Care Team")
         c_att1, c_att2 = st.columns(2)
         with c_att1:
-            attending_physician = st.text_input("Attending Physician Name (Blank)")
+            attending_physician = st.text_input("Attending Physician Name", value="")
         with c_att2:
             attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL PAEDIATRICS"))
 
@@ -1155,7 +1155,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
             for i in range(int(num_comanage)):
                 cm1, cm2 = st.columns(2)
                 with cm1:
-                    cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", key=f"cm_name_scu_{i}")
+                    cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", value="", key=f"cm_name_scu_{i}")
                 with cm2:
                     cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_scu_{i}")
                 cm_entries.append((cm_name, cm_spec))
@@ -1173,7 +1173,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
 
         st.subheader("📋 Diagnosis & Diagnostic Flags")
-        diagnosis = st.text_area("Diagnosis Text (Blank)")
+        diagnosis = st.text_area("Diagnosis Text", value="")
         diag_flags = st.multiselect("Diagnostic Flags", ["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY"])
 
         submitted = st.form_submit_button("Submit Record to Google Sheets")
