@@ -696,7 +696,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         
         ca, cb, cc, cd = st.columns(4)
         with ca: 
-            proc_type = st.radio("Nature", ["DIAGNOSTICS", "THERAPEUTIC", "DIAGNOSTICS & THERAPEUTIC"])
+            proc_type = st.selectbox("Nature", ["None", "DIAGNOSTICS", "THERAPEUTIC", "DIAGNOSTICS & THERAPEUTIC"])
         with cb: 
             hosp_mode = st.selectbox("Hospitalization Mode", ["None", "Outpatient", "Inpatient"])
         with cc: 
