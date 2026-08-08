@@ -153,6 +153,18 @@ USER_DATABASE = {
         "role": "Nursing Administration",
         "name": "Nursing Control Staff",
         "modules": "All"
+    },
+    "ha_staff": {
+        "password": hash_password("hastaff2026"),
+        "role": "Hospital Administration",
+        "name": "Hospital Administration Staff",
+        "modules": "All"
+    },
+    "ha_staff1": {
+        "password": hash_password("hastaff12026"),
+        "role": "Hospital Administration",
+        "name": "Hospital Administration Staff 1",
+        "modules": "All"
     }
 }
 
@@ -868,17 +880,6 @@ if selected_sheet == "Hospital Information System":
 elif selected_sheet == "Emergency Care Complex (ECC)":
     st.header("Emergency Care Complex (ECC) Patient Registration")
     ph_now = get_ph_time()
-    
-    # Callback action for toggling co-management from attending physician field
-    def add_cm_ecc():
-        doc_name = st.session_state.get("ecc_att_input", "").strip()
-        doc_spec = st.session_state.get("ecc_spec_input", "None")
-        if doc_name:
-            st.session_state["cm_list_ecc"].append({"name": doc_name, "spec": doc_spec})
-            st.success(f"Added Dr. {doc_name} as Co-Management Physician.")
-        else:
-            st.warning("Please enter a physician name first.")
-
     with st.form("ecc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -922,7 +923,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
             admitted_to = st.selectbox("Admitted to", HOSPITAL_UNIT_AREAS)
         with c_doc4:
             st.markdown("<br>", unsafe_allow_html=True)
-            tag_as_cm = st.form_submit_button("Tag as Co-Management", on_click=add_cm_ecc)
+            tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
         if st.session_state["cm_list_ecc"]:
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -947,7 +948,6 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
             if existing_record:
                 st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
 
-            # If user clicked Tag as Co-Management during submit, ensure it goes to CM instead of Attending
             final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
             if tag_as_cm and attending_physician:
                 st.session_state["cm_list_ecc"].append({"name": attending_physician.strip(), "spec": attending_spec})
@@ -990,15 +990,6 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
     st.header("Endoscopy Unit Patient Registration")
     ph_now = get_ph_time()
     
-    def add_cm_endo():
-        doc_name = st.session_state.get("endo_att_input", "").strip()
-        doc_spec = st.session_state.get("endo_spec_input", "None")
-        if doc_name:
-            st.session_state["cm_list_endo"].append({"name": doc_name, "spec": doc_spec})
-            st.success(f"Added Dr. {doc_name} as Co-Management Physician.")
-        else:
-            st.warning("Please enter a physician name first.")
-
     with st.form("endo_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -1032,7 +1023,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, key="endo_spec_input")
         with c_doc3:
             st.markdown("<br>", unsafe_allow_html=True)
-            tag_as_cm = st.form_submit_button("Tag as CM", on_click=add_cm_endo)
+            tag_as_cm = st.form_submit_button("Tag as CM")
 
         if st.session_state["cm_list_endo"]:
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -1118,15 +1109,6 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 # ---------------------------------------------------------
 elif selected_sheet == "Hemodialysis Unit (HDU)":
     st.header("Hemodialysis Unit Patient Registration")
-    
-    def add_cm_hdu():
-        doc_name = st.session_state.get("hdu_att_input", "").strip()
-        doc_spec = st.session_state.get("hdu_spec_input", "None")
-        if doc_name:
-            st.session_state["cm_list_hdu"].append({"name": doc_name, "spec": doc_spec})
-            st.success(f"Added Dr. {doc_name} as Co-Management Physician.")
-        else:
-            st.warning("Please enter a physician name first.")
 
     with st.form("hdu_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
@@ -1158,7 +1140,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("NEPHROLOGY"), key="hdu_spec_input")
         with c_doc3:
             st.markdown("<br>", unsafe_allow_html=True)
-            tag_as_cm = st.form_submit_button("Tag as CM", on_click=add_cm_hdu)
+            tag_as_cm = st.form_submit_button("Tag as CM")
 
         if st.session_state["cm_list_hdu"]:
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -1223,15 +1205,6 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
     st.header("OBGYNE Care Complex Patient Registration")
     ph_now = get_ph_time()
     
-    def add_cm_ob():
-        doc_name = st.session_state.get("ob_att_input", "").strip()
-        doc_spec = st.session_state.get("ob_spec_input", "None")
-        if doc_name:
-            st.session_state["cm_list_ob"].append({"name": doc_name, "spec": doc_spec})
-            st.success(f"Added Dr. {doc_name} as Co-Management Physician.")
-        else:
-            st.warning("Please enter a physician name first.")
-
     with st.form("obgyne_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -1265,7 +1238,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("OBSTETRICS & GYNAECOLOGY"), key="ob_spec_input")
         with c_doc3:
             st.markdown("<br>", unsafe_allow_html=True)
-            tag_as_cm = st.form_submit_button("Tag as CM", on_click=add_cm_ob)
+            tag_as_cm = st.form_submit_button("Tag as CM")
 
         if st.session_state["cm_list_ob"]:
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -1364,15 +1337,6 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
     st.header("Surgical Care Complex Patient Registration")
     ph_now = get_ph_time()
     
-    def add_cm_scc():
-        doc_name = st.session_state.get("scc_att_input", "").strip()
-        doc_spec = st.session_state.get("scc_spec_input", "None")
-        if doc_name:
-            st.session_state["cm_list_scc"].append({"name": doc_name, "spec": doc_spec})
-            st.success(f"Added Dr. {doc_name} as Co-Management Physician.")
-        else:
-            st.warning("Please enter a physician name first.")
-
     with st.form("scc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -1403,10 +1367,10 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key="scc_att_input")
         with c_doc2:
-            attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, key="scc_spec_input")
+            attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, key="scc_spec_input")
         with c_doc3:
             st.markdown("<br>", unsafe_allow_html=True)
-            tag_as_cm = st.form_submit_button("Tag as CM", on_click=add_cm_scc)
+            tag_as_cm = st.form_submit_button("Tag as CM")
 
         if st.session_state["cm_list_scc"]:
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -1505,15 +1469,6 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 # ---------------------------------------------------------
 elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
     st.header("Special Care Unit Patient Registration")
-    
-    def add_cm_scu():
-        doc_name = st.session_state.get("scu_att_input", "").strip()
-        doc_spec = st.session_state.get("scu_spec_input", "None")
-        if doc_name:
-            st.session_state["cm_list_scu"].append({"name": doc_name, "spec": doc_spec})
-            st.success(f"Added Dr. {doc_name} as Co-Management Physician.")
-        else:
-            st.warning("Please enter a physician name first.")
 
     with st.form("scu_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
@@ -1550,7 +1505,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL PAEDIATRICS"), key="scu_spec_input")
         with c_doc3:
             st.markdown("<br>", unsafe_allow_html=True)
-            tag_as_cm = st.form_submit_button("Tag as CM", on_click=add_cm_scu)
+            tag_as_cm = st.form_submit_button("Tag as CM")
 
         if st.session_state["cm_list_scu"]:
             st.markdown("**Current Co-Management Doctors Added:**")
