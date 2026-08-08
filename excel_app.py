@@ -796,7 +796,6 @@ if selected_sheet == "Hospital Information System":
             status = str(row.get('PATIENT STATUS', 'Active')).strip().lower()
             hosp_mode = str(row.get('HOSPITALIZATION MODE', 'Inpatient')).strip().lower()
             
-            # Condition check: Status is active/may go home AND mode is inpatient
             is_active_status = status in ['active', 'may go home', '']
             is_inpatient = hosp_mode == 'inpatient'
             
@@ -916,7 +915,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         ]
         selected_diseases = st.multiselect("Disease Category", disease_options)
 
-        submitted = st.form_submit_button("Submit Record to Google Sheets")
+        submitted = st.form_submit_button("Submit Record")
         if submitted:
             existing_record = check_existing_patient_ai("Emergency Care Complex (ECC)", last_name, first_name, curr_date_str)
             if existing_record:
@@ -1032,7 +1031,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         with ce:
             kit_package = st.checkbox("Hospital Kit Package", value=False)
 
-        submitted = st.form_submit_button("Submit Record to Google Sheets")
+        submitted = st.form_submit_button("Submit Record")
         if submitted:
             existing_record = check_existing_patient_ai("Endoscopy Unit (ENDO)", last_name, first_name, curr_date_str)
             if existing_record:
@@ -1133,7 +1132,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         with c10:
             patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"])
 
-        submitted = st.form_submit_button("Submit Record to Google Sheets")
+        submitted = st.form_submit_button("Submit Record")
         if submitted:
             existing_record = check_existing_patient_ai("Hemodialysis Unit (HDU)", last_name, first_name, curr_date_str)
             if existing_record:
@@ -1264,7 +1263,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         with ce:
             patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"])
 
-        submitted = st.form_submit_button("Submit Record to Google Sheets")
+        submitted = st.form_submit_button("Submit Record")
         if submitted:
             existing_record = check_existing_patient_ai("OBGYNE Care Complex (LRDR-OB Surgery)", last_name, first_name, curr_date_str)
             if existing_record:
@@ -1406,7 +1405,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         with ce:
             patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"])
 
-        submitted = st.form_submit_button("Submit Record to Google Sheets")
+        submitted = st.form_submit_button("Submit Record")
         if submitted:
             existing_record = check_existing_patient_ai("Surgical Care Complex (OR Main)", last_name, first_name, curr_date_str)
             if existing_record:
@@ -1520,7 +1519,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         diagnosis = st.text_area("Diagnosis Text", value="")
         diag_flags = st.multiselect("Diagnosis Category", ["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY"])
 
-        submitted = st.form_submit_button("Submit Record to Google Sheets")
+        submitted = st.form_submit_button("Submit Record")
         if submitted:
             existing_record = check_existing_patient_ai("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", last_name, first_name, curr_date_str)
             if existing_record:
