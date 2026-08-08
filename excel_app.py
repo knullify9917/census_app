@@ -8,7 +8,7 @@ import os
 # 1. PAGE CONFIGURATION
 # ---------------------------------------------------------
 st.set_page_config(
-    page_title="MTCMC Direct Google Sheets Data Entry System",
+    page_title="PATIENT DATA RECORDING SYSTEM",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -140,7 +140,7 @@ def get_spec_index(default_name):
     return 0
 
 # ---------------------------------------------------------
-# 3. STREAMLINED SHEET HEADERS (RENAMED DEPARTMENTS)
+# 3. STREAMLINED SHEET HEADERS
 # ---------------------------------------------------------
 SHEET_HEADERS = {
     "Emergency Care Complex (ECC)": [
@@ -337,7 +337,7 @@ ensure_google_sheets_exist()
 # 5. STREAMLIT APP INTERFACE
 # ---------------------------------------------------------
 st.title("PATIENT DATA RECORDING SYSTEM")
-st.markdown("Enter patient census data into the input form below. Records are written directly to your cloud **Google Sheet (`MTCMC_CENSUS_MASTERFILES_SYSTEM`)**.")
+st.markdown("All data entries are securely stored on our hospital database.")
 
 MODULES = [
     "Dashboard & Summary", 
@@ -353,7 +353,7 @@ selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODUL
 st.markdown("---")
 
 # ---------------------------------------------------------
-# MODULE: DASHBOARD & SUMMARY TALLY
+# MODULE: HOSPITAL SUMMARY
 # ---------------------------------------------------------
 if selected_sheet == "Dashboard & Summary":
     st.header("Hospital Summary")
