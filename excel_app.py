@@ -428,19 +428,18 @@ def check_existing_patient_ai(sheet_name, last_name, fn, curr_date_str):
 ensure_google_sheets_exist()
 
 # ---------------------------------------------------------
-# 6. STREAMLIT APP INTERFACE (ROBUST LOGO, TITLE & SUBTITLE HEADER)
+# 6. STREAMLIT APP INTERFACE (LOGO_3.PNG, TITLE & SUBTITLE HEADER)
 # ---------------------------------------------------------
 col_logo, col_title = st.columns([0.10, 0.90], gap="small")
 
 with col_logo:
     logo_found = False
-    for logo_filename in ["logo.png", "logo_2.png", "assets/logo.png", "assets/logo_2.png"]:
+    for logo_filename in ["logo_3.png", "logo.png", "logo_2.png", "assets/logo_3.png", "assets/logo.png"]:
         if os.path.exists(logo_filename):
             st.image(logo_filename, width=80)
             logo_found = True
             break
     if not logo_found:
-        # Fallback inline SVG hospital icon if image files aren't uploaded in working directory yet
         st.markdown("""
             <div style="background-color: #1e3a8a; width: 70px; height: 70px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
                 <span style="color: white; font-size: 32px; font-weight: bold;">✚</span>
