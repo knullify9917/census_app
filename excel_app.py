@@ -367,7 +367,7 @@ def get_spec_index(default_name):
     return 0
 
 # ---------------------------------------------------------
-# 4. STREAMLINED SHEET HEADERS (Includes Co-Management fields & GNU Units)
+# 4. STREAMLINED SHEET HEADERS (Sorted Alphabetically)
 # ---------------------------------------------------------
 GNU_SHEET_HEADER = [
     'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
@@ -392,6 +392,15 @@ SHEET_HEADERS = {
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
         'PROCEDURE NATURE', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
     ],
+    "General Nursing Unit (GNU 1C)": GNU_SHEET_HEADER,
+    "General Nursing Unit (GNU 2A)": GNU_SHEET_HEADER,
+    "General Nursing Unit (GNU 2B)": GNU_SHEET_HEADER,
+    "General Nursing Unit (GNU 2C)": GNU_SHEET_HEADER,
+    "General Nursing Unit (GNU 2D)": GNU_SHEET_HEADER,
+    "General Nursing Unit (GNU 3A)": GNU_SHEET_HEADER,
+    "General Nursing Unit (GNU 3B)": GNU_SHEET_HEADER,
+    "General Nursing Unit (GNU 3C)": GNU_SHEET_HEADER,
+    "General Nursing Unit (GNU 4A)": GNU_SHEET_HEADER,
     "Hemodialysis Unit (HDU)": [
         'MONTH', 'DATE', 'TRUE DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'DIAGNOSIS', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
@@ -407,6 +416,13 @@ SHEET_HEADERS = {
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
         'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
     ],
+    "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)": [
+        'MONTH', 'DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AOG', 'AGE', 'DIAGNOSIS', 
+        'DIAGNOSIS CATEGORY', 'ADMITTED FROM', 'ADMITTED TO', 'TRANSFERRED TO', 
+        'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
+        'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
+        'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
+    ],
     "Surgical Care Complex (OR Main)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
         'PRE-OP DIAGNOSIS', 'POST-OP DIAGNOSIS', 'PROCEDURE', 'PROCEDURE CATEGORY', 
@@ -415,23 +431,7 @@ SHEET_HEADERS = {
         'PRIMARY SURGEON', 'SURGEON SPECIALIZATION',
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
         'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
-    ],
-    "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)": [
-        'MONTH', 'DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AOG', 'AGE', 'DIAGNOSIS', 
-        'DIAGNOSIS CATEGORY', 'ADMITTED FROM', 'ADMITTED TO', 'TRANSFERRED TO', 
-        'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
-        'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-        'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
-    ],
-    "General Nursing Unit (GNU 1C)": GNU_SHEET_HEADER,
-    "General Nursing Unit (GNU 2A)": GNU_SHEET_HEADER,
-    "General Nursing Unit (GNU 2B)": GNU_SHEET_HEADER,
-    "General Nursing Unit (GNU 2C)": GNU_SHEET_HEADER,
-    "General Nursing Unit (GNU 2D)": GNU_SHEET_HEADER,
-    "General Nursing Unit (GNU 3A)": GNU_SHEET_HEADER,
-    "General Nursing Unit (GNU 3B)": GNU_SHEET_HEADER,
-    "General Nursing Unit (GNU 3C)": GNU_SHEET_HEADER,
-    "General Nursing Unit (GNU 4A)": GNU_SHEET_HEADER
+    ]
 }
 
 def get_month_str(date_obj, fmt_style="numeric_prefix"):
@@ -652,12 +652,12 @@ st.sidebar.markdown(f"**Date & Time:** `{ph_now_display.strftime('%B %d, %Y - %I
 
 st.sidebar.markdown("---")
 
-# Role-Based Access Control (RBAC) Module Visibility
+# Role-Based Access Control (RBAC) Module Visibility (Sorted Alphabetically)
 logged_user_key = st.session_state["username"]
 user_info = USER_DATABASE.get(logged_user_key, {})
 allowed_modules = user_info.get("modules", "All")
 
-all_department_modules = [
+all_department_modules = sorted([
     "Hospital Information System", 
     "Emergency Care Complex (ECC)", 
     "Endoscopy Unit (ENDO)", 
@@ -674,7 +674,7 @@ all_department_modules = [
     "General Nursing Unit (GNU 3B)",
     "General Nursing Unit (GNU 3C)",
     "General Nursing Unit (GNU 4A)"
-]
+])
 
 if logged_user_key in ["ecc_staff", "scc_staff", "endo_staff", "hdu_staff"]:
     dept_map = {
@@ -683,13 +683,13 @@ if logged_user_key in ["ecc_staff", "scc_staff", "endo_staff", "hdu_staff"]:
         "endo_staff": "Endoscopy Unit (ENDO)",
         "hdu_staff": "Hemodialysis Unit (HDU)"
     }
-    MODULES = ["Hospital Information System", dept_map[logged_user_key]]
+    MODULES = sorted(["Hospital Information System", dept_map[logged_user_key]])
 elif logged_user_key in ["nsgcon_staff", "ha_staff", "ha_staff1"]:
     MODULES = ["Hospital Information System"]
 elif allowed_modules == "All":
     MODULES = all_department_modules
 else:
-    MODULES = allowed_modules
+    MODULES = sorted(allowed_modules)
 
 st.sidebar.markdown("### 🧭 Department Navigation")
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
@@ -792,7 +792,7 @@ if selected_sheet == "Hospital Information System":
     st.header("Hospital Summary")
     st.markdown("This is the census summary of the departments of MTCMC.")
 
-    department_sheets = [
+    department_sheets = sorted([
         "Emergency Care Complex (ECC)", 
         "Endoscopy Unit (ENDO)", 
         "Hemodialysis Unit (HDU)", 
@@ -808,7 +808,7 @@ if selected_sheet == "Hospital Information System":
         "General Nursing Unit (GNU 3B)",
         "General Nursing Unit (GNU 3C)",
         "General Nursing Unit (GNU 4A)"
-    ]
+    ])
     
     summary_data = []
     total_all_cases = 0
