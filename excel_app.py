@@ -104,7 +104,7 @@ REGULAR_FONT_SIZE = 10
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# User Database with Administrator and Department Staff Accounts
+# User Database with Administrator and Department Staff Accounts (Strictly restricted module access)
 USER_DATABASE = {
     "admin": {
         "password": hash_password("admin123"),
