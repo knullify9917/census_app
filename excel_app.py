@@ -204,7 +204,7 @@ def get_month_str(date_obj, fmt_style="numeric_prefix"):
     return month_name
 
 # ---------------------------------------------------------
-# 4. GOOGLE SHEETS CONNECTION & SETUP (FOOLPROOF SANITIZER)
+# 4. GOOGLE SHEETS CONNECTION & SETUP
 # ---------------------------------------------------------
 @st.cache_resource
 def init_google_sheets():
@@ -219,8 +219,14 @@ def init_google_sheets():
             creds_dict = dict(st.secrets["gcp_service_account"])
             if "private_key" in creds_dict:
                 pk = str(creds_dict["private_key"])
-                pk = pk.strip("'\"")
+                pk = pk.strip("'\" \n\r")
                 pk = pk.replace("\\n", "\n")
+                
+                if "-----BEGIN PRIVATE KEY-----" in pk and "-----END PRIVATE KEY-----" in pk:
+                    start_idx = pk.find("-----BEGIN PRIVATE KEY-----")
+                    end_idx = pk.find("-----END PRIVATE KEY-----") + len("-----END PRIVATE KEY-----")
+                    pk = pk[start_idx:end_idx]
+                
                 creds_dict["private_key"] = pk
             creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
         except Exception as e:
@@ -327,15 +333,75 @@ ensure_google_sheets_exist()
 st.title("📊 MTCMC Direct Google Sheets Data Entry Application")
 st.markdown("Enter patient census data into the input form below. Records are written directly to your cloud **Google Sheet (`MTCMC_CENSUS_MASTERFILES_SYSTEM`)**.")
 
-MODULES = ["ECC TOP DISEASES", "ENDO", "HDU", "OBGYNE CASES", "SCC CASES", "SCU CASES"]
+MODULES = [
+    "Dashboard & Summary", 
+    "ECC TOP DISEASES", 
+    "ENDO", 
+    "HDU", 
+    "OBGYNE CASES", 
+    "SCC CASES", 
+    "SCU CASES"
+]
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES)
 
 st.markdown("---")
 
 # ---------------------------------------------------------
+# MODULE: DASHBOARD & SUMMARY TALLY
+# ---------------------------------------------------------
+if selected_sheet == "Dashboard & Summary":
+    st.header("📈 MTCMC Department Census Tally & Summary")
+    st.markdown("This dashboard aggregates live data entries across all department modules from your Google Sheet.")
+
+    department_sheets = ["ECC TOP DISEASES", "ENDO", "HDU", "OBGYNE CASES", "SCC CASES", "SCU CASES"]
+    
+    summary_data = []
+    total_all_cases = 0
+
+    for dept in department_sheets:
+        df = read_google_sheet(dept)
+        record_count = len(df) if not df.empty else 0
+        total_all_cases += record_count
+        
+        summary_data.append({
+            "Department Module": dept,
+            "Total Census Records": record_count,
+            "Active Columns": len(df.columns) if not df.empty else len(SHEET_HEADERS.get(dept, []))
+        })
+
+    m1, m2 = st.columns(2)
+    with m1:
+        st.metric(label="Total Hospital-Wide Census Records", value=total_all_cases)
+    with m2:
+        st.metric(label="Active Departments Tracked", value=len(department_sheets))
+
+    st.markdown("---")
+    st.subheader("📋 Department-wise Breakdown Table")
+    summary_df = pd.DataFrame(summary_data)
+    st.dataframe(summary_df, use_container_width=True)
+
+    st.markdown("---")
+    st.subheader("🔍 Deep-Dive Department Filter")
+    selected_dept_view = st.selectbox("Select Department to Tally & Inspect", department_sheets)
+    
+    dept_df = read_google_sheet(selected_dept_view)
+    if not dept_df.empty:
+        st.write(f"Showing all records for **{selected_dept_view}** (Total: {len(dept_df)} records)")
+        
+        if 'MODE OF PAYMENT' in dept_df.columns:
+            st.markdown("##### 💳 Breakdown by Mode of Payment")
+            payment_counts = dept_df['MODE OF PAYMENT'].value_counts().reset_index()
+            payment_counts.columns = ['Mode of Payment', 'Count']
+            st.bar_chart(payment_counts.set_index('Mode of Payment'))
+            
+        st.dataframe(dept_df, use_container_width=True)
+    else:
+        st.info(f"No records found yet for {selected_dept_view}.")
+
+# ---------------------------------------------------------
 # FORM 1: ECC TOP DISEASES
 # ---------------------------------------------------------
-if selected_sheet == "ECC TOP DISEASES":
+elif selected_sheet == "ECC TOP DISEASES":
     st.header("Emergency Care Center (ECC) Data Entry Form")
     with st.form("ecc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics & AI Checker")
@@ -985,12 +1051,13 @@ elif selected_sheet == "SCU CASES":
             if append_record_to_google_sheet("SCU CASES", row_data):
                 st.success("Successfully saved to Google Sheets `SCU CASES` tab!")
 
-st.markdown("---")
-st.subheader(f"Live Sheet Preview: `{selected_sheet}` (Google Sheets)")
+if selected_sheet != "Dashboard & Summary":
+    st.markdown("---")
+    st.subheader(f"Live Sheet Preview: `{selected_sheet}` (Google Sheets)")
 
-sheet_df = read_google_sheet(selected_sheet)
-if not sheet_df.empty:
-    st.dataframe(sheet_df.tail(10), use_container_width=True)
-    st.caption(f"Showing last 10 entries of `{selected_sheet}` (Total: {len(sheet_df)} records)")
-else:
-    st.info(f"Google Sheets worksheet `{selected_sheet}` currently has no records.")
+    sheet_df = read_google_sheet(selected_sheet)
+    if not sheet_df.empty:
+        st.dataframe(sheet_df.tail(10), use_container_width=True)
+        st.caption(f"Showing last 10 entries of `{selected_sheet}` (Total: {len(sheet_df)} records)")
+    else:
+        st.info(f"Google Sheets worksheet `{selected_sheet}` currently has no records.")
