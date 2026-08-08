@@ -175,7 +175,7 @@ if "name" not in st.session_state:
     st.session_state["name"] = ""
 
 # Session state initialization for co-management dynamic list storage per form context
-for form_key in ["ecc", "endo", "hdu", "ob", "scc", "scu", "gnu_1c", "gnu_2a", "gnu_2b", "gnu_2c", "gnu_2d", "gnu_3a", "gnu_3b", "gnu_3c", "gnu_4a"]:
+for form_key in ["ecc", "endo", "hdu", "ob", "scc", "scu", "1c", "2a", "2b", "2c", "2d", "3a", "3b", "3c", "4a"]:
     if f"cm_list_{form_key}" not in st.session_state:
         st.session_state[f"cm_list_{form_key}"] = []
 
@@ -367,7 +367,7 @@ def get_spec_index(default_name):
     return 0
 
 # ---------------------------------------------------------
-# 4. STREAMLIT SHEET HEADERS (Updated ECC Header without Patient Status)
+# 4. STREAMLINED SHEET HEADERS
 # ---------------------------------------------------------
 GNU_SHEET_HEADER = [
     'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
@@ -986,9 +986,10 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
-        if st.session_state[f"cm_list_{form_key_slug}"]:
+        cm_list_key = f"cm_list_{form_key_slug}"
+        if st.session_state.get(cm_list_key):
             st.markdown("**Current Co-Management Doctors Added:**")
-            for idx, cm in enumerate(st.session_state[f"cm_list_{form_key_slug}"]):
+            for idx, cm in enumerate(st.session_state[cm_list_key]):
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
         st.subheader("📋 Clinical & Diagnostic Details")
@@ -1002,9 +1003,9 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
 
             final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
             if tag_as_cm and attending_physician:
-                st.session_state[f"cm_list_{form_key_slug}"].append({"name": attending_physician.strip(), "spec": attending_spec})
+                st.session_state.setdefault(cm_list_key, []).append({"name": attending_physician.strip(), "spec": attending_spec})
 
-            valid_cm = st.session_state[f"cm_list_{form_key_slug}"]
+            valid_cm = st.session_state.get(cm_list_key, [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
             cm_specs_str = "; ".join([item['spec'] for item in valid_cm]) if valid_cm else "N/A"
 
@@ -1030,7 +1031,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
 
             if append_record_to_google_sheet(gnu_title, row_data):
                 st.success(f"Successfully saved to Google Sheets `{gnu_title}` tab!")
-                st.session_state[f"cm_list_{form_key_slug}"] = []
+                st.session_state[cm_list_key] = []
 
 # ---------------------------------------------------------
 # FORM 1: Emergency Care Complex (ECC)
@@ -1080,7 +1081,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
-        if st.session_state["cm_list_ecc"]:
+        if st.session_state.get("cm_list_ecc"):
             st.markdown("**Current Co-Management Doctors Added:**")
             for idx, cm in enumerate(st.session_state["cm_list_ecc"]):
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
@@ -1105,9 +1106,9 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 
             final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
             if tag_as_cm and attending_physician:
-                st.session_state["cm_list_ecc"].append({"name": attending_physician.strip(), "spec": attending_spec})
+                st.session_state.setdefault("cm_list_ecc", []).append({"name": attending_physician.strip(), "spec": attending_spec})
 
-            valid_cm = st.session_state["cm_list_ecc"]
+            valid_cm = st.session_state.get("cm_list_ecc", [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
             cm_specs_str = "; ".join([item['spec'] for item in valid_cm]) if valid_cm else "N/A"
 
@@ -1178,7 +1179,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
-        if st.session_state["cm_list_endo"]:
+        if st.session_state.get("cm_list_endo"):
             st.markdown("**Current Co-Management Doctors Added:**")
             for cm in st.session_state["cm_list_endo"]:
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
@@ -1218,9 +1219,9 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 
             final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
             if tag_as_cm and attending_physician:
-                st.session_state["cm_list_endo"].append({"name": attending_physician.strip(), "spec": attending_spec})
+                st.session_state.setdefault("cm_list_endo", []).append({"name": attending_physician.strip(), "spec": attending_spec})
 
-            valid_cm = st.session_state["cm_list_endo"]
+            valid_cm = st.session_state.get("cm_list_endo", [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
             cm_specs_str = "; ".join([item['spec'] for item in valid_cm]) if valid_cm else "N/A"
 
@@ -1294,7 +1295,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
-        if st.session_state["cm_list_hdu"]:
+        if st.session_state.get("cm_list_hdu"):
             st.markdown("**Current Co-Management Doctors Added:**")
             for cm in st.session_state["cm_list_hdu"]:
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
@@ -1320,9 +1321,9 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
             
             final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
             if tag_as_cm and attending_physician:
-                st.session_state["cm_list_hdu"].append({"name": attending_physician.strip(), "spec": attending_spec})
+                st.session_state.setdefault("cm_list_hdu", []).append({"name": attending_physician.strip(), "spec": attending_spec})
 
-            valid_cm = st.session_state["cm_list_hdu"]
+            valid_cm = st.session_state.get("cm_list_hdu", [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
             cm_specs_str = "; ".join([item['spec'] for item in valid_cm]) if valid_cm else "N/A"
 
@@ -1391,7 +1392,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
-        if st.session_state["cm_list_ob"]:
+        if st.session_state.get("cm_list_ob"):
             st.markdown("**Current Co-Management Doctors Added:**")
             for cm in st.session_state["cm_list_ob"]:
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
@@ -1440,9 +1441,9 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 
             final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
             if tag_as_cm and attending_physician:
-                st.session_state["cm_list_ob"].append({"name": attending_physician.strip(), "spec": attending_spec})
+                st.session_state.setdefault("cm_list_ob", []).append({"name": attending_physician.strip(), "spec": attending_spec})
 
-            valid_cm = st.session_state["cm_list_ob"]
+            valid_cm = st.session_state.get("cm_list_ob", [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
             cm_specs_str = "; ".join([item['spec'] for item in valid_cm]) if valid_cm else "N/A"
 
@@ -1522,7 +1523,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
-        if st.session_state["cm_list_scc"]:
+        if st.session_state.get("cm_list_scc"):
             st.markdown("**Current Co-Management Doctors Added:**")
             for cm in st.session_state["cm_list_scc"]:
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
@@ -1574,9 +1575,9 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 
             final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
             if tag_as_cm and attending_physician:
-                st.session_state["cm_list_scc"].append({"name": attending_physician.strip(), "spec": attending_spec})
+                st.session_state.setdefault("cm_list_scc", []).append({"name": attending_physician.strip(), "spec": attending_spec})
 
-            valid_cm = st.session_state["cm_list_scc"]
+            valid_cm = st.session_state.get("cm_list_scc", [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
             cm_specs_str = "; ".join([item['spec'] for item in valid_cm]) if valid_cm else "N/A"
 
@@ -1656,7 +1657,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
-        if st.session_state["cm_list_scu"]:
+        if st.session_state.get("cm_list_scu"):
             st.markdown("**Current Co-Management Doctors Added:**")
             for cm in st.session_state["cm_list_scu"]:
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
@@ -1693,9 +1694,9 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
 
             final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
             if tag_as_cm and attending_physician:
-                st.session_state["cm_list_scu"].append({"name": attending_physician.strip(), "spec": attending_spec})
+                st.session_state.setdefault("cm_list_scu", []).append({"name": attending_physician.strip(), "spec": attending_spec})
 
-            valid_cm = st.session_state["cm_list_scu"]
+            valid_cm = st.session_state.get("cm_list_scu", [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
             cm_specs_str = "; ".join([item['spec'] for item in valid_cm]) if valid_cm else "N/A"
 
