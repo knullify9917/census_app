@@ -698,7 +698,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         with ca: 
             proc_type = st.radio("Nature", ["DIAGNOSTICS", "THERAPEUTIC", "DIAGNOSTICS & THERAPEUTIC"])
         with cb: 
-            hosp_mode = st.radio("Hospitalization Mode", ["Outpatient", "Inpatient"])
+            hosp_mode = st.selectbox("Hospitalization Mode", ["None", "Outpatient", "Inpatient"])
         with cc: 
             payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
         with cd:
@@ -798,7 +798,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         with c7:
             shift_set = st.selectbox("Dialysis Shift Slot", ["None", "1ST SET", "2ND SET", "3RD SET", "ONCALL"])
         with c8:
-            hosp_mode = st.radio("Hospitalization Mode", ["Outpatient", "Inpatient"])
+            hosp_mode = st.selectbox("Hospitalization Mode", ["None", "Outpatient", "Inpatient"])
         with c9:
             payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
 
@@ -914,7 +914,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         with cb:
             complexity = st.selectbox("Complexity Tier", ["None", "MAJOR", "MINOR", "DIAGNOSTIC"])
         with cc:
-            hosp_mode = st.radio("Hospitalization Mode", ["Outpatient", "Inpatient"])
+            hosp_mode = st.selectbox("Hospitalization Mode", ["None", "Outpatient", "Inpatient"])
             kit_used = st.checkbox("Hospital Kit Package", value=True)
         with cd:
             payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
@@ -1049,7 +1049,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         with ca: 
             complexity = st.selectbox("Complexity Tier", ["None", "MAJOR", "MEDIUM", "MINOR", "DIAGNOSTICS"])
         with cb: 
-            hosp_mode = st.radio("Hospitalization Mode", ["Outpatient", "Inpatient"])
+            hosp_mode = st.selectbox("Hospitalization Mode", ["None", "Outpatient", "Inpatient"])
         with cc: 
             kit_package = st.checkbox("Hospital Kit Package", value=True)
         with cd: 
@@ -1158,7 +1158,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         with c12:
             transferred_to = st.selectbox("Transferred To", HOSPITAL_UNIT_AREAS)
         with c13:
-            hosp_mode = st.radio("Hospitalization Mode", ["Outpatient", "Inpatient"])
+            hosp_mode = st.selectbox("Hospitalization Mode", ["None", "Outpatient", "Inpatient"])
 
         payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
 
