@@ -382,7 +382,7 @@ def get_spec_index(default_name):
 # 4. STREAMLINED SHEET HEADERS
 # ---------------------------------------------------------
 GNU_SHEET_HEADER = [
-    'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
+    'MONTH', 'DATE', 'TIME', 'ROOM NO', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
     'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
     'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
     'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'PATIENT STATUS', 
@@ -865,56 +865,60 @@ if selected_sheet == "Hospital Information System":
 
     # ---------------------------------------------------------
     # ACTIVE PATIENT ROSTER (Condition: Active & May Go Home Inpatients)
+    # Formatted specifically for General Nursing Units requested fields:
+    # Admission Date, Room No., Name of Patient, Age, Admitting Diagnosis,
+    # Admitting Physician, Surgical Procedure, Diagnostic Procedure, Status
     # ---------------------------------------------------------
     st.subheader("📋 Active Patient Roster")
-    st.markdown("Aggregated live roster displaying **Inpatient** records currently tagged as **Active** or **May Go Home** across all hospital departments.")
+    st.markdown("Aggregated live roster displaying patient records from General Nursing Units.")
 
-    all_roster_frames = []
-    for dept in department_sheets:
-        dept_df = read_google_sheet(dept)
-        if not dept_df.empty:
-            df_copy = dept_df.copy()
-            df_copy.insert(0, "DEPARTMENT UNIT", dept)
-            if dept.startswith("General Nursing Unit (GNU") and 'LAST NAME' in df_copy.columns and 'FIRST NAME' in df_copy.columns and 'PATIENT STATUS' in df_copy.columns:
-                df_copy['PATIENT & STATUS'] = df_copy['LAST NAME'].astype(str).str.strip() + ", " + df_copy['FIRST NAME'].astype(str).str.strip() + " [" + df_copy['PATIENT STATUS'].astype(str).str.strip() + "]"
-            all_roster_frames.append(df_copy)
+    gnu_sheets = [d for d in department_sheets if d.startswith("General Nursing Unit (GNU")]
+    gnu_roster_frames = []
+    for gnu in gnu_sheets:
+        gnu_df = read_google_sheet(gnu)
+        if not gnu_df.empty:
+            df_c = gnu_df.copy()
+            df_c.insert(0, "DEPARTMENT UNIT", gnu)
+            gnu_roster_frames.append(df_c)
 
-    if all_roster_frames:
-        master_roster_df = pd.concat(all_roster_frames, ignore_index=True)
+    if gnu_roster_frames:
+        master_gnu_df = pd.concat(gnu_roster_frames, ignore_index=True)
         
-        # Filter strictly for Active & May Go Home if PATIENT STATUS column exists
-        if 'PATIENT STATUS' in master_roster_df.columns:
-            master_roster_df['PATIENT STATUS'] = master_roster_df['PATIENT STATUS'].fillna("Active")
-            active_roster_filtered = master_roster_df[
-                master_roster_df['PATIENT STATUS'].astype(str).str.strip().str.lower().isin(['active', 'may go home'])
+        # Filter for active/may go home status if column exists
+        if 'PATIENT STATUS' in master_gnu_df.columns:
+            master_gnu_df['PATIENT STATUS'] = master_gnu_df['PATIENT STATUS'].fillna("Active")
+            gnu_filtered = master_gnu_df[
+                master_gnu_df['PATIENT STATUS'].astype(str).str.strip().str.lower().isin(['active', 'may go home'])
             ]
         else:
-            active_roster_filtered = master_roster_df
+            gnu_filtered = master_gnu_df
 
-        # Filter strictly for Inpatients if HOSPITALIZATION MODE column exists
-        if 'HOSPITALIZATION MODE' in active_roster_filtered.columns:
-            active_roster_filtered = active_roster_filtered[
-                active_roster_filtered['HOSPITALIZATION MODE'].astype(str).str.strip().str.lower() == 'inpatient'
-            ]
+        if not gnu_filtered.empty:
+            # Construct patient full name from Last, First, Middle
+            gnu_filtered['NAME OF PATIENT'] = (
+                gnu_filtered.get('LAST NAME', '').astype(str).str.strip() + ", " +
+                gnu_filtered.get('FIRST NAME', '').astype(str).str.strip() + " " +
+                gnu_filtered.get('MIDDLE NAME', '').astype(str).str.strip()
+            ).str.strip(", ")
 
-        c_filt1, c_filt2 = st.columns(2)
-        with c_filt1:
-            unit_filter = st.selectbox("Filter by Department Unit", ["All Departments"] + department_sheets)
-        with c_filt2:
-            search_name = st.text_input("Search Patient Last Name", value="")
+            # Map fields to required table schema
+            roster_mapped = pd.DataFrame()
+            roster_mapped['Admission Date'] = gnu_filtered.get('DATE', '')
+            roster_mapped['Room No.'] = gnu_filtered.get('ROOM NO', '')
+            roster_mapped['Name of Patient'] = gnu_filtered['NAME OF PATIENT']
+            roster_mapped['Age'] = gnu_filtered.get('AGE', '')
+            roster_mapped['Admitting Diagnosis'] = gnu_filtered.get('DIAGNOSIS', '')
+            roster_mapped['Admitting Physician'] = gnu_filtered.get('ATTENDING PHYSICIAN', '')
+            roster_mapped['Surgical Procedure'] = gnu_filtered.get('PROCEDURES', '')
+            roster_mapped['Diagnostic Procedure'] = gnu_filtered.get('DIAGNOSTIC EXAMINATIONS', '')
+            roster_mapped['Status'] = gnu_filtered.get('PATIENT STATUS', '')
 
-        final_roster_display = active_roster_filtered.copy()
-        if not final_roster_display.empty:
-            if unit_filter != "All Departments":
-                final_roster_display = final_roster_display[final_roster_display["DEPARTMENT UNIT"] == unit_filter]
-            if search_name.strip():
-                if 'LAST NAME' in final_roster_display.columns:
-                    final_roster_display = final_roster_display[final_roster_display['LAST NAME'].astype(str).str.contains(search_name.strip(), case=False, na=False)]
-
-        st.dataframe(final_roster_display, use_container_width=True)
-        st.caption(f"Showing {len(final_roster_display)} active inpatient records.")
+            st.dataframe(roster_mapped, use_container_width=True)
+            st.caption(f"Showing {len(roster_mapped)} active General Nursing Unit patient records.")
+        else:
+            st.info("No active patient records found in General Nursing Units.")
     else:
-        st.info("No patient admission records found across hospital sheets.")
+        st.info("No General Nursing Unit records found.")
 
     st.markdown("---")
     st.subheader("📊 Department Performance")
@@ -968,7 +972,9 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
     with st.form(f"gnu_form_{form_key_slug}", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
-        c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
+        c0, c1, c2, c3, c4, c5 = st.columns([1.5, 2, 2, 2, 1, 1.5])
+        with c0:
+            room_no = st.text_input("Room No.", value="").strip().upper()
         with c1:
             last_name = st.text_input("Last Name", value="").strip().upper()
         with c2:
@@ -1038,6 +1044,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
                 'MONTH': get_month_str(entry_date, "full_month"),
                 'DATE': curr_date_str,
                 'TIME': entry_time_str,
+                'ROOM NO': room_no,
                 'LAST NAME': last_name,
                 'FIRST NAME': first_name,
                 'MIDDLE NAME': middle_name,
