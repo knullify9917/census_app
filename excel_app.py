@@ -152,19 +152,19 @@ USER_DATABASE = {
         "password": hash_password("nsgcon2026"),
         "role": "Nursing Administration",
         "name": "Nursing Control Staff",
-        "modules": "All"
+        "modules": ["Hospital Information System"]
     },
     "ha_staff": {
         "password": hash_password("hastaff2026"),
         "role": "Hospital Administration",
         "name": "Hospital Administration Staff",
-        "modules": "All"
+        "modules": ["Hospital Information System"]
     },
     "ha_staff1": {
         "password": hash_password("hastaff12026"),
         "role": "Hospital Administration",
         "name": "Hospital Administration Staff 1",
-        "modules": "All"
+        "modules": ["Hospital Information System"]
     }
 }
 
