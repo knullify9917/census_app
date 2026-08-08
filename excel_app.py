@@ -367,7 +367,7 @@ def get_spec_index(default_name):
     return 0
 
 # ---------------------------------------------------------
-# 4. STREAMLINED SHEET HEADERS
+# 4. STREAMLIT SHEET HEADERS (Updated ECC Header without Patient Status)
 # ---------------------------------------------------------
 GNU_SHEET_HEADER = [
     'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
@@ -381,7 +381,7 @@ SHEET_HEADERS = {
         'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
         'DISEASE CATEGORY', 'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-        'HOSPITALIZATION MODE', 'CASE TYPE', 'MODE OF PAYMENT', 'ADMITTED TO', 'PATIENT STATUS', 'CASE COUNT'
+        'HOSPITALIZATION MODE', 'CASE TYPE', 'MODE OF PAYMENT', 'ADMITTED TO', 'CASE COUNT'
     ],
     "Endoscopy Unit (ENDO)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
@@ -1067,18 +1067,16 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         with c_h3:
             payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY", "CHARITY"], index=0)
         with c_h4:
-            patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"], index=0)
+            admitted_to = st.selectbox("Admitted To", HOSPITAL_UNIT_AREAS, index=0)
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
-        c_doc1, c_doc2, c_doc3 = st.columns([2, 1.5, 1.5])
+        c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key="ecc_att_input")
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="ecc_spec_input")
-        with c_doc3:
-            admitted_to = st.selectbox("Admitted to", HOSPITAL_UNIT_AREAS, index=0)
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
@@ -1132,7 +1130,6 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
                 'CASE TYPE': case_type,
                 'MODE OF PAYMENT': payment_selected,
                 'ADMITTED TO': admitted_to,
-                'PATIENT STATUS': patient_status,
                 'CASE COUNT': 1
             }
 
