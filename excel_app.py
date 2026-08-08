@@ -265,7 +265,7 @@ SHEET_HEADERS = {
     ],
     "Surgical Care Complex (OR Main)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
-        'PRE-OP DIAGNOSIS', 'POST-OP DIAGNOSIS', 'PROCEDURE', 'SURGICAL PROCEDURE FLAGS', 
+        'PRE-OP DIAGNOSIS', 'POST-OP DIAGNOSIS', 'PROCEDURE', 'PROCEDURE CENSUS', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'PRIMARY SURGEON', 'SURGEON SPECIALIZATION',
@@ -972,6 +972,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
     with st.form("scc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
+        # Row 1: Name / Age / Sex aligned (Matched identically with OBGYNE)
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
             last_name = st.text_input("Last Name", value="")
@@ -984,6 +985,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         with c5:
             sex = st.selectbox("Sex", ["None", "Male", "Female", "Others"])
 
+        # Row 2: Date / Time aligned (Matched identically with OBGYNE)
         c_d1, c_d2, c_d3 = st.columns(3)
         with c_d1:
             entry_date = st.date_input("Surgery Date", ph_now.date())
