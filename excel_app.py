@@ -355,7 +355,7 @@ def get_spec_index(default_name):
     return 0
 
 # ---------------------------------------------------------
-# 4. STREAMLINED SHEET HEADERS
+# 4. STREAMLINED SHEET HEADERS (Co-Management fields removed)
 # ---------------------------------------------------------
 SHEET_HEADERS = {
     "Emergency Care Complex (ECC)": [
@@ -367,7 +367,6 @@ SHEET_HEADERS = {
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
         'DIAGNOSIS', 'PROCEDURE', 'PROCEDURE CATEGORY', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
-        'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'SURGEON / PROCEDURALIST', 'SURGEON SPECIALIZATION',
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
         'PROCEDURE NATURE', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
@@ -375,14 +374,12 @@ SHEET_HEADERS = {
     "Hemodialysis Unit (HDU)": [
         'MONTH', 'DATE', 'TRUE DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'DIAGNOSIS', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
-        'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'DIALYSIS SHIFT SLOT', 'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
     ],
     "OBGYNE Care Complex (LRDR-OB Surgery)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
         'PRE-OP DIAGNOSIS', 'POST-OP DIAGNOSIS', 'PROCEDURE NAME', 'SURGICAL PROCEDURE', 'PROCEDURE CATEGORY', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
-        'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'SURGEON / OBGYNE', 'SURGEON SPECIALIZATION',
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
         'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
@@ -391,7 +388,6 @@ SHEET_HEADERS = {
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
         'PRE-OP DIAGNOSIS', 'POST-OP DIAGNOSIS', 'PROCEDURE', 'PROCEDURE CATEGORY', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
-        'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'PRIMARY SURGEON', 'SURGEON SPECIALIZATION',
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
         'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
@@ -400,7 +396,6 @@ SHEET_HEADERS = {
         'MONTH', 'DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AOG', 'AGE', 'DIAGNOSIS', 
         'DIAGNOSIS CATEGORY', 'ADMITTED FROM', 'ADMITTED TO', 'TRANSFERRED TO', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
-        'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
     ]
 }
@@ -953,10 +948,6 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
     st.header("Endoscopy Unit Patient Registration")
     ph_now = get_ph_time()
     
-    # Helper for dynamic session state co-management count
-    if "num_cm_endo" not in st.session_state:
-        st.session_state["num_cm_endo"] = 0
-
     with st.form("endo_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -984,25 +975,11 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 
         st.subheader("👨‍⚕️ Medical & Surgical Care Team")
         attending_physician = st.text_input("Attending Physician Name", value="")
-        attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS, key="endo_attspec")
+        attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS)
         surgeon = st.text_input("Surgeon / Endoscopist / Proceduralist", value="")
-        surgeon_spec = st.selectbox("Surgeon / Proceduralist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GASTROENTEROLOGY"), key="endo_surgspec")
+        surgeon_spec = st.selectbox("Surgeon / Proceduralist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GASTROENTEROLOGY"))
         anesthesiologist = st.text_input("Anesthesiologist Name", value="")
-        anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"), key="endo_anesspec")
-
-        st.subheader("🤝 Co-Management Physician Settings")
-        num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="form_num_cm_endo")
-        cm_entries = []
-        if num_comanage > 0:
-            for i in range(int(num_comanage)):
-                cc1, cc2 = st.columns(2)
-                with cc1:
-                    cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", value="", key=f"cm_name_endo_{i}")
-                with cc2:
-                    cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_endo_{i}")
-                cm_entries.append((cm_name, cm_spec))
-        else:
-            st.info("No co-management physicians added.")
+        anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
         st.subheader("📋 Clinical & Diagnostic Details")
         cd1, cd2 = st.columns(2)
@@ -1032,10 +1009,6 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
             if existing_record:
                 st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
 
-            valid_cm = [(name.strip(), spec) for name, spec in cm_entries if name.strip()]
-            cm_names_str = "; ".join([item[0] for item in valid_cm]) if valid_cm else "N/A"
-            cm_specs_str = "; ".join([item[1] for item in valid_cm]) if valid_cm else "N/A"
-
             row_data = {
                 'MONTH': get_month_str(entry_date, "mixed"),
                 'DATE': curr_date_str,
@@ -1051,8 +1024,6 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
                 'PROCEDURE CATEGORY': ", ".join(selected_procs) if selected_procs else "None",
                 'ATTENDING PHYSICIAN': attending_physician if attending_physician else "N/A",
                 'ATTENDING SPECIALIZATION': attending_spec,
-                'CO-MANAGEMENT PHYSICIAN': cm_names_str,
-                'CO-MANAGEMENT SPECIALIZATION': cm_specs_str,
                 'SURGEON / PROCEDURALIST': surgeon if surgeon else "N/A",
                 'SURGEON SPECIALIZATION': surgeon_spec if surgeon else "N/A",
                 'ANESTHESIOLOGIST': anesthesiologist if anesthesiologist else "N/A",
@@ -1097,22 +1068,8 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         curr_date_str = entry_date.strftime("%B %d, %Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
-        num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="form_num_cm_hdu")
         attending_physician = st.text_input("Attending Physician", value="")
         attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("NEPHROLOGY"))
-        
-        st.subheader("🤝 Co-Management Physician Settings")
-        cm_entries = []
-        if num_comanage > 0:
-            for i in range(int(num_comanage)):
-                cc1, cc2 = st.columns(2)
-                with cc1:
-                    cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", value="", key=f"cm_name_hdu_{i}")
-                with cc2:
-                    cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_hdu_{i}")
-                cm_entries.append((cm_name, cm_spec))
-        else:
-            st.info("No co-management physicians added.")
 
         c7, c8, c9, c10 = st.columns(4)
         with c7:
@@ -1132,10 +1089,6 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
 
             epoch = datetime(1899, 12, 30)
             true_date = str((datetime.combine(entry_date, datetime.min.time()) - epoch).days)
-            
-            valid_cm = [(name.strip(), spec) for name, spec in cm_entries if name.strip()]
-            cm_names_str = "; ".join([item[0] for item in valid_cm]) if valid_cm else "N/A"
-            cm_specs_str = "; ".join([item[1] for item in valid_cm]) if valid_cm else "N/A"
 
             row_data = {
                 'MONTH': get_month_str(entry_date, "numeric_prefix"),
@@ -1148,8 +1101,6 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
                 'DIAGNOSIS': diagnosis,
                 'ATTENDING PHYSICIAN': attending_physician,
                 'ATTENDING SPECIALIZATION': attending_spec,
-                'CO-MANAGEMENT PHYSICIAN': cm_names_str,
-                'CO-MANAGEMENT SPECIALIZATION': cm_specs_str,
                 'DIALYSIS SHIFT SLOT': shift_set,
                 'HOSPITALIZATION MODE': hosp_mode,
                 'MODE OF PAYMENT': payment_selected,
@@ -1193,26 +1144,12 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical & Surgical Care Team")
-        num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="form_num_cm_obgyne")
         attending_physician = st.text_input("Attending Physician Name", value="")
         attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("OBSTETRICS & GYNAECOLOGY"))
         surgeon = st.text_input("Surgeon / OBGYNE Primary Operator", value="")
         surgeon_spec = st.selectbox("Surgeon Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("OBSTETRICS & GYNAECOLOGY"))
         anesthesiologist = st.text_input("Anesthesiologist Name", value="")
         anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
-        
-        st.subheader("🤝 Co-Management Physician Settings")
-        cm_entries = []
-        if num_comanage > 0:
-            for i in range(int(num_comanage)):
-                cc1, cc2 = st.columns(2)
-                with cc1:
-                    cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", value="", key=f"cm_name_ob_{i}")
-                with cc2:
-                    cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_ob_{i}")
-                cm_entries.append((cm_name, cm_spec))
-        else:
-            st.info("No co-management physicians added.")
 
         st.subheader("📋 Clinical & Diagnostic Details")
         
@@ -1251,10 +1188,6 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             if existing_record:
                 st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
 
-            valid_cm = [(name.strip(), spec) for name, spec in cm_entries if name.strip()]
-            cm_names_str = "; ".join([item[0] for item in valid_cm]) if valid_cm else "N/A"
-            cm_specs_str = "; ".join([item[1] for item in valid_cm]) if valid_cm else "N/A"
-
             row_data = {
                 'MONTH': get_month_str(entry_date, "numeric_prefix"),
                 'DATE': curr_date_str,
@@ -1272,8 +1205,6 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
                 'PROCEDURE CATEGORY': ", ".join(selected_ob_procs) if selected_ob_procs else "None",
                 'ATTENDING PHYSICIAN': attending_physician if attending_physician else "N/A",
                 'ATTENDING SPECIALIZATION': attending_spec,
-                'CO-MANAGEMENT PHYSICIAN': cm_names_str,
-                'CO-MANAGEMENT SPECIALIZATION': cm_specs_str,
                 'SURGEON / OBGYNE': surgeon if surgeon else "N/A",
                 'SURGEON SPECIALIZATION': surgeon_spec if surgeon else "N/A",
                 'ANESTHESIOLOGIST': anesthesiologist if anesthesiologist else "N/A",
@@ -1322,26 +1253,12 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical & Surgical Care Team")
-        num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="form_num_cm_scc")
         attending_physician = st.text_input("Attending Physician Name", value="")
         attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS)
         surgeon = st.text_input("Primary Surgeon", value="")
         surgeon_spec = st.selectbox("Surgeon Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL SURGERY"))
         anesthesiologist = st.text_input("Anesthesiologist Name", value="")
         anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
-        
-        st.subheader("🤝 Co-Management Physician Settings")
-        cm_entries = []
-        if num_comanage > 0:
-            for i in range(int(num_comanage)):
-                cc1, cc2 = st.columns(2)
-                with cc1:
-                    cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", value="", key=f"cm_name_scc_{i}")
-                with cc2:
-                    cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_scc_{i}")
-                cm_entries.append((cm_name, cm_spec))
-        else:
-            st.info("No co-management physicians added.")
 
         st.subheader("📋 Clinical & Diagnostic Details")
         
@@ -1383,10 +1300,6 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             if existing_record:
                 st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
 
-            valid_cm = [(name.strip(), spec) for name, spec in cm_entries if name.strip()]
-            cm_names_str = "; ".join([item[0] for item in valid_cm]) if valid_cm else "N/A"
-            cm_specs_str = "; ".join([item[1] for item in valid_cm]) if valid_cm else "N/A"
-
             row_data = {
                 'MONTH': get_month_str(entry_date, "numeric_prefix"),
                 'DATE': curr_date_str,
@@ -1403,8 +1316,6 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
                 'PROCEDURE CATEGORY': ", ".join(selected_scc_procs) if selected_scc_procs else "None",
                 'ATTENDING PHYSICIAN': attending_physician if attending_physician else "N/A",
                 'ATTENDING SPECIALIZATION': attending_spec,
-                'CO-MANAGEMENT PHYSICIAN': cm_names_str,
-                'CO-MANAGEMENT SPECIALIZATION': cm_specs_str,
                 'PRIMARY SURGEON': surgeon if surgeon else "N/A",
                 'SURGEON SPECIALIZATION': surgeon_spec if surgeon else "N/A",
                 'ANESTHESIOLOGIST': anesthesiologist if anesthesiologist else "N/A",
@@ -1454,22 +1365,8 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
-        num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="form_num_cm_scu")
         attending_physician = st.text_input("Attending Physician Name", value="")
         attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL PAEDIATRICS"))
-        
-        st.subheader("🤝 Co-Management Physician Settings")
-        cm_entries = []
-        if num_comanage > 0:
-            for i in range(int(num_comanage)):
-                cc1, cc2 = st.columns(2)
-                with cc1:
-                    cm_name = st.text_input(f"Co-Management Physician #{i+1} Name", value="", key=f"cm_name_scu_{i}")
-                with cc2:
-                    cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_scu_{i}")
-                cm_entries.append((cm_name, cm_spec))
-        else:
-            st.info("No co-management physicians added.")
 
         c10, c11, c12, c13, c14 = st.columns(5)
         with c10:
@@ -1501,10 +1398,6 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
             if age_d > 0: age_str_parts.append(f"{age_d} Days")
             age_formatted = ", ".join(age_str_parts) if age_str_parts else "Neonate / Infant"
 
-            valid_cm = [(name.strip(), spec) for name, spec in cm_entries if name.strip()]
-            cm_names_str = "; ".join([item[0] for item in valid_cm]) if valid_cm else "N/A"
-            cm_specs_str = "; ".join([item[1] for item in valid_cm]) if valid_cm else "N/A"
-
             row_data = {
                 'MONTH': get_month_str(entry_date, "numeric_prefix"),
                 'DATE': curr_date_str,
@@ -1518,11 +1411,9 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
                 'DIAGNOSIS CATEGORY': ", ".join(diag_flags) if diag_flags else "None",
                 'ADMITTED FROM': admitted_from,
                 'ADMITTED TO': admitted_to,
-                'TRANSFERRED_TO': transferred_to,
+                'TRANSFERRED TO': transferred_to,
                 'ATTENDING PHYSICIAN': attending_physician if attending_physician else "N/A",
                 'ATTENDING SPECIALIZATION': attending_spec,
-                'CO-MANAGEMENT PHYSICIAN': cm_names_str,
-                'CO-MANAGEMENT SPECIALIZATION': cm_specs_str,
                 'HOSPITALIZATION MODE': hosp_mode,
                 'MODE OF PAYMENT': payment_selected,
                 'PATIENT STATUS': patient_status,
