@@ -32,14 +32,8 @@ st.markdown("""
     /* Subheaders & Paragraph/Label Typography Accent (Logo Green #0f766e) */
     .stMarkdown p, label, .stRadio label, .stCheckbox label, .stMultiSelect label { color: #0f766e !important; font-weight: 500 !important; }
     
-    /* Action Buttons (Logo Blue with green accent hover) */
-    .stButton > button, form button[type="submit"] {
-        background-color: #1e3a8a !important; color: #ffffff !important; border-radius: 6px !important; border: none !important; font-weight: bold !important;
-    }
-    .stButton > button:hover, form button[type="submit"]:hover { background-color: #0f766e !important; color: #ffffff !important; }
-    
-    /* Sidebar Sign Out, Refresh, & Download Buttons Styled to Match stMetric Cards */
-    section[data-testid="stSidebar"] div.stButton > button, section[data-testid="stSidebar"] .stDownloadButton > button {
+    /* Unified Button Theme (Matching Sidebar Button Cards) across all forms and actions */
+    .stButton > button, form button[type="submit"], .stFormSubmitButton > button {
         background-color: #ffffff !important;
         color: #1e3a8a !important;
         border: 1px solid #cbd5e1 !important;
@@ -51,7 +45,7 @@ st.markdown("""
         text-align: left !important;
         padding: 10px 15px !important;
     }
-    section[data-testid="stSidebar"] div.stButton > button:hover, section[data-testid="stSidebar"] .stDownloadButton > button:hover {
+    .stButton > button:hover, form button[type="submit"]:hover, .stFormSubmitButton > button:hover {
         background-color: #f0fdf4 !important;
         color: #0f766e !important;
         border-color: #0f766e !important;
@@ -632,11 +626,11 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-# Sidebar Profile Info, Dynamic Date & Time, Database Security Notice & Sign Out
+# Sidebar Profile Info, Dynamic Date & Time (Without seconds, updates every min), Database Security Notice & Sign Out
 st.sidebar.markdown(f"**Logged in as:** {st.session_state['name']}")
 st.sidebar.markdown(f"**Role:** `{st.session_state['role']}`")
 ph_now_display = get_ph_time()
-st.sidebar.markdown(f"**Date & Time:** `{ph_now_display.strftime('%B %d, %Y - %I:%M:%S %p')}`")
+st.sidebar.markdown(f"**Date & Time:** `{ph_now_display.strftime('%B %d, %Y - %I:%M %p')}`")
 
 st.sidebar.markdown("---")
 
@@ -908,7 +902,7 @@ if selected_sheet == "Hospital Information System":
 # FORM 1: Emergency Care Complex (ECC)
 # ---------------------------------------------------------
 elif selected_sheet == "Emergency Care Complex (ECC)":
-    st.header("Emergency Care Complex (ECC) Patient Registration")
+    st.header("Emergency Care Complex Patient Registration")
     ph_now = get_ph_time()
     with st.form("ecc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
@@ -929,7 +923,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         with c_d1:
             entry_date = st.date_input("Date", ph_now.date())
         with c_d2:
-            entry_time_str = civilian_time_text_field("Time of Entry", key_suffix="ecc_time")
+            entry_time_str = civilian_time_text_field("Time", key_suffix="ecc_time")
 
         c_h1, c_h2, c_h3, c_h4 = st.columns(4)
         with c_h1:
@@ -1053,7 +1047,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="endo_spec_input")
         with c_doc3:
             st.markdown("<br>", unsafe_allow_html=True)
-            tag_as_cm = st.form_submit_button("Tag as CM")
+            tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
         if st.session_state["cm_list_endo"]:
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -1170,7 +1164,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="hdu_spec_input")
         with c_doc3:
             st.markdown("<br>", unsafe_allow_html=True)
-            tag_as_cm = st.form_submit_button("Tag as CM")
+            tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
         if st.session_state["cm_list_hdu"]:
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -1268,7 +1262,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="ob_spec_input")
         with c_doc3:
             st.markdown("<br>", unsafe_allow_html=True)
-            tag_as_cm = st.form_submit_button("Tag as CM")
+            tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
         if st.session_state["cm_list_ob"]:
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -1400,7 +1394,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scc_spec_input")
         with c_doc3:
             st.markdown("<br>", unsafe_allow_html=True)
-            tag_as_cm = st.form_submit_button("Tag as CM")
+            tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
         if st.session_state["cm_list_scc"]:
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -1535,7 +1529,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scu_spec_input")
         with c_doc3:
             st.markdown("<br>", unsafe_allow_html=True)
-            tag_as_cm = st.form_submit_button("Tag as CM")
+            tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
         if st.session_state["cm_list_scu"]:
             st.markdown("**Current Co-Management Doctors Added:**")
