@@ -214,7 +214,7 @@ SHEET_HEADERS = {
     "Emergency Care Complex (ECC)": [
         'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
         'DISEASE CATEGORIES', 'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
-        'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'ADMITTED TO', 'CASE COUNT'
+        'HOSPITALIZATION MODE', 'CASE TYPE', 'MODE OF PAYMENT', 'ADMITTED TO', 'CASE COUNT'
     ],
     "Endoscopy Unit (ENDO)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
@@ -526,21 +526,19 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         with c4:
             sex = st.selectbox("Sex", ["Male", "Female", "Others"])
 
-        c5, c6, c7, c8 = st.columns(4)
+        c5, c6, c7 = st.columns(3)
         with c5:
             entry_date = st.date_input("Date", datetime.today())
         with c6:
             entry_time = st.time_input("Time", datetime.now().time())
         with c7:
             age = st.number_input("Age", min_value=0, max_value=120, value=25)
+
+        c8, c9 = st.columns(2)
         with c8:
-            # Separating IPD/OPD from Private Case / House Case (Walk-in)
-            hosp_mode = st.selectbox("Hospitalization Mode", [
-                "IPD - Inpatient", 
-                "OPD - Outpatient", 
-                "Private Case", 
-                "House Case (Walk-in)"
-            ])
+            hosp_mode = st.selectbox("Hospitalization Mode", ["IPD - Inpatient", "OPD - Outpatient"])
+        with c9:
+            case_type = st.selectbox("Case Type", ["Private Case", "House Case (Walk-in)", "Not Applicable"])
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
@@ -587,6 +585,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
                 'ATTENDING PHYSICIAN': attending_physician if attending_physician else "N/A",
                 'ATTENDING SPECIALIZATION': attending_spec,
                 'HOSPITALIZATION MODE': hosp_mode,
+                'CASE TYPE': case_type,
                 'MODE OF PAYMENT': payment_selected,
                 'ADMITTED TO': admitted_to,
                 'CASE COUNT': 1
