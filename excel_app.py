@@ -20,9 +20,10 @@ st.markdown("""
     /* Global Clean Light Theme */
     .stApp { background-color: #fcfcfd !important; color: #1e293b !important; }
     
-    /* Sidebar Text & Background Styling */
-    section[data-testid="stSidebar"] { background-color: #f1f5f9 !important; border-right: 1px solid #cbd5e1; }
+    /* Sidebar Background & Text Theme Styling */
+    section[data-testid="stSidebar"] { background-color: #f8fafc !important; border-right: 1px solid #cbd5e1; }
     section[data-testid="stSidebar"] * { color: #1e3a8a !important; }
+    section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] span, section[data-testid="stSidebar"] label { color: #0f766e !important; }
     
     /* Headers using Logo Blue (#1e3a8a) */
     h1, h2, h3, h4, h5, h6 { color: #1e3a8a !important; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
@@ -591,11 +592,18 @@ st.markdown(f"""
     </div>
 """, unsafe_allow_html=True)
 
-st.markdown("All data entries are securely stored on our hospital database.")
-
-# Sidebar Profile Info & Sign Out
+# Sidebar Profile Info, Database Security Notice & Sign Out
 st.sidebar.markdown(f"**Logged in as:** {st.session_state['name']}")
 st.sidebar.markdown(f"**Role:** `{st.session_state['role']}`")
+
+st.sidebar.markdown("---")
+st.sidebar.markdown(
+    "<p style='font-size: 0.85rem; color: #0f766e; font-style: italic; margin-bottom: 10px;'>"
+    "All data entries are securely stored on our hospital database."
+    "</p>", 
+    unsafe_allow_html=True
+)
+
 if st.sidebar.button("Sign Out"):
     st.session_state["authenticated"] = False
     st.rerun()
