@@ -192,7 +192,7 @@ if not st.session_state["authenticated"]:
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown("""
             <div style="text-align: center; margin-bottom: 25px;">
-                <h1 style="color: #1e3a8a; margin-bottom: 2px; font-size: 2.8rem; white-space: nowrap; font-weight: 800;">Mother Teresa of Calcutta Medical Center</h1>
+                <h1 style="color: #1e3a8a; margin-bottom: -2px; font-size: 2.8rem; white-space: nowrap; font-weight: 800;">Mother Teresa of Calcutta Medical Center</h1>
                 <p style="color: #0f766e; font-weight: 600; font-size: 1.4rem; margin-top: 0px; letter-spacing: 0.5px;">Patient Data System</p>
             </div>
         """, unsafe_allow_html=True)
@@ -589,17 +589,19 @@ st.markdown("""
     }
     .header-title {
         margin: 0px !important;
-        line-height: 1.1 !important;
+        line-height: 1.0 !important;
         font-size: 2.35rem !important;
         color: #1e3a8a !important;
         font-weight: 800 !important;
+        padding-bottom: 0px !important;
     }
     .header-subtitle {
-        margin: 1px 0px 0px 0px !important;
+        margin: -4px 0px 0px 0px !important;
         font-size: 1.15rem !important;
         color: #0f766e !important;
         font-weight: 600 !important;
         letter-spacing: 0.5px !important;
+        padding-top: 0px !important;
     }
 </style>
 """, unsafe_allow_html=True)
