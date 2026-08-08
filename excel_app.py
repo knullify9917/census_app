@@ -953,6 +953,10 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
     st.header("Endoscopy Unit Patient Registration")
     ph_now = get_ph_time()
     
+    # Helper for dynamic session state co-management count
+    if "num_cm_endo" not in st.session_state:
+        st.session_state["num_cm_endo"] = 0
+
     with st.form("endo_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -979,19 +983,15 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical & Surgical Care Team")
-        c_team1, c_team2, c_team3 = st.columns(3)
-        with c_team1:
-            attending_physician = st.text_input("Attending Physician Name", value="")
-            attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS)
-        with c_team2:
-            surgeon = st.text_input("Surgeon / Endoscopist / Proceduralist", value="")
-            surgeon_spec = st.selectbox("Surgeon / Proceduralist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GASTROENTEROLOGY"))
-        with c_team3:
-            anesthesiologist = st.text_input("Anesthesiologist Name", value="")
-            anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
-        
+        attending_physician = st.text_input("Attending Physician Name", value="")
+        attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS, key="endo_attspec")
+        surgeon = st.text_input("Surgeon / Endoscopist / Proceduralist", value="")
+        surgeon_spec = st.selectbox("Surgeon / Proceduralist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GASTROENTEROLOGY"), key="endo_surgspec")
+        anesthesiologist = st.text_input("Anesthesiologist Name", value="")
+        anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"), key="endo_anesspec")
+
         st.subheader("🤝 Co-Management Physician Settings")
-        num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_endo")
+        num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="form_num_cm_endo")
         cm_entries = []
         if num_comanage > 0:
             for i in range(int(num_comanage)):
@@ -1097,7 +1097,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         curr_date_str = entry_date.strftime("%B %d, %Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
-        num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_hdu")
+        num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="form_num_cm_hdu")
         attending_physician = st.text_input("Attending Physician", value="")
         attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("NEPHROLOGY"))
         
@@ -1193,7 +1193,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical & Surgical Care Team")
-        num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_obgyne")
+        num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="form_num_cm_obgyne")
         attending_physician = st.text_input("Attending Physician Name", value="")
         attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("OBSTETRICS & GYNAECOLOGY"))
         surgeon = st.text_input("Surgeon / OBGYNE Primary Operator", value="")
@@ -1322,7 +1322,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical & Surgical Care Team")
-        num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_scc")
+        num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="form_num_cm_scc")
         attending_physician = st.text_input("Attending Physician Name", value="")
         attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS)
         surgeon = st.text_input("Primary Surgeon", value="")
@@ -1454,7 +1454,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
-        num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_scu")
+        num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="form_num_cm_scu")
         attending_physician = st.text_input("Attending Physician Name", value="")
         attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL PAEDIATRICS"))
         
@@ -1518,7 +1518,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
                 'DIAGNOSIS CATEGORY': ", ".join(diag_flags) if diag_flags else "None",
                 'ADMITTED FROM': admitted_from,
                 'ADMITTED TO': admitted_to,
-                'TRANSFERRED TO': transferred_to,
+                'TRANSFERRED_TO': transferred_to,
                 'ATTENDING PHYSICIAN': attending_physician if attending_physician else "N/A",
                 'ATTENDING SPECIALIZATION': attending_spec,
                 'CO-MANAGEMENT PHYSICIAN': cm_names_str,
