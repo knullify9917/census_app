@@ -8,7 +8,7 @@ import os
 # 1. PAGE CONFIGURATION
 # ---------------------------------------------------------
 st.set_page_config(
-    page_title="MTCMC Direct Google Sheets Data Entry System",
+    page_title="MTCMC Patient Data Recording System",
     layout="wide",
     initial_sidebar_state="expanded"
 )
@@ -140,15 +140,15 @@ def get_spec_index(default_name):
     return 0
 
 # ---------------------------------------------------------
-# 3. STREAMLINED SHEET HEADERS
+# 3. STREAMLINED SHEET HEADERS (RENAMED DEPARTMENTS)
 # ---------------------------------------------------------
 SHEET_HEADERS = {
-    "ECC TOP DISEASES": [
+    "Emergency Care Complex (ECC)": [
         'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
         'DISEASE CATEGORIES', 'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'TRANSFERRED TO', 'CASE COUNT'
     ],
-    "ENDO": [
+    "Endoscopy Unit (ENDO)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
         'DIAGNOSIS', 'PROCEDURE', 'PROCEDURE CATEGORIES', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
@@ -157,13 +157,13 @@ SHEET_HEADERS = {
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
         'PROCEDURE NATURE', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'CASE COUNT'
     ],
-    "HDU": [
+    "Hemodialysis Unit (HDU)": [
         'MONTH', 'DATE', 'TRUE DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'DIAGNOSIS', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'DIALYSIS SHIFT SLOT', 'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'CASE COUNT'
     ],
-    "OBGYNE CASES": [
+    "OBGYNE Care Complex (LRDR-OB Surgery)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
         'DIAGNOSIS', 'PROCEDURE', 'PROCEDURE BREAKDOWN', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
@@ -172,7 +172,7 @@ SHEET_HEADERS = {
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
         'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'CASE COUNT'
     ],
-    "SCC CASES": [
+    "Surgical Care Complex (OR Main)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
         'DIAGNOSIS', 'PROCEDURE', 'SURGICAL PROCEDURE FLAGS', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
@@ -181,7 +181,7 @@ SHEET_HEADERS = {
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
         'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'CASE COUNT'
     ],
-    "SCU CASES": [
+    "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)": [
         'MONTH', 'DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AOG', 'AGE', 'DIAGNOSIS', 
         'DIAGNOSTIC FLAGS', 'ADMITTED FROM', 'ADMITTED TO', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
@@ -341,12 +341,12 @@ st.markdown("Enter patient census data into the input form below. Records are wr
 
 MODULES = [
     "Dashboard & Summary", 
-    "ECC TOP DISEASES", 
-    "ENDO", 
-    "HDU", 
-    "OBGYNE CASES", 
-    "SCC CASES", 
-    "SCU CASES"
+    "Emergency Care Complex (ECC)", 
+    "Endoscopy Unit (ENDO)", 
+    "Hemodialysis Unit (HDU)", 
+    "OBGYNE Care Complex (LRDR-OB Surgery)", 
+    "Surgical Care Complex (OR Main)", 
+    "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
 ]
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES)
 
@@ -359,7 +359,14 @@ if selected_sheet == "Dashboard & Summary":
     st.header("📈 MTCMC Department Census Tally & Summary")
     st.markdown("This dashboard aggregates live data entries across all department modules from your Google Sheet.")
 
-    department_sheets = ["ECC TOP DISEASES", "ENDO", "HDU", "OBGYNE CASES", "SCC CASES", "SCU CASES"]
+    department_sheets = [
+        "Emergency Care Complex (ECC)", 
+        "Endoscopy Unit (ENDO)", 
+        "Hemodialysis Unit (HDU)", 
+        "OBGYNE Care Complex (LRDR-OB Surgery)", 
+        "Surgical Care Complex (OR Main)", 
+        "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
+    ]
     
     summary_data = []
     total_all_cases = 0
@@ -405,10 +412,10 @@ if selected_sheet == "Dashboard & Summary":
         st.info(f"No records found yet for {selected_dept_view}.")
 
 # ---------------------------------------------------------
-# FORM 1: ECC TOP DISEASES
+# FORM 1: Emergency Care Complex (ECC)
 # ---------------------------------------------------------
-elif selected_sheet == "ECC TOP DISEASES":
-    st.header("Emergency Care Center (ECC) Data Entry Form")
+elif selected_sheet == "Emergency Care Complex (ECC)":
+    st.header("Emergency Care Complex (ECC) Data Entry Form")
     with st.form("ecc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics & AI Checker")
         c1, c2, c3, c4 = st.columns(4)
@@ -458,7 +465,7 @@ elif selected_sheet == "ECC TOP DISEASES":
 
         submitted = st.form_submit_button("Submit Record to Google Sheets")
         if submitted:
-            existing_record = check_existing_patient_ai("ECC TOP DISEASES", last_name, first_name, curr_date_str)
+            existing_record = check_existing_patient_ai("Emergency Care Complex (ECC)", last_name, first_name, curr_date_str)
             if existing_record:
                 st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
 
@@ -481,13 +488,13 @@ elif selected_sheet == "ECC TOP DISEASES":
                 'CASE COUNT': 1
             }
 
-            if append_record_to_google_sheet("ECC TOP DISEASES", row_data):
-                st.success("Successfully saved to Google Sheets `ECC TOP DISEASES` tab!")
+            if append_record_to_google_sheet("Emergency Care Complex (ECC)", row_data):
+                st.success("Successfully saved to Google Sheets `Emergency Care Complex (ECC)` tab!")
 
 # ---------------------------------------------------------
-# FORM 2: ENDO
+# FORM 2: Endoscopy Unit (ENDO)
 # ---------------------------------------------------------
-elif selected_sheet == "ENDO":
+elif selected_sheet == "Endoscopy Unit (ENDO)":
     st.header("Endoscopy Unit Data Entry Form")
     
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
@@ -569,7 +576,7 @@ elif selected_sheet == "ENDO":
 
         submitted = st.form_submit_button("Submit Record to Google Sheets")
         if submitted:
-            existing_record = check_existing_patient_ai("ENDO", last_name, first_name, curr_date_str)
+            existing_record = check_existing_patient_ai("Endoscopy Unit (ENDO)", last_name, first_name, curr_date_str)
             if existing_record:
                 st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
 
@@ -605,13 +612,13 @@ elif selected_sheet == "ENDO":
                 'CASE COUNT': 1
             }
 
-            if append_record_to_google_sheet("ENDO", row_data):
-                st.success("Successfully saved to Google Sheets `ENDO` tab!")
+            if append_record_to_google_sheet("Endoscopy Unit (ENDO)", row_data):
+                st.success("Successfully saved to Google Sheets `Endoscopy Unit (ENDO)` tab!")
 
 # ---------------------------------------------------------
-# FORM 3: HDU
+# FORM 3: Hemodialysis Unit (HDU)
 # ---------------------------------------------------------
-elif selected_sheet == "HDU":
+elif selected_sheet == "Hemodialysis Unit (HDU)":
     st.header("Hemodialysis Unit Data Entry Form")
 
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
@@ -665,7 +672,7 @@ elif selected_sheet == "HDU":
 
         submitted = st.form_submit_button("Submit Record to Google Sheets")
         if submitted:
-            existing_record = check_existing_patient_ai("HDU", last_name, first_name, curr_date_str)
+            existing_record = check_existing_patient_ai("Hemodialysis Unit (HDU)", last_name, first_name, curr_date_str)
             if existing_record:
                 st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
 
@@ -695,13 +702,13 @@ elif selected_sheet == "HDU":
                 'CASE COUNT': 1
             }
 
-            if append_record_to_google_sheet("HDU", row_data):
-                st.success("Successfully saved to Google Sheets `HDU` tab!")
+            if append_record_to_google_sheet("Hemodialysis Unit (HDU)", row_data):
+                st.success("Successfully saved to Google Sheets `Hemodialysis Unit (HDU)` tab!")
 
 # ---------------------------------------------------------
-# FORM 4: OBGYNE CASES
+# FORM 4: OBGYNE Care Complex (LRDR-OB Surgery)
 # ---------------------------------------------------------
-elif selected_sheet == "OBGYNE CASES":
+elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
     st.header("OBGYNE Cases Data Entry Form")
 
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
@@ -781,7 +788,7 @@ elif selected_sheet == "OBGYNE CASES":
 
         submitted = st.form_submit_button("Submit Record to Google Sheets")
         if submitted:
-            existing_record = check_existing_patient_ai("OBGYNE CASES", last_name, first_name, curr_date_str)
+            existing_record = check_existing_patient_ai("OBGYNE Care Complex (LRDR-OB Surgery)", last_name, first_name, curr_date_str)
             if existing_record:
                 st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
 
@@ -817,13 +824,13 @@ elif selected_sheet == "OBGYNE CASES":
                 'CASE COUNT': 1
             }
 
-            if append_record_to_google_sheet("OBGYNE CASES", row_data):
-                st.success("Successfully saved to Google Sheets `OBGYNE CASES` tab!")
+            if append_record_to_google_sheet("OBGYNE Care Complex (LRDR-OB Surgery)", row_data):
+                st.success("Successfully saved to Google Sheets `OBGYNE Care Complex (LRDR-OB Surgery)` tab!")
 
 # ---------------------------------------------------------
-# FORM 5: SCC CASES
+# FORM 5: Surgical Care Complex (OR Main)
 # ---------------------------------------------------------
-elif selected_sheet == "SCC CASES":
+elif selected_sheet == "Surgical Care Complex (OR Main)":
     st.header("Surgical Care Center (SCC) Data Entry Form")
 
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
@@ -914,7 +921,7 @@ elif selected_sheet == "SCC CASES":
 
         submitted = st.form_submit_button("Submit Record to Google Sheets")
         if submitted:
-            existing_record = check_existing_patient_ai("SCC CASES", last_name, first_name, curr_date_str)
+            existing_record = check_existing_patient_ai("Surgical Care Complex (OR Main)", last_name, first_name, curr_date_str)
             if existing_record:
                 st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
 
@@ -950,10 +957,13 @@ elif selected_sheet == "SCC CASES":
                 'CASE COUNT': 1
             }
 
-            if append_record_to_google_sheet("SCC CASES", row_data):
-                st.success("Successfully saved to Google Sheets `SCC CASES` tab!")
+            if append_record_to_google_sheet("Surgical Care Complex (OR Main)", row_data):
+                st.success("Successfully saved to Google Sheets `Surgical Care Complex (OR Main)` tab!")
 
-elif selected_sheet == "SCU CASES":
+# ---------------------------------------------------------
+# FORM 6: Special Care Complex (NICU-PICU-NSU/PCN-Outborn)
+# ---------------------------------------------------------
+elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
     st.header("Special Care Unit (SCU) Data Entry Form")
 
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
@@ -1018,7 +1028,7 @@ elif selected_sheet == "SCU CASES":
 
         submitted = st.form_submit_button("Submit Record to Google Sheets")
         if submitted:
-            existing_record = check_existing_patient_ai("SCU CASES", last_name, first_name, curr_date_str)
+            existing_record = check_existing_patient_ai("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", last_name, first_name, curr_date_str)
             if existing_record:
                 st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
 
@@ -1054,8 +1064,8 @@ elif selected_sheet == "SCU CASES":
                 'CASE COUNT': 1
             }
 
-            if append_record_to_google_sheet("SCU CASES", row_data):
-                st.success("Successfully saved to Google Sheets `SCU CASES` tab!")
+            if append_record_to_google_sheet("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", row_data):
+                st.success("Successfully saved to Google Sheets `Special Care Complex (NICU-PICU-NSU/PCN-Outborn)` tab!")
 
 if selected_sheet != "Dashboard & Summary":
     st.markdown("---")
