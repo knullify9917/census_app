@@ -902,12 +902,15 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
         st.subheader("📋 OBGYNE Diagnosis & Procedure Details")
+        
+        # Row 1 of Details: OBGYNE Diagnosis & Procedure Name (Matched identically with Surgical Care Complex)
         cd1, cd2 = st.columns(2)
         with cd1:
             diagnosis = st.text_area("OBGYNE Diagnosis", value="")
         with cd2:
             procedure = st.text_input("Procedure Name", value="")
 
+        # Row 2 of Details: Procedure Breakdown / Complexity Tier / Hospitalization Mode & Kit Package / Mode of Payment
         ca, cb, cc, cd = st.columns(4)
         with ca:
             ob_procs = st.multiselect("Procedure Breakdown", ["CS PRIMARY", "CS", "NSD", "D&C", "HYSTERECTOMY", "EXLAP", "OTHER PROCEDURES", "NST"])
@@ -972,7 +975,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
     with st.form("scc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
-        # Row 1: Name / Age / Sex aligned (Matched identically with OBGYNE)
+        # Row 1: Name / Age / Sex aligned (Matched 100% with OBGYNE)
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
             last_name = st.text_input("Last Name", value="")
@@ -985,7 +988,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         with c5:
             sex = st.selectbox("Sex", ["None", "Male", "Female", "Others"])
 
-        # Row 2: Surgery Date / Scheduled Time / Actual Time aligned (Matched identically with OBGYNE)
+        # Row 2: Surgery Date / Scheduled Time / Actual Time aligned (Matched 100% with OBGYNE)
         c_d1, c_d2, c_d3 = st.columns(3)
         with c_d1:
             entry_date = st.date_input("Surgery Date", ph_now.date())
@@ -1027,13 +1030,16 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
         st.subheader("📋 Surgical Details")
-        cd1, cd2, cd3 = st.columns(3)
+        
+        # Row 1 of Details: Pre-Op Diagnosis & Post-Op Diagnosis (Matched with OBGYNE Diagnosis & Procedure Name layout)
+        cd1, cd2 = st.columns(2)
         with cd1:
             pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="")
         with cd2:
             post_op_diagnosis = st.text_area("Post-Op Diagnosis", value="")
-        with cd3:
-            procedure = st.text_area("Surgical Procedure", value="")
+
+        # Row 2 of Details: Procedure Name / Surgical Procedure Text Area
+        procedure = st.text_area("Surgical Procedure", value="")
 
         all_scc_procs = [
             'EXCISION BIOPSY', 'INCISION AND DRAINAGE', 'WOUND SUTURING & CLOSING AND CHANGE OF DRESSING',
@@ -1046,17 +1052,16 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             'CHOLEDOSCOPY', 'DENTAL PROCEDURES', 'OTHER PROCEDURES'
         ]
         
-        # Row layout matching your exact specification: Procedure Census | Complexity Tier | Hospitalization Mode | Mode of Payment
-        # With Hospital Kit Package placed neatly below Hospitalization Mode
-        c_p1, c_p2, c_p3, c_p4 = st.columns(4)
-        with c_p1:
+        # Row 3 of Details: Procedure Census | Complexity Tier | Hospitalization Mode & Kit Package | Mode of Payment (Matched 100% with OBGYNE)
+        ca, cb, cc, cd = st.columns(4)
+        with ca:
             selected_scc_procs = st.multiselect("Procedure Census", all_scc_procs)
-        with c_p2:
+        with cb:
             complexity = st.selectbox("Complexity Tier", ["None", "MAJOR", "MEDIUM", "MINOR", "DIAGNOSTICS"])
-        with c_p3:
+        with cc:
             hosp_mode = st.selectbox("Hospitalization Mode", ["None", "Outpatient", "Inpatient"])
             kit_package = st.checkbox("Hospital Kit Package", value=True)
-        with c_p4:
+        with cd:
             payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
 
         submitted = st.form_submit_button("Submit Record to Google Sheets")
