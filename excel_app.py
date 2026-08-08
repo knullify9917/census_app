@@ -170,13 +170,13 @@ if "name" not in st.session_state:
 # AUTHENTICATION SCREEN IF NOT LOGGED IN
 # ---------------------------------------------------------
 if not st.session_state["authenticated"]:
-    col_l1, col_l2, col_l3 = st.columns([0.5, 2, 0.5])
+    col_l1, col_l2, col_l3 = st.columns([0.2, 2.6, 0.2])
     with col_l2:
         st.markdown("<br><br>", unsafe_allow_html=True)
         st.markdown("""
             <div style="text-align: center; margin-bottom: 25px;">
-                <h2 style="color: #1e3a8a; margin-bottom: 4px; font-size: 1.6rem; white-space: nowrap;">Mother Teresa of Calcutta Medical Center</h2>
-                <p style="color: #0f766e; font-weight: 600; font-size: 1.05rem; margin-top: 0px;">Patient Data System</p>
+                <h1 style="color: #1e3a8a; margin-bottom: 6px; font-size: 2.2rem; white-space: nowrap; font-weight: 800;">Mother Teresa of Calcutta Medical Center</h1>
+                <p style="color: #0f766e; font-weight: 600; font-size: 1.2rem; margin-top: 0px; letter-spacing: 0.5px;">Patient Data System</p>
             </div>
         """, unsafe_allow_html=True)
         
@@ -355,7 +355,7 @@ def get_spec_index(default_name):
     return 0
 
 # ---------------------------------------------------------
-# 4. STREAMLIT SHEET HEADERS (Includes PATIENT STATUS)
+# 4. STREAMLINED SHEET HEADERS (Includes PATIENT STATUS)
 # ---------------------------------------------------------
 SHEET_HEADERS = {
     "Emergency Care Complex (ECC)": [
