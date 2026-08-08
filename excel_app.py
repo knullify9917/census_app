@@ -146,38 +146,38 @@ for field in sorted(SPECIALTIES_BY_FIELD.keys()):
         SPECIALTY_DROPDOWN_OPTIONS.append(spec)
 
 # ---------------------------------------------------------
-# 3. STREAMLINED, NON-SPARSE EXCEL SHEET HEADERS
+# 3. STREAMLINED EXCEL SHEET HEADERS (SEPARATED NAME & SEX)
 # ---------------------------------------------------------
 SHEET_HEADERS = {
     "ECC TOP DISEASES": [
-        'MONTH', 'DATE', 'TIME', 'PATIENT', 'AGE', 'DIAGNOSIS', 
+        'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
         'DISEASE CATEGORIES', 'PHYSICIAN', 'PHYSICIAN SPECIALTY', 
         'PATIENT TYPE / CLASSIFICATION', 'TRANSFERRED TO', 'CASE COUNT'
     ],
     "ENDO": [
-        'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'PATIENT', 'AGE', 
+        'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
         'DIAGNOSIS', 'PROCEDURE', 'PROCEDURE CATEGORIES', 'PHYSICIAN', 
         'ATTENDING SPECIALTY', 'GASTROENTEROLOGIST', 'ENT SPECIALIST', 
         'ANESTHESIOLOGIST', 'PROCEDURE NATURE', 'SETTING', 'PAYMENT METHOD', 'CASE COUNT'
     ],
     "HDU": [
-        'MONTH', 'DATE', 'TRUE DATE', 'PATIENT', 'DIAGNOSIS', 'PHYSICIAN', 
+        'MONTH', 'DATE', 'TRUE DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'DIAGNOSIS', 'PHYSICIAN', 
         'PHYSICIAN SPECIALTY', 'DIALYSIS SHIFT SLOT', 'PATIENT TYPE', 'CASE COUNT'
     ],
     "OBGYNE CASES": [
-        'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'PATIENT', 'AGE', 
+        'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
         'DIAGNOSIS', 'PROCEDURE', 'PROCEDURE BREAKDOWN', 'SURGEON / OBGYNE', 
         'ATTENDING SPECIALTY', 'ANESTHESIOLOGIST', 'COMPLEXITY TIER', 
         'CARE SETTING', 'KIT USED', 'PAYMENT CHANNEL', 'CASE COUNT'
     ],
     "SCC CASES": [
-        'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'PATIENT', 'AGE', 
+        'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
         'DIAGNOSIS', 'PROCEDURE', 'SURGICAL PROCEDURE FLAGS', 'PRIMARY SURGEON', 
         'SURGICAL DEPARTMENT / SPECIALTY', 'ANESTHESIOLOGIST', 'COMPLEXITY TIER', 
         'PATIENT SETTING', 'BILLING CHANNELS', 'CASE COUNT'
     ],
     "SCU CASES": [
-        'MONTH', 'DATE', 'PATIENT', 'AOG', 'AGE', 'GENDER', 'DIAGNOSIS', 
+        'MONTH', 'DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AOG', 'AGE', 'DIAGNOSIS', 
         'DIAGNOSTIC FLAGS', 'SCU UNIT LOCATION', 'ATTENDING PHYSICIAN', 
         'SUBSPECIALTIES', 'CASE COUNT'
     ]
@@ -344,16 +344,25 @@ st.markdown("---")
 if selected_sheet == "ECC TOP DISEASES":
     st.header("Emergency Care Center (ECC) Data Entry Form")
     with st.form("ecc_form", clear_on_submit=True):
-        c1, c2, c3 = st.columns(3)
+        c1, c2, c3, c4 = st.columns(4)
         with c1:
+            last_name = st.text_input("Last Name")
+        with c2:
+            first_name = st.text_input("First Name")
+        with c3:
+            middle_name = st.text_input("Middle Name")
+        with c4:
+            sex = st.selectbox("Sex", ["Male", "Female", "Others"])
+
+        c5, c6, c7 = st.columns(3)
+        with c5:
             entry_date = st.date_input("Date", datetime.today())
             entry_time = st.time_input("Time", datetime.now().time())
-            patient_name = st.text_input("Patient Full Name")
-        with c2:
+        with c6:
             age = st.number_input("Age", min_value=0, max_value=120, value=25)
             physician = st.text_input("Attending Physician Name")
+        with c7:
             specialty_sel = st.selectbox("Physician Specialty", SPECIALTY_DROPDOWN_OPTIONS)
-        with c3:
             case_classification = st.selectbox("Patient Type / Case Classification", ["IPD", "OPD", "Private Case", "House Case (Walk-in)"])
             transferred_to = st.selectbox("Transferred To", ["None", "GNU", "PICU", "ICU"])
 
@@ -374,7 +383,10 @@ if selected_sheet == "ECC TOP DISEASES":
                 'MONTH': get_month_str(entry_date, "full_month"),
                 'DATE': entry_date.strftime("%m/%d/%Y"),
                 'TIME': entry_time.strftime("%I:%M:%S %p"),
-                'PATIENT': patient_name,
+                'LAST NAME': last_name,
+                'FIRST NAME': first_name,
+                'MIDDLE NAME': middle_name,
+                'SEX': sex,
                 'AGE': str(age),
                 'DIAGNOSIS': diagnosis_text,
                 'DISEASE CATEGORIES': ", ".join(selected_diseases) if selected_diseases else "None",
@@ -394,21 +406,36 @@ if selected_sheet == "ECC TOP DISEASES":
 elif selected_sheet == "ENDO":
     st.header("Endoscopy Unit Data Entry Form")
     with st.form("endo_form", clear_on_submit=True):
-        c1, c2, c3 = st.columns(3)
+        c1, c2, c3, c4 = st.columns(4)
         with c1:
+            last_name = st.text_input("Last Name")
+        with c2:
+            first_name = st.text_input("First Name")
+        with c3:
+            middle_name = st.text_input("Middle Name")
+        with c4:
+            sex = st.selectbox("Sex", ["Male", "Female", "Others"])
+
+        c5, c6, c7, c8 = st.columns(4)
+        with c5:
             entry_date = st.date_input("Procedure Date", datetime.today())
             sched_time = st.time_input("Scheduled Time", datetime.now().time())
+        with c6:
             actual_time = st.time_input("Actual Time", datetime.now().time())
-            patient_name = st.text_input("Patient Name (Last, First M.I.)")
-        with c2:
             age = st.number_input("Age", min_value=0, max_value=120, value=40)
+        with c7:
             diagnosis_text = st.text_input("Diagnosis")
             procedure_text = st.text_input("Procedure Name")
+        with c8:
             physician = st.text_input("Attending Physician")
-        with c3:
             specialty_sel = st.selectbox("Attending Specialty", SPECIALTY_DROPDOWN_OPTIONS)
+
+        c9, c10, c11 = st.columns(3)
+        with c9:
             gastro = st.text_input("Gastroenterologist")
+        with c10:
             ent = st.text_input("ENT Specialist")
+        with c11:
             anesthesiologist = st.text_input("Anesthesiologist")
 
         proc_cols = ['GASTROSCOPY', 'COLONOSCOPY', 'NASAL PROCEDURE', 'PEG PROCEDURE', 'ERCP', 'PROCTOSIGMOIDOSCOPY', 'PARACENTESIS', 'BRONCHOSCOPY', 'OTHER PROCEDURES']
@@ -426,7 +453,10 @@ elif selected_sheet == "ENDO":
                 'DATE': entry_date.strftime("%m/%d/%Y"),
                 'SCHEDULED TIME': sched_time.strftime("%I:%M:%S %p"),
                 'ACTUAL TIME': actual_time.strftime("%I:%M:%S %p"),
-                'PATIENT': patient_name,
+                'LAST NAME': last_name,
+                'FIRST NAME': first_name,
+                'MIDDLE NAME': middle_name,
+                'SEX': sex,
                 'AGE': age,
                 'DIAGNOSIS': diagnosis_text,
                 'PROCEDURE': procedure_text,
@@ -451,15 +481,28 @@ elif selected_sheet == "ENDO":
 elif selected_sheet == "HDU":
     st.header("Hemodialysis Unit Data Entry Form")
     with st.form("hdu_form", clear_on_submit=True):
-        c1, c2 = st.columns(2)
+        c1, c2, c3, c4 = st.columns(4)
         with c1:
-            entry_date = st.date_input("Dialysis Date", datetime.today())
-            patient_name = st.text_input("Patient Name (LAST, FIRST)")
-            diagnosis = st.text_input("Diagnosis", value="CKD")
+            last_name = st.text_input("Last Name")
         with c2:
+            first_name = st.text_input("First Name")
+        with c3:
+            middle_name = st.text_input("Middle Name")
+        with c4:
+            sex = st.selectbox("Sex", ["Male", "Female", "Others"])
+
+        c5, c6 = st.columns(2)
+        with c5:
+            entry_date = st.date_input("Dialysis Date", datetime.today())
+            diagnosis = st.text_input("Diagnosis", value="CKD")
+        with c6:
             physician = st.text_input("Nephrologist", value="DR. ALEJANDRO SESE JR.")
             specialty_sel = st.selectbox("Physician Specialty", SPECIALTY_DROPDOWN_OPTIONS)
+
+        c7, c8 = st.columns(2)
+        with c7:
             shift_set = st.selectbox("Dialysis Shift Slot", ["1ST SET", "2ND SET", "3RD SET", "ONCALL"])
+        with c8:
             patient_type = st.radio("Patient Type", ["OPD", "IPD"])
 
         submitted = st.form_submit_button("Submit Record to Excel Sheet")
@@ -471,7 +514,10 @@ elif selected_sheet == "HDU":
                 'MONTH': get_month_str(entry_date, "numeric_prefix"),
                 'DATE': entry_date.strftime("%B %d, %Y"),
                 'TRUE DATE': true_date,
-                'PATIENT': patient_name,
+                'LAST NAME': last_name,
+                'FIRST NAME': first_name,
+                'MIDDLE NAME': middle_name,
+                'SEX': sex,
                 'DIAGNOSIS': diagnosis,
                 'PHYSICIAN': physician,
                 'PHYSICIAN SPECIALTY': specialty_sel,
@@ -489,29 +535,40 @@ elif selected_sheet == "HDU":
 elif selected_sheet == "OBGYNE CASES":
     st.header("OBGYNE Cases Data Entry Form")
     with st.form("obgyne_form", clear_on_submit=True):
-        c1, c2, c3 = st.columns(3)
+        c1, c2, c3, c4 = st.columns(4)
         with c1:
+            last_name = st.text_input("Last Name")
+        with c2:
+            first_name = st.text_input("First Name")
+        with c3:
+            middle_name = st.text_input("Middle Name")
+        with c4:
+            sex = st.selectbox("Sex", ["Female", "Male", "Others"])
+
+        c5, c6, c7, c8 = st.columns(4)
+        with c5:
             entry_date = st.date_input("Procedure Date", datetime.today())
             sched_time = st.time_input("Scheduled Time", datetime.now().time())
+        with c6:
             actual_time = st.time_input("Actual Time", datetime.now().time())
-            patient_name = st.text_input("Patient Name")
-        with c2:
             age = st.number_input("Age", min_value=10, max_value=100, value=30)
+        with c7:
             diagnosis = st.text_area("OBGYNE Diagnosis")
             procedure = st.text_input("Procedure Name")
-        with c3:
+        with c8:
             surgeon = st.text_input("Surgeon / OBGYNE")
             specialty_sel = st.selectbox("Attending Specialty", SPECIALTY_DROPDOWN_OPTIONS)
             anesthesiologist = st.text_input("Anesthesiologist")
 
-        ca, cb, cc = st.columns(3)
+        ca, cb, cc, cd = st.columns(4)
         with ca:
             ob_procs = st.multiselect("Procedure Breakdown", ["CS PRIMARY", "CS", "NSD", "D&C", "HYSTERECTOMY", "EXLAP", "OTHER PROCEDURES", "NST"])
         with cb:
             complexity = st.selectbox("Complexity Tier", ["MAJOR", "MINOR", "DIAGNOSTIC"])
-            setting = st.radio("Care Setting", ["IPD", "OPD"])
         with cc:
+            setting = st.radio("Care Setting", ["IPD", "OPD"])
             kit_used = st.checkbox("Kit Used", value=True)
+        with cd:
             payment = st.radio("Payment Channel", ["SELF-PAY", "HMO"])
 
         submitted = st.form_submit_button("Submit Record to Excel Sheet")
@@ -521,7 +578,10 @@ elif selected_sheet == "OBGYNE CASES":
                 'DATE': entry_date.strftime("%m/%d/%Y"),
                 'SCHEDULED TIME': sched_time.strftime("%I:%M:%S %p"),
                 'ACTUAL TIME': actual_time.strftime("%I:%M:%S %p"),
-                'PATIENT': patient_name,
+                'LAST NAME': last_name,
+                'FIRST NAME': first_name,
+                'MIDDLE NAME': middle_name,
+                'SEX': sex,
                 'AGE': float(age),
                 'DIAGNOSIS': diagnosis,
                 'PROCEDURE': procedure,
@@ -545,17 +605,27 @@ elif selected_sheet == "OBGYNE CASES":
 elif selected_sheet == "SCC CASES":
     st.header("Surgical Care Center (SCC) Data Entry Form")
     with st.form("scc_form", clear_on_submit=True):
-        c1, c2, c3 = st.columns(3)
+        c1, c2, c3, c4 = st.columns(4)
         with c1:
+            last_name = st.text_input("Last Name")
+        with c2:
+            first_name = st.text_input("First Name")
+        with c3:
+            middle_name = st.text_input("Middle Name")
+        with c4:
+            sex = st.selectbox("Sex", ["Male", "Female", "Others"])
+
+        c5, c6, c7, c8 = st.columns(4)
+        with c5:
             entry_date = st.date_input("Surgery Date", datetime.today())
             sched_time = st.time_input("Scheduled Time", datetime.now().time())
+        with c6:
             actual_time = st.time_input("Actual Time", datetime.now().time())
-            patient_name = st.text_input("Patient Name")
-        with c2:
             age = st.number_input("Age", min_value=0, max_value=120, value=35)
+        with c7:
             diagnosis = st.text_area("Pre/Post-Op Diagnosis")
             procedure = st.text_area("Surgical Procedure")
-        with c3:
+        with c8:
             surgeon = st.text_input("Primary Surgeon")
             specialty_sel = st.selectbox("Surgical Department / Specialty", SPECIALTY_DROPDOWN_OPTIONS)
             anesthesiologist = st.text_input("Anesthesiologist")
@@ -584,7 +654,10 @@ elif selected_sheet == "SCC CASES":
                 'DATE': entry_date.strftime("%m/%d/%Y"),
                 'SCHEDULED TIME': sched_time.strftime("%I:%M:%S %p"),
                 'ACTUAL TIME': actual_time.strftime("%I:%M:%S %p"),
-                'PATIENT': patient_name,
+                'LAST NAME': last_name,
+                'FIRST NAME': first_name,
+                'MIDDLE NAME': middle_name,
+                'SEX': sex,
                 'AGE': float(age),
                 'DIAGNOSIS': diagnosis,
                 'PROCEDURE': procedure,
@@ -607,22 +680,36 @@ elif selected_sheet == "SCC CASES":
 elif selected_sheet == "SCU CASES":
     st.header("Special Care Unit (SCU) Data Entry Form")
     with st.form("scu_form", clear_on_submit=True):
-        c1, c2, c3 = st.columns(3)
+        c1, c2, c3, c4 = st.columns(4)
         with c1:
-            entry_date = st.date_input("Admission Date", datetime.today())
-            patient_name = st.text_input("Patient Name (e.g., BABY BOY ...)")
-            gender = st.radio("Gender", ["MALE", "FEMALE"])
-            aog = st.text_input("Age of Gestation (AOG)", value="38 WEEKS")
+            last_name = st.text_input("Last Name")
         with c2:
-            age_y = st.number_input("Age (Years)", min_value=0, max_value=18, value=0)
-            age_m = st.number_input("Age (Months)", min_value=0, max_value=11, value=0)
-            age_d = st.number_input("Age (Days)", min_value=0, max_value=31, value=0)
-            physician = st.text_input("Attending Physician")
+            first_name = st.text_input("First Name")
         with c3:
-            diagnosis = st.text_area("Diagnosis Text")
-            scu_unit = st.selectbox("SCU Unit", ["NICU", "PICU", "GNU", "ER", "NSU", "OUTBORN"])
+            middle_name = st.text_input("Middle Name")
+        with c4:
+            sex = st.selectbox("Sex", ["Male", "Female", "Others"])
+
+        c5, c6, c7, c8, c9 = st.columns(5)
+        with c5:
+            entry_date = st.date_input("Admission Date", datetime.today())
+            aog = st.text_input("Age of Gestation (AOG)", value="38 WEEKS")
+        with c6:
+            age_y = st.number_input("Age (Years)", min_value=0, max_value=18, value=0)
+        with c7:
+            age_m = st.number_input("Age (Months)", min_value=0, max_value=11, value=0)
+        with c8:
+            age_d = st.number_input("Age (Days)", min_value=0, max_value=31, value=0)
+        with c9:
+            physician = st.text_input("Attending Physician")
+
+        c10, c11 = st.columns(2)
+        with c10:
+            scu_unit = st.selectbox("SCU Unit Location", ["NICU", "PICU", "GNU", "ER", "NSU", "OUTBORN"])
+        with c11:
             subspecialties = st.multiselect("Subspecialties", SPECIALTY_DROPDOWN_OPTIONS[1:])
 
+        diagnosis = st.text_area("Diagnosis Text")
         diag_flags = st.multiselect("Diagnostic Flags", ["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY"])
 
         submitted = st.form_submit_button("Submit Record to Excel Sheet")
@@ -636,10 +723,12 @@ elif selected_sheet == "SCU CASES":
             row_data = {
                 'MONTH': get_month_str(entry_date, "numeric_prefix"),
                 'DATE': entry_date.strftime("%m/%d/%Y"),
-                'PATIENT': patient_name,
+                'LAST NAME': last_name,
+                'FIRST NAME': first_name,
+                'MIDDLE NAME': middle_name,
+                'SEX': sex,
                 'AOG': aog if aog else "N/A",
                 'AGE': age_formatted,
-                'GENDER': gender,
                 'DIAGNOSIS': diagnosis,
                 'DIAGNOSTIC FLAGS': ", ".join(diag_flags) if diag_flags else "None",
                 'SCU UNIT LOCATION': scu_unit,
