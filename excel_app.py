@@ -5,7 +5,7 @@ import pandas as pd
 import os
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION & COMPLETE LIGHT MODE UI STYLING
+# 1. PAGE CONFIGURATION & REFINED LIGHT MODE UI STYLING
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="PATIENT DATA RECORDING SYSTEM",
@@ -13,7 +13,8 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS ensuring all selectboxes, dropdowns, input fields, tables, and containers match a clean hospital light mode
+# Custom CSS ensuring that ALL buttons, form submit buttons, dropdown selectboxes, 
+# popovers, and option menus match the crisp hospital light theme (White & Royal Blue / Teal).
 st.markdown("""
 <style>
     /* Main app background and text color */
@@ -37,30 +38,58 @@ st.markdown("""
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     }
     
-    /* Buttons styling */
-    .stButton>button {
+    /* --- BUTTON STYLING FIX --- */
+    .stButton > button, form button[type="submit"] {
         background-color: #1e3a8a !important;
-        color: white !important;
-        border-radius: 6px;
-        border: none;
-        font-weight: bold;
+        color: #ffffff !important;
+        border-radius: 6px !important;
+        border: none !important;
+        font-weight: bold !important;
+        box-shadow: 0 2px 4px rgba(30, 58, 138, 0.2) !important;
     }
-    .stButton>button:hover {
+    .stButton > button:hover, form button[type="submit"]:hover {
         background-color: #1d4ed8 !important;
-        color: white !important;
+        color: #ffffff !important;
     }
     
-    /* Input fields and selectbox dropdown containers in light mode */
-    div[data-baseweb="select"] > div, input[type="text"], input[type="number"], textarea {
+    /* --- DROPDOWN & INPUT FIELD STYLING FIX --- */
+    div[data-baseweb="select"] > div {
         background-color: #ffffff !important;
         color: #1e293b !important;
-        border-color: #cbd5e1 !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 6px !important;
     }
     
-    /* Dropdown text and menu items background in light mode */
-    div[data-baseweb="popover"] div, div[data-baseweb="menu"] div {
+    /* Selected option text inside selectbox */
+    div[data-baseweb="select"] span {
+        color: #1e293b !important;
+    }
+    
+    input[type="text"], input[type="number"], textarea {
         background-color: #ffffff !important;
         color: #1e293b !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+    }
+    
+    /* --- DROPDOWN POPUP MENU LIGHT MODE FIX --- */
+    div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"] {
+        background-color: #ffffff !important;
+        color: #1e293b !important;
+        border: 1px solid #cbd5e1 !important;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+    }
+    
+    /* Dropdown individual option items */
+    div[data-baseweb="menu"] div, option, li[role="option"] {
+        background-color: #ffffff !important;
+        color: #1e293b !important;
+    }
+    
+    /* Hover state for dropdown options */
+    div[data-baseweb="menu"] div:hover, li[role="option"]:hover {
+        background-color: #f1f5f9 !important;
+        color: #1e3a8a !important;
     }
     
     /* Metric cards in light mode */
