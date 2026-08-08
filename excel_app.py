@@ -231,7 +231,7 @@ def get_spec_index(default_name):
     return 0
 
 # ---------------------------------------------------------
-# 4. STREAMLIT SHEET HEADERS
+# 4. STREAMLINED SHEET HEADERS
 # ---------------------------------------------------------
 SHEET_HEADERS = {
     "Emergency Care Complex (ECC)": [
@@ -773,15 +773,13 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         with c_d1:
             entry_date = st.date_input("Dialysis Date", datetime.today())
 
-        # Removed default "CKD" entry as requested
         diagnosis = st.text_input("Diagnosis", value="")
         curr_date_str = entry_date.strftime("%B %d, %Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
         c_att1, c_att2 = st.columns(2)
         with c_att1:
-            # Removed default "DR. ALEJANDRO SESE JR." entry as requested
-            attending_physician = st.text_input("Attending Nephrologist / Physician Name", value="")
+            attending_physician = st.text_input("Attending Physician", value="")
         with c_att2:
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("NEPHROLOGY"))
 
