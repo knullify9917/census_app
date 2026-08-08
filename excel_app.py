@@ -972,7 +972,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
     with st.form("scc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
-        # Row 1: Name / Age / Sex aligned (Matched 100% with OBGYNE)
+        # Row 1: Name / Age / Sex aligned (Matched identically with OBGYNE)
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
             last_name = st.text_input("Last Name", value="")
@@ -985,7 +985,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         with c5:
             sex = st.selectbox("Sex", ["None", "Male", "Female", "Others"])
 
-        # Row 2: Surgery Date / Scheduled Time / Actual Time aligned (Matched 100% with OBGYNE Procedure Date & times)
+        # Row 2: Surgery Date / Scheduled Time / Actual Time aligned (Matched identically with OBGYNE)
         c_d1, c_d2, c_d3 = st.columns(3)
         with c_d1:
             entry_date = st.date_input("Surgery Date", ph_now.date())
@@ -1045,16 +1045,18 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             'ULTRASOUND GUIDED', 'MIS', 'AVF', 'IJ CATH', 'PERM CATH/ FEMORAL CATH', 'PROCTOSCOPY',
             'CHOLEDOSCOPY', 'DENTAL PROCEDURES', 'OTHER PROCEDURES'
         ]
-        selected_scc_procs = st.multiselect("Procedure Census", all_scc_procs)
-
-        ca, cb, cc, cd = st.columns(4)
-        with ca: 
+        
+        # Row layout matching your exact specification: Procedure Census | Complexity Tier | Hospitalization Mode | Mode of Payment
+        # With Hospital Kit Package placed neatly below Hospitalization Mode
+        c_p1, c_p2, c_p3, c_p4 = st.columns(4)
+        with c_p1:
+            selected_scc_procs = st.multiselect("Procedure Census", all_scc_procs)
+        with c_p2:
             complexity = st.selectbox("Complexity Tier", ["None", "MAJOR", "MEDIUM", "MINOR", "DIAGNOSTICS"])
-        with cb: 
+        with c_p3:
             hosp_mode = st.selectbox("Hospitalization Mode", ["None", "Outpatient", "Inpatient"])
-        with cc: 
             kit_package = st.checkbox("Hospital Kit Package", value=True)
-        with cd: 
+        with c_p4:
             payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
 
         submitted = st.form_submit_button("Submit Record to Google Sheets")
