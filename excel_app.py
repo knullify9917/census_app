@@ -274,7 +274,7 @@ SHEET_HEADERS = {
     ],
     "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)": [
         'MONTH', 'DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AOG', 'AGE', 'DIAGNOSIS', 
-        'DIAGNOSTIC FLAGS', 'ADMITTED FROM', 'ADMITTED TO', 'TRANSFERRED TO', 
+        'DIAGNOSTIC CENSUS', 'ADMITTED FROM', 'ADMITTED TO', 'TRANSFERRED TO', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'CASE COUNT'
@@ -518,7 +518,7 @@ if selected_sheet == "Hospital Information System":
                 dept_df = dept_df[dept_df['ADMITTED TO'] == selected_area]
                 st.write(f"Filtered to **{selected_area}** ({len(dept_df)} records)")
 
-        preferred_cols = ['DATE', 'LAST NAME', 'FIRST NAME', 'DIAGNOSIS', 'DIAGNOSTIC FLAGS', 'ATTENDING PHYSICIAN', 'PRIMARY SURGEON', 'SURGEON / PROCEDURALIST', 'SURGEON / OBGYNE', 'ADMITTED TO', 'TRANSFERRED TO', 'MODE OF PAYMENT']
+        preferred_cols = ['DATE', 'LAST NAME', 'FIRST NAME', 'DIAGNOSIS', 'DIAGNOSTIC CENSUS', 'ATTENDING PHYSICIAN', 'PRIMARY SURGEON', 'SURGEON / PROCEDURALIST', 'SURGEON / OBGYNE', 'ADMITTED TO', 'TRANSFERRED TO', 'MODE OF PAYMENT']
         display_cols = [c for c in preferred_cols if c in dept_df.columns]
         if not display_cols:
             display_cols = dept_df.columns.tolist()
@@ -725,7 +725,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
                 'SEX': sex,
                 'AGE': age,
                 'DIAGNOSIS': diagnosis_text,
-                'PROCEDURE': procedure,
+                'PROCEDURE': procedure_text,
                 'PROCEDURE CATEGORIES': ", ".join(selected_procs) if selected_procs else "None",
                 'ATTENDING PHYSICIAN': attending_physician if attending_physician else "N/A",
                 'ATTENDING SPECIALIZATION': attending_spec,
@@ -901,16 +901,14 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         with c_anes2:
             anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
-        st.subheader("📋 OBGYNE Diagnosis & Procedure Details")
+        st.subheader("📋 Diagnosis & Procedure Details")
         
-        # Row 1: Pre-Op Diagnosis & Post-Op Diagnosis
         cd1, cd2 = st.columns(2)
         with cd1:
             pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="")
         with cd2:
             post_op_diagnosis = st.text_area("Post-Op Diagnosis", value="")
 
-        # Row 2: Procedure Name & Surgical Procedure
         cp1, cp2 = st.columns(2)
         with cp1:
             procedure_name = st.text_input("Procedure Name", value="")
@@ -921,7 +919,6 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             'CS PRIMARY', 'CS', 'NSD', 'D&C', 'HYSTERECTOMY', 'EXLAP', 'OTHER PROCEDURES', 'NST'
         ]
 
-        # Row 3: Procedure Census | Complexity Tier | Hospitalization Mode & Kit Package | Mode of Payment
         ca, cb, cc, cd = st.columns(4)
         with ca:
             selected_ob_procs = st.multiselect("Procedure Census", all_ob_procs)
@@ -1040,7 +1037,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         with c_anes2:
             anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
-        st.subheader("📋 Surgical Details")
+        st.subheader("📋 Diagnosis & Procedure Details")
         
         cd1, cd2 = st.columns(2)
         with cd1:
@@ -1179,9 +1176,9 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
 
         payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
 
-        st.subheader("📋 Diagnosis & Diagnostic Flags")
+        st.subheader("📋 Diagnosis & Diagnostic Details")
         diagnosis = st.text_area("Diagnosis Text", value="")
-        diag_flags = st.multiselect("Diagnostic Flags", ["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY"])
+        diag_flags = st.multiselect("Diagnostic Census", ["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY"])
 
         submitted = st.form_submit_button("Submit Record to Google Sheets")
         if submitted:
@@ -1209,7 +1206,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
                 'AOG': aog if aog else "N/A",
                 'AGE': age_formatted,
                 'DIAGNOSIS': diagnosis,
-                'DIAGNOSTIC FLAGS': ", ".join(diag_flags) if diag_flags else "None",
+                'DIAGNOSTIC CENSUS': ", ".join(diag_flags) if diag_flags else "None",
                 'ADMITTED FROM': admitted_from,
                 'ADMITTED TO': admitted_to,
                 'TRANSFERRED TO': transferred_to,
