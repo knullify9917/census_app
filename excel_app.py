@@ -78,20 +78,21 @@ REGULAR_FONT_SIZE = 10
 def get_ph_time():
     return datetime.now(ZoneInfo("Asia/Manila"))
 
-# Helper for 12-hour civilian time input components
-def civilian_time_input(label, key_suffix=""):
+# Helper for a single cohesive civilian 12-hour time entry container block
+def civilian_time_field(label, key_suffix=""):
     ph_now = get_ph_time()
-    default_hour = ph_now.strftime("%I") # 12-hr format
+    default_hour = ph_now.strftime("%I")
     default_minute = ph_now.strftime("%M")
-    default_ampm = ph_now.strftime("%p") # AM or PM
+    default_ampm = ph_now.strftime("%p")
 
-    col_h, col_m, col_ap = st.columns([2, 2, 2])
-    with col_h:
-        hour_val = st.selectbox(f"{label} - Hour", [f"{i:02d}" for i in range(1, 13)], index=int(default_hour)-1, key=f"hour_{key_suffix}")
-    with col_m:
-        minute_val = st.selectbox(f"{label} - Minute", [f"{i:02d}" for i in range(60)], index=int(default_minute), key=f"min_{key_suffix}")
-    with col_ap:
-        ampm_val = st.selectbox(f"{label} - AM/PM", ["AM", "PM"], index=0 if default_ampm == "AM" else 1, key=f"ampm_{key_suffix}")
+    st.markdown(f"**{label}**")
+    c_h, c_m, c_ap, c_space = st.columns([1.5, 1.5, 1.5, 5.5])
+    with c_h:
+        hour_val = st.selectbox("Hour", [f"{i:02d}" for i in range(1, 13)], index=int(default_hour)-1, key=f"hour_{key_suffix}")
+    with c_m:
+        minute_val = st.selectbox("Minute", [f"{i:02d}" for i in range(60)], index=int(default_minute), key=f"min_{key_suffix}")
+    with c_ap:
+        ampm_val = st.selectbox("AM/PM", ["AM", "PM"], index=0 if default_ampm == "AM" else 1, key=f"ampm_{key_suffix}")
 
     return f"{hour_val}:{minute_val}:00 {ampm_val}"
 
@@ -565,14 +566,11 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         with c5:
             entry_date = st.date_input("Date", ph_now.date())
         with c6:
-            entry_age_col, c_hosp_col = st.columns(2)
-            with entry_age_col:
-                age = st.number_input("Age", min_value=0, max_value=120, value=0)
+            age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c7:
             hosp_mode = st.selectbox("Hospitalization Mode", ["None", "IPD - Inpatient", "OPD - Outpatient"])
 
-        st.markdown("**Time of Entry (12-hr AM/PM)**")
-        entry_time_str = civilian_time_input("Time of Entry", key_suffix="ecc_time")
+        entry_time_str = civilian_time_field("Time of Entry", key_suffix="ecc_time")
 
         c_extra1, c_extra2 = st.columns(2)
         with c_extra1:
@@ -659,11 +657,8 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         with c6:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
 
-        st.markdown("**Scheduled Time (12-hr AM/PM)**")
-        sched_time_str = civilian_time_input("Scheduled Time", key_suffix="endo_sched")
-
-        st.markdown("**Actual Time (12-hr AM/PM)**")
-        actual_time_str = civilian_time_input("Actual Time", key_suffix="endo_actual")
+        sched_time_str = civilian_time_field("Scheduled Time", key_suffix="endo_sched")
+        actual_time_str = civilian_time_field("Actual Time", key_suffix="endo_actual")
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
@@ -875,11 +870,8 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         with c6:
             age = st.number_input("Age", min_value=10, max_value=100, value=0)
 
-        st.markdown("**Scheduled Time (12-hr AM/PM)**")
-        sched_time_str = civilian_time_input("Scheduled Time", key_suffix="ob_sched")
-
-        st.markdown("**Actual Time (12-hr AM/PM)**")
-        actual_time_str = civilian_time_input("Actual Time", key_suffix="ob_actual")
+        sched_time_str = civilian_time_field("Scheduled Time", key_suffix="ob_sched")
+        actual_time_str = civilian_time_field("Actual Time", key_suffix="ob_actual")
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
@@ -999,11 +991,8 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         with c6:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
 
-        st.markdown("**Scheduled Time (12-hr AM/PM)**")
-        sched_time_str = civilian_time_input("Scheduled Time", key_suffix="scc_sched")
-
-        st.markdown("**Actual Time (12-hr AM/PM)**")
-        actual_time_str = civilian_time_input("Actual Time", key_suffix="scc_actual")
+        sched_time_str = civilian_time_field("Scheduled Time", key_suffix="scc_sched")
+        actual_time_str = civilian_time_field("Actual Time", key_suffix="scc_actual")
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
