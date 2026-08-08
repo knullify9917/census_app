@@ -824,17 +824,23 @@ if selected_sheet == "Hospital Information System":
         "General Nursing Unit (GNU 4A)"
     ])
     
-    summary_data = []
-    total_all_cases = 0
+    gnu_sheets = [d for d in department_sheets if d.startswith("General Nursing Unit (GNU")]
+    
+    # Tally total active & may go home patients strictly from General Nursing Units to avoid overlaps
+    total_active_patients = 0
+    daily_active_patients = 0
+    monthly_active_patients = 0
+    
     ph_now_summary = get_ph_time()
     today_str = ph_now_summary.strftime("%m/%d/%Y")
     current_month_num = str(ph_now_summary.month)
     current_month_name = ph_now_summary.strftime("%B").upper()
 
+    summary_data = []
+
     for dept in department_sheets:
         df = read_google_sheet(dept)
         record_count = len(df) if not df.empty else 0
-        total_all_cases += record_count
         
         daily_count = 0
         monthly_count = 0
@@ -848,6 +854,22 @@ if selected_sheet == "Hospital Information System":
                 ]
                 monthly_count = len(monthly_subset)
 
+        # If department is a General Nursing Unit, filter strictly for Active & May Go Home for summary metrics
+        if dept in gnu_sheets and not df.empty and 'PATIENT STATUS' in df.columns:
+            df['PATIENT STATUS'] = df['PATIENT STATUS'].fillna("Active")
+            active_subset = df[
+                df['PATIENT STATUS'].astype(str).str.strip().str.lower().isin(['active', 'may go home'])
+            ]
+            total_active_patients += len(active_subset)
+            if 'DATE' in active_subset.columns:
+                daily_active_patients += len(active_subset[active_subset['DATE'].astype(str).str.strip() == today_str])
+            if 'MONTH' in active_subset.columns:
+                m_active = active_subset[
+                    active_subset['MONTH'].astype(str).str.contains(current_month_name, case=False, na=False) |
+                    active_subset['MONTH'].astype(str).str.startswith(f"{current_month_num}.", na=False)
+                ]
+                monthly_active_patients += len(m_active)
+
         summary_data.append({
             "Department Module": dept,
             "Total Census Records": record_count,
@@ -855,24 +877,22 @@ if selected_sheet == "Hospital Information System":
             "Monthly Patient Census": monthly_count
         })
 
-    m1, m2 = st.columns(2)
+    m1, m2, m3 = st.columns(3)
     with m1:
-        st.metric(label="Total Hospital-Wide Census Records", value=total_all_cases)
+        st.metric(label="Total Active Inpatients (GNU)", value=total_active_patients)
     with m2:
-        st.metric(label="Active Departments Tracked", value=len(department_sheets))
+        st.metric(label="Today's Active Census (GNU)", value=daily_active_patients)
+    with m3:
+        st.metric(label="Monthly Active Census (GNU)", value=monthly_active_patients)
 
     st.markdown("---")
 
     # ---------------------------------------------------------
-    # ACTIVE PATIENT ROSTER (Condition: Active & May Go Home Inpatients)
-    # Formatted specifically for General Nursing Units requested fields:
-    # Admission Date, Room No., Name of Patient, Age, Admitting Diagnosis,
-    # Admitting Physician, Surgical Procedure, Diagnostic Procedure, Status
+    # ACTIVE PATIENT ROSTER (Derived from General Nursing Units)
     # ---------------------------------------------------------
     st.subheader("📋 Active Patient Roster")
-    st.markdown("Aggregated live roster displaying patient records from General Nursing Units.")
+    st.markdown("Aggregated live roster displaying active & may go home inpatient records from General Nursing Units.")
 
-    gnu_sheets = [d for d in department_sheets if d.startswith("General Nursing Unit (GNU")]
     gnu_roster_frames = []
     for gnu in gnu_sheets:
         gnu_df = read_google_sheet(gnu)
@@ -884,7 +904,6 @@ if selected_sheet == "Hospital Information System":
     if gnu_roster_frames:
         master_gnu_df = pd.concat(gnu_roster_frames, ignore_index=True)
         
-        # Filter for active/may go home status if column exists
         if 'PATIENT STATUS' in master_gnu_df.columns:
             master_gnu_df['PATIENT STATUS'] = master_gnu_df['PATIENT STATUS'].fillna("Active")
             gnu_filtered = master_gnu_df[
@@ -894,14 +913,12 @@ if selected_sheet == "Hospital Information System":
             gnu_filtered = master_gnu_df
 
         if not gnu_filtered.empty:
-            # Construct patient full name from Last, First, Middle
             gnu_filtered['NAME OF PATIENT'] = (
                 gnu_filtered.get('LAST NAME', '').astype(str).str.strip() + ", " +
                 gnu_filtered.get('FIRST NAME', '').astype(str).str.strip() + " " +
                 gnu_filtered.get('MIDDLE NAME', '').astype(str).str.strip()
             ).str.strip(", ")
 
-            # Map fields to required table schema
             roster_mapped = pd.DataFrame()
             roster_mapped['Admission Date'] = gnu_filtered.get('DATE', '')
             roster_mapped['Room No.'] = gnu_filtered.get('ROOM NO', '')
