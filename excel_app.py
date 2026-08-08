@@ -737,12 +737,24 @@ st.sidebar.markdown(
 
 if st.sidebar.button("🔄 Refresh Data"):
     st.cache_resource.clear()
-    st.toast("Fetching latest census and patient records from Google Sheets...", icon="🔄")
+    st.toast("Reloaded latest census & patient records from Google Sheets.", icon="🔄")
     st.rerun()
 
 if st.sidebar.button("Sign Out"):
     st.session_state["authenticated"] = False
     st.rerun()
+
+# ---------------------------------------------------------
+# CONDITIONAL AUTO-REFRESH (Every 1 minute)
+# Only active on the Hospital Information System dashboard.
+# Bypassed on department tabs while users are actively encoding data.
+# ---------------------------------------------------------
+if selected_sheet == "Hospital Information System":
+    try:
+        from streamlit_autorefresh import st_autorefresh
+        st_autorefresh(interval=60000, limit=None, key="his_auto_refresh")
+    except ImportError:
+        pass
 
 st.markdown("---")
 
