@@ -6,7 +6,7 @@ import pandas as pd
 import os
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION & LOGO-MATCHED FONT COLOR STYLING
+# 1. PAGE CONFIGURATION & LOGO-MATCHED BLUE/GREEN COLORWAY
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="PATIENT DATA RECORDING SYSTEM",
@@ -16,24 +16,24 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-    /* Global Clean Light Theme & Logo-Matched Text Colors */
+    /* Global Clean Light Theme */
     .stApp { background-color: #fcfcfd !important; color: #1e293b !important; }
     
     /* Sidebar Text & Background Styling */
     section[data-testid="stSidebar"] { background-color: #f1f5f9 !important; border-right: 1px solid #cbd5e1; }
     section[data-testid="stSidebar"] * { color: #1e3a8a !important; }
     
-    /* Headers matching MTCMC Logo Royal Blue (#1e3a8a) */
+    /* Headers using Logo Blue (#1e3a8a) */
     h1, h2, h3, h4, h5, h6 { color: #1e3a8a !important; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
     
-    /* Subheaders & Paragraph/Label Typography Accent (Logo Teal #0d9488) */
-    .stMarkdown p, label, .stRadio label, .stCheckbox label, .stMultiSelect label { color: #334155 !important; }
+    /* Subheaders & Paragraph/Label Typography Accent (Logo Green #0f766e) */
+    .stMarkdown p, label, .stRadio label, .stCheckbox label, .stMultiSelect label { color: #0f766e !important; font-weight: 500 !important; }
     
-    /* Action Buttons (Logo Royal Blue with crisp hover) */
+    /* Action Buttons (Logo Blue with green accent hover) */
     .stButton > button, form button[type="submit"] {
         background-color: #1e3a8a !important; color: #ffffff !important; border-radius: 6px !important; border: none !important; font-weight: bold !important;
     }
-    .stButton > button:hover, form button[type="submit"]:hover { background-color: #1d4ed8 !important; color: #ffffff !important; }
+    .stButton > button:hover, form button[type="submit"]:hover { background-color: #0f766e !important; color: #ffffff !important; }
     
     /* Form Inputs, Textareas, and Dropdown Controls */
     div[data-baseweb="select"] > div, input[type="text"], input[type="number"], textarea {
@@ -48,8 +48,8 @@ st.markdown("""
         border-radius: 6px !important;
     }
     div[data-baseweb="input"]:focus-within {
-        border-color: #1e3a8a !important;
-        box-shadow: 0 0 0 1px #1e3a8a !important;
+        border-color: #0f766e !important;
+        box-shadow: 0 0 0 1px #0f766e !important;
     }
 
     /* Dropdown Popover Lists & Menus (Fixes dark/black popover boxes) */
@@ -57,18 +57,18 @@ st.markdown("""
         background-color: #ffffff !important; color: #1e3a8a !important; border: 1px solid #cbd5e1 !important;
     }
     li[role="option"], div[data-baseweb="menu"] div, option { background-color: #ffffff !important; color: #1e3a8a !important; }
-    li[role="option"]:hover, div[data-baseweb="menu"] div:hover { background-color: #f0fdfa !important; color: #0d9488 !important; }
+    li[role="option"]:hover, div[data-baseweb="menu"] div:hover { background-color: #f0fdf4 !important; color: #0f766e !important; }
     
     /* Dataframe Tables */
     [data-testid="stDataFrame"] { background-color: #ffffff !important; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px; }
     [data-testid="stDataFrame"] table { background-color: #ffffff !important; color: #1e293b !important; }
     [data-testid="stDataFrame"] thead tr th { background-color: #e2e8f0 !important; color: #1e3a8a !important; font-weight: bold !important; }
     
-    /* Metric Cards with Logo Teal Accent Border (#0d9488) */
+    /* Metric Cards with Logo Green Accent Border (#0f766e) */
     div.stMetric {
-        background-color: #ffffff !important; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #cbd5e1; border-left: 5px solid #0d9488 !important;
+        background-color: #ffffff !important; padding: 15px; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); border: 1px solid #cbd5e1; border-left: 5px solid #0f766e !important;
     }
-    div.stMetric label { color: #0d9488 !important; font-weight: 600 !important; }
+    div.stMetric label { color: #0f766e !important; font-weight: 600 !important; }
     div.stMetric div[data-testid="stMetricValue"] { color: #1e3a8a !important; font-weight: bold !important; }
     
     div.stForm { background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
