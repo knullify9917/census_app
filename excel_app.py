@@ -428,21 +428,30 @@ def check_existing_patient_ai(sheet_name, last_name, fn, curr_date_str):
 ensure_google_sheets_exist()
 
 # ---------------------------------------------------------
-# 6. STREAMLIT APP INTERFACE (LOGO, TITLE & SUBTITLE HEADER)
+# 6. STREAMLIT APP INTERFACE (ROBUST LOGO, TITLE & SUBTITLE HEADER)
 # ---------------------------------------------------------
-col_logo, col_title = st.columns([0.12, 0.88], gap="small")
+col_logo, col_title = st.columns([0.10, 0.90], gap="small")
 
 with col_logo:
-    if os.path.exists("logo.png"):
-        st.image("logo.png", width=95)
-    elif os.path.exists("logo_2.png"):
-        st.image("logo_2.png", width=95)
+    logo_found = False
+    for logo_filename in ["logo.png", "logo_2.png", "assets/logo.png", "assets/logo_2.png"]:
+        if os.path.exists(logo_filename):
+            st.image(logo_filename, width=80)
+            logo_found = True
+            break
+    if not logo_found:
+        # Fallback inline SVG hospital icon if image files aren't uploaded in working directory yet
+        st.markdown("""
+            <div style="background-color: #1e3a8a; width: 70px; height: 70px; border-radius: 12px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+                <span style="color: white; font-size: 32px; font-weight: bold;">✚</span>
+            </div>
+        """, unsafe_allow_html=True)
 
 with col_title:
     st.markdown("""
-        <div style="padding-top: 5px;">
-            <h1 style="margin-bottom: 0px; line-height: 1.1; font-size: 2.1rem; color: #1e3a8a;">MOTHER TERESA OF CALCUTTA MEDICAL CENTER</h1>
-            <p style="margin-top: 4px; font-size: 1.1rem; color: #0f766e; font-weight: 600; letter-spacing: 0.5px;">Touching Lives Through Expert Care</p>
+        <div style="padding-top: 2px;">
+            <h1 style="margin-bottom: 0px; line-height: 1.15; font-size: 1.95rem; color: #1e3a8a;">MOTHER TERESA OF CALCUTTA MEDICAL CENTER</h1>
+            <p style="margin-top: 2px; font-size: 1.05rem; color: #0f766e; font-weight: 600; letter-spacing: 0.5px;">Touching Lives Through Expert Care</p>
         </div>
     """, unsafe_allow_html=True)
 
