@@ -562,7 +562,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 
         c_h1, c_h2, c_h3 = st.columns(3)
         with c_h1:
-            hosp_mode = st.selectbox("Hospitalization Mode", ["None", "IPD - Inpatient", "OPD - Outpatient"])
+            hosp_mode = st.selectbox("Hospitalization Mode", ["None", "Inpatient", "Outpatient"])
         with c_h2:
             case_type = st.selectbox("Case Type", ["None", "Private Case", "House Case (Walk-in)", "Not Applicable"])
         with c_h3:
@@ -624,7 +624,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 # FORM 2: Endoscopy Unit (ENDO)
 # ---------------------------------------------------------
 elif selected_sheet == "Endoscopy Unit (ENDO)":
-    st.header("Endoscopy Unit (ENDO) Patient Registration")
+    st.header("Endoscopy Unit Patient Registration")
     ph_now = get_ph_time()
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_endo")
@@ -698,7 +698,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         with ca: 
             proc_type = st.radio("Nature", ["DIAGNOSTICS", "THERAPEUTIC", "DIAGNOSTICS & THERAPEUTIC"])
         with cb: 
-            hosp_mode = st.radio("Hospitalization Mode", ["OPD", "IPD"])
+            hosp_mode = st.radio("Hospitalization Mode", ["Outpatient", "Inpatient"])
         with cc: 
             payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
         with cd:
@@ -749,7 +749,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 # FORM 3: Hemodialysis Unit (HDU)
 # ---------------------------------------------------------
 elif selected_sheet == "Hemodialysis Unit (HDU)":
-    st.header("Hemodialysis Unit (HDU) Patient Registration")
+    st.header("Hemodialysis Unit Patient Registration")
 
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_hdu")
@@ -798,7 +798,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         with c7:
             shift_set = st.selectbox("Dialysis Shift Slot", ["None", "1ST SET", "2ND SET", "3RD SET", "ONCALL"])
         with c8:
-            hosp_mode = st.radio("Hospitalization Mode", ["OPD", "IPD"])
+            hosp_mode = st.radio("Hospitalization Mode", ["Outpatient", "Inpatient"])
         with c9:
             payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
 
@@ -841,7 +841,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
 # FORM 4: OBGYNE Care Complex (LRDR-OB Surgery)
 # ---------------------------------------------------------
 elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
-    st.header("OBGYNE Care Complex (LRDR-OB) Patient Registration")
+    st.header("OBGYNE Care Complex Patient Registration")
     ph_now = get_ph_time()
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_obgyne")
@@ -914,7 +914,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         with cb:
             complexity = st.selectbox("Complexity Tier", ["None", "MAJOR", "MINOR", "DIAGNOSTIC"])
         with cc:
-            hosp_mode = st.radio("Hospitalization Mode", ["OPD", "IPD"])
+            hosp_mode = st.radio("Hospitalization Mode", ["Outpatient", "Inpatient"])
             kit_used = st.checkbox("Hospital Kit Package", value=True)
         with cd:
             payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
@@ -964,7 +964,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 # FORM 5: Surgical Care Complex (OR Main)
 # ---------------------------------------------------------
 elif selected_sheet == "Surgical Care Complex (OR Main)":
-    st.header("Surgical Care Complex (SCC) Patient Registration")
+    st.header("Surgical Care Complex Patient Registration")
     ph_now = get_ph_time()
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_scc")
@@ -1049,7 +1049,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         with ca: 
             complexity = st.selectbox("Complexity Tier", ["None", "MAJOR", "MEDIUM", "MINOR", "DIAGNOSTICS"])
         with cb: 
-            hosp_mode = st.radio("Hospitalization Mode", ["OPD", "IPD"])
+            hosp_mode = st.radio("Hospitalization Mode", ["Outpatient", "Inpatient"])
         with cc: 
             kit_package = st.checkbox("Hospital Kit Package", value=True)
         with cd: 
@@ -1101,7 +1101,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 # FORM 6: Special Care Complex (NICU-PICU-NSU/PCN-Outborn)
 # ---------------------------------------------------------
 elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
-    st.header("Special Care Complex (SCC) Patient Registration")
+    st.header("Special Care Unit Patient Registration")
 
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_scu")
@@ -1158,7 +1158,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         with c12:
             transferred_to = st.selectbox("Transferred To", HOSPITAL_UNIT_AREAS)
         with c13:
-            hosp_mode = st.radio("Hospitalization Mode", ["IPD", "OPD"])
+            hosp_mode = st.radio("Hospitalization Mode", ["Outpatient", "Inpatient"])
 
         payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
 
