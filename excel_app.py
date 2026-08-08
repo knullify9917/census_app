@@ -231,7 +231,7 @@ def get_spec_index(default_name):
     return 0
 
 # ---------------------------------------------------------
-# 4. STREAMLINED SHEET HEADERS
+# 4. STREAMLIT SHEET HEADERS
 # ---------------------------------------------------------
 SHEET_HEADERS = {
     "Emergency Care Complex (ECC)": [
@@ -542,7 +542,6 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
     with st.form("ecc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics & AI Checker")
         
-        # Row 1: Name / Age / Sex aligned
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
             last_name = st.text_input("Last Name", value="")
@@ -555,14 +554,12 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         with c5:
             sex = st.selectbox("Sex", ["None", "Male", "Female", "Others"])
 
-        # Row 2: Date / Time aligned
         c_d1, c_d2 = st.columns(2)
         with c_d1:
             entry_date = st.date_input("Date", ph_now.date())
         with c_d2:
             entry_time_str = civilian_time_text_field("Time of Entry", key_suffix="ecc_time")
 
-        # Row 3: Hospitalization Mode / Case Type / Mode of Payment aligned
         c_h1, c_h2, c_h3 = st.columns(3)
         with c_h1:
             hosp_mode = st.selectbox("Hospitalization Mode", ["None", "IPD - Inpatient", "OPD - Outpatient"])
@@ -635,7 +632,6 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
     with st.form("endo_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics & AI Checker")
         
-        # Row 1: Name / Age / Sex aligned
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
             last_name = st.text_input("Last Name", value="")
@@ -648,7 +644,6 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         with c5:
             sex = st.selectbox("Sex", ["None", "Male", "Female", "Others"])
 
-        # Row 2: Date / Time aligned
         c_d1, c_d2, c_d3 = st.columns(3)
         with c_d1:
             entry_date = st.date_input("Procedure Date", ph_now.date())
@@ -762,7 +757,6 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
     with st.form("hdu_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics & AI Checker")
         
-        # Row 1: Name / Age / Sex aligned
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
             last_name = st.text_input("Last Name", value="")
@@ -775,18 +769,19 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         with c5:
             sex = st.selectbox("Sex", ["None", "Male", "Female", "Others"])
 
-        # Row 2: Date aligned
         c_d1, _ = st.columns([1, 1])
         with c_d1:
             entry_date = st.date_input("Dialysis Date", datetime.today())
 
-        diagnosis = st.text_input("Diagnosis", value="CKD")
+        # Removed default "CKD" entry as requested
+        diagnosis = st.text_input("Diagnosis", value="")
         curr_date_str = entry_date.strftime("%B %d, %Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
         c_att1, c_att2 = st.columns(2)
         with c_att1:
-            attending_physician = st.text_input("Attending Nephrologist / Physician Name", value="DR. ALEJANDRO SESE JR.")
+            # Removed default "DR. ALEJANDRO SESE JR." entry as requested
+            attending_physician = st.text_input("Attending Nephrologist / Physician Name", value="")
         with c_att2:
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("NEPHROLOGY"))
 
@@ -801,7 +796,6 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
                     cm_spec = st.selectbox(f"Co-Management Physician #{i+1} Specialization", SPECIALTY_DROPDOWN_OPTIONS, key=f"cm_spec_hdu_{i}")
                 cm_entries.append((cm_name, cm_spec))
 
-        # Row 3: Hospitalization Mode / Mode of Payment aligned
         c7, c8, c9 = st.columns(3)
         with c7:
             shift_set = st.selectbox("Dialysis Shift Slot", ["None", "1ST SET", "2ND SET", "3RD SET", "ONCALL"])
@@ -857,7 +851,6 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
     with st.form("obgyne_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics & AI Checker")
         
-        # Row 1: Name / Age / Sex aligned
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
             last_name = st.text_input("Last Name", value="")
@@ -870,7 +863,6 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         with c5:
             sex = st.selectbox("Sex", ["None", "Female", "Male", "Others"])
 
-        # Row 2: Date / Time aligned
         c_d1, c_d2, c_d3 = st.columns(3)
         with c_d1:
             entry_date = st.date_input("Procedure Date", ph_now.date())
@@ -982,7 +974,6 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
     with st.form("scc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics & AI Checker")
         
-        # Row 1: Name / Age / Sex aligned
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
             last_name = st.text_input("Last Name", value="")
@@ -995,7 +986,6 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         with c5:
             sex = st.selectbox("Sex", ["None", "Male", "Female", "Others"])
 
-        # Row 2: Date / Time aligned
         c_d1, c_d2, c_d3 = st.columns(3)
         with c_d1:
             entry_date = st.date_input("Surgery Date", ph_now.date())
@@ -1118,7 +1108,6 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
     with st.form("scu_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics & AI Checker")
         
-        # Row 1: Name / Age / Sex aligned
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
             last_name = st.text_input("Last Name", value="")
