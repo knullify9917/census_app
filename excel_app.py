@@ -5,7 +5,7 @@ import pandas as pd
 import os
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION & BRANDING STYLING
+# 1. PAGE CONFIGURATION & LIGHT MODE BRANDING STYLING
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="PATIENT DATA RECORDING SYSTEM",
@@ -13,36 +13,65 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS matching the MTCMC & Mount Grace Hospital logo color scheme (Royal Blue, Teal, Red accents)
+# Custom CSS enforcing a strict hospital light mode palette (White backgrounds, dark slate text, royal blue/teal highlights)
 st.markdown("""
 <style>
+    /* Force main app background to clean white/off-white */
     .stApp {
-        background-color: #f8fafc;
+        background-color: #ffffff !important;
+        color: #1e293b !important;
     }
-    h1, h2, h3 {
-        color: #1e3a8a !important; /* Royal Blue from logo circle */
+    
+    /* Force sidebar background and text to clean light theme */
+    section[data-testid="stSidebar"] {
+        background-color: #f8fafc !important;
+        border-right: 1px solid #e2e8f0;
+    }
+    section[data-testid="stSidebar"] * {
+        color: #1e293b !important;
+    }
+    
+    /* Headers & Typography */
+    h1, h2, h3, h4, h5, h6 {
+        color: #1e3a8a !important; /* Royal Blue */
         font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     }
+    
+    /* Buttons styling */
     .stButton>button {
-        background-color: #1e3a8a;
-        color: white;
+        background-color: #1e3a8a !important;
+        color: white !important;
         border-radius: 6px;
         border: none;
         font-weight: bold;
     }
     .stButton>button:hover {
-        background-color: #1d4ed8;
-        color: white;
+        background-color: #1d4ed8 !important;
+        color: white !important;
     }
+    
+    /* Metric cards in light mode */
     div.stMetric {
-        background-color: #ffffff;
+        background-color: #f8fafc !important;
         padding: 15px;
         border-radius: 8px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        border-left: 5px solid #0d9488; /* Teal accent matching 'Calcutta' text */
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        border: 1px solid #e2e8f0;
+        border-left: 5px solid #0d9488; /* Teal accent */
     }
-    .sidebar .sidebar-content {
-        background-color: #ffffff;
+    div.stMetric label {
+        color: #64748b !important;
+    }
+    div.stMetric div[data-testid="stMetricValue"] {
+        color: #1e3a8a !important;
+    }
+    
+    /* Form containers */
+    div.stForm {
+        background-color: #fdfdfd;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 20px;
     }
 </style>
 """, unsafe_allow_html=True)
