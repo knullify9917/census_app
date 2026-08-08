@@ -853,10 +853,11 @@ if selected_sheet == "Hospital Information System":
                 ]
                 monthly_count = len(monthly_subset)
 
+        # For Hospital Summary metrics & roster: Count ONLY active & MGH patients from General Nursing Units (excluding Discharged / CAB)
         if dept in gnu_sheets and not df.empty and 'PATIENT STATUS' in df.columns:
-            df['PATIENT STATUS'] = df['PATIENT STATUS'].fillna("Active")
+            df['PATIENT STATUS'] = df['PATIENT STATUS'].fillna("ACTIVE")
             active_subset = df[
-                df['PATIENT STATUS'].astype(str).str.strip().str.lower().isin(['active', 'may go home'])
+                df['PATIENT STATUS'].astype(str).str.strip().str.upper().isin(['ACTIVE', 'MGH'])
             ]
             total_active_patients += len(active_subset)
             if 'DATE' in active_subset.columns:
@@ -886,10 +887,10 @@ if selected_sheet == "Hospital Information System":
     st.markdown("---")
 
     # ---------------------------------------------------------
-    # ACTIVE PATIENT ROSTER (Derived from General Nursing Units)
+    # ACTIVE PATIENT ROSTER (Derived from General Nursing Units - Active & MGH only)
     # ---------------------------------------------------------
     st.subheader("📋 Active Patient Roster")
-    st.markdown("Aggregated live roster displaying active & may go home inpatient records from General Nursing Units.")
+    st.markdown("Aggregated live roster displaying active & MGH patient records from General Nursing Units.")
 
     gnu_roster_frames = []
     for gnu in gnu_sheets:
@@ -903,9 +904,9 @@ if selected_sheet == "Hospital Information System":
         master_gnu_df = pd.concat(gnu_roster_frames, ignore_index=True)
         
         if 'PATIENT STATUS' in master_gnu_df.columns:
-            master_gnu_df['PATIENT STATUS'] = master_gnu_df['PATIENT STATUS'].fillna("Active")
+            master_gnu_df['PATIENT STATUS'] = master_gnu_df['PATIENT STATUS'].fillna("ACTIVE")
             gnu_filtered = master_gnu_df[
-                master_gnu_df['PATIENT STATUS'].astype(str).str.strip().str.lower().isin(['active', 'may go home'])
+                master_gnu_df['PATIENT STATUS'].astype(str).str.strip().str.upper().isin(['ACTIVE', 'MGH'])
             ]
         else:
             gnu_filtered = master_gnu_df
@@ -987,7 +988,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
     with st.form(f"gnu_form_{form_key_slug}", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
-        c1, c2, c3, c4 = st.columns([1.5, 2, 2, 1.5])
+        c1, c2, c3 = st.columns([1.5, 2, 2])
         with c1:
             entry_date = st.date_input("Date", ph_now.date())
         with c2:
@@ -1013,7 +1014,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
         with c_h2:
             payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY", "CHARITY"], index=0)
         with c_h3:
-            patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"], index=0)
+            patient_status = st.selectbox("Patient Status", ["ACTIVE", "MGH", "DISCHARGED", "CAB"], index=0)
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
