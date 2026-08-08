@@ -37,6 +37,17 @@ st.markdown("""
     }
     div[data-baseweb="select"] span { color: #1e293b !important; }
     
+    /* Professional Clean Borders for Time / Date input widget containers */
+    div[data-baseweb="input"] {
+        background-color: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 6px !important;
+    }
+    div[data-baseweb="input"]:focus-within {
+        border-color: #1e3a8a !important;
+        box-shadow: 0 0 0 1px #1e3a8a !important;
+    }
+
     /* Dropdown Popover Lists & Menus (Fixes dark/black popover boxes) */
     div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"] {
         background-color: #ffffff !important; color: #1e293b !important; border: 1px solid #cbd5e1 !important;
@@ -197,7 +208,7 @@ SPECIALTIES_BY_FIELD = {
     ]
 }
 
-SPECIALTY_DROPDOWN_OPTIONS = ["OTHERS"]
+SPECIALTY_DROPDOWN_OPTIONS = ["None", "OTHERS"]
 for field in sorted(SPECIALTIES_BY_FIELD.keys()):
     for spec in sorted(SPECIALTIES_BY_FIELD[field]):
         SPECIALTY_DROPDOWN_OPTIONS.append(spec)
@@ -518,43 +529,43 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         st.subheader("👤 Patient Demographics & AI Checker")
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            last_name = st.text_input("Last Name")
+            last_name = st.text_input("Last Name (Blank)")
         with c2:
-            first_name = st.text_input("First Name")
+            first_name = st.text_input("First Name (Blank)")
         with c3:
-            middle_name = st.text_input("Middle Name")
+            middle_name = st.text_input("Middle Name (Blank)")
         with c4:
-            sex = st.selectbox("Sex", ["Male", "Female", "Others"])
+            sex = st.selectbox("Sex", ["None", "Male", "Female", "Others"])
 
-        c5, c6, c7 = st.columns(3)
+        c5, c6, c7, c8 = st.columns(4)
         with c5:
             entry_date = st.date_input("Date", datetime.today())
         with c6:
-            entry_time = st.time_input("Time", datetime.now().time())
+            entry_time = st.time_input("Time", datetime.now().time()) # Defaults to system time
         with c7:
-            age = st.number_input("Age", min_value=0, max_value=120, value=25)
-
-        c8, c9 = st.columns(2)
+            age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c8:
-            hosp_mode = st.selectbox("Hospitalization Mode", ["IPD - Inpatient", "OPD - Outpatient"])
-        with c9:
-            case_type = st.selectbox("Case Type", ["Private Case", "House Case (Walk-in)", "Not Applicable"])
+            hosp_mode = st.selectbox("Hospitalization Mode", ["None", "IPD - Inpatient", "OPD - Outpatient"])
+
+        c_extra1, c_extra2 = st.columns(2)
+        with c_extra1:
+            case_type = st.selectbox("Case Type", ["None", "Private Case", "House Case (Walk-in)", "Not Applicable"])
+        with c_extra2:
+            payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY", "CHARITY"])
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Physician Information")
-        c_doc1, c_doc2, c_doc3, c_doc4 = st.columns(4)
+        c_doc1, c_doc2, c_doc3 = st.columns(3)
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name")
+            attending_physician = st.text_input("Attending Physician Name (Blank)")
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS)
         with c_doc3:
-            payment_selected = st.selectbox("Mode of Payment", ["PHIC", "HMO", "SELF-PAY", "CHARITY"])
-        with c_doc4:
             admitted_to = st.selectbox("Admitted to", HOSPITAL_UNIT_AREAS)
 
         st.subheader("📋 Clinical Details")
-        diagnosis_text = st.text_area("Clinical Diagnosis")
+        diagnosis_text = st.text_area("Clinical Diagnosis (Blank)")
 
         disease_options = [
             'ACUTE GASTROENTERITIS', 'DENGUE FEVER', 'HYPERTENSION', 'GASTROESOPHAGEAL REFLUX DISEASE',
@@ -607,30 +618,30 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         st.subheader("👤 Patient Demographics & AI Checker")
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            last_name = st.text_input("Last Name")
+            last_name = st.text_input("Last Name (Blank)")
         with c2:
-            first_name = st.text_input("First Name")
+            first_name = st.text_input("First Name (Blank)")
         with c3:
-            middle_name = st.text_input("Middle Name")
+            middle_name = st.text_input("Middle Name (Blank)")
         with c4:
-            sex = st.selectbox("Sex", ["Male", "Female", "Others"])
+            sex = st.selectbox("Sex", ["None", "Male", "Female", "Others"])
 
         c5, c6, c7, c8 = st.columns(4)
         with c5:
             entry_date = st.date_input("Procedure Date", datetime.today())
         with c6:
-            sched_time = st.time_input("Scheduled Time", datetime.now().time())
+            sched_time = st.time_input("Scheduled Time", datetime.now().time()) # System time default
         with c7:
-            actual_time = st.time_input("Actual Time", datetime.now().time())
+            actual_time = st.time_input("Actual Time", datetime.now().time()) # System time default
         with c8:
-            age = st.number_input("Age", min_value=0, max_value=120, value=40)
+            age = st.number_input("Age", min_value=0, max_value=120, value=0)
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical & Surgical Care Team")
         c_att1, c_att2 = st.columns(2)
         with c_att1:
-            attending_physician = st.text_input("Attending Physician Name")
+            attending_physician = st.text_input("Attending Physician Name (Blank)")
         with c_att2:
             attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS)
 
@@ -647,22 +658,22 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 
         c_surg1, c_surg2 = st.columns(2)
         with c_surg1:
-            surgeon = st.text_input("Surgeon / Endoscopist / Proceduralist")
+            surgeon = st.text_input("Surgeon / Endoscopist / Proceduralist (Blank)")
         with c_surg2:
             surgeon_spec = st.selectbox("Surgeon / Proceduralist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GASTROENTEROLOGY"))
 
         c_anes1, c_anes2 = st.columns(2)
         with c_anes1:
-            anesthesiologist = st.text_input("Anesthesiologist Name (Optional)")
+            anesthesiologist = st.text_input("Anesthesiologist Name (Blank)")
         with c_anes2:
             anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
         st.subheader("📋 Diagnosis & Procedure Details")
         cd1, cd2 = st.columns(2)
         with cd1:
-            diagnosis_text = st.text_input("Diagnosis")
+            diagnosis_text = st.text_input("Diagnosis (Blank)")
         with cd2:
-            procedure_text = st.text_input("Procedure Name")
+            procedure_text = st.text_input("Procedure Name (Blank)")
 
         proc_cols = ['GASTROSCOPY', 'COLONOSCOPY', 'NASAL PROCEDURE', 'PEG PROCEDURE', 'ERCP', 'PROCTOSIGMOIDOSCOPY', 'PARACENTESIS', 'BRONCHOSCOPY', 'OTHER PROCEDURES']
         selected_procs = st.multiselect("Select Procedure Flags", proc_cols)
@@ -673,7 +684,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         with cb: 
             hosp_mode = st.radio("Hospitalization Mode", ["OPD", "IPD"])
         with cc: 
-            payment_selected = st.selectbox("Mode of Payment", ["PHIC", "HMO", "SELF-PAY"])
+            payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
         with cd:
             kit_package = st.checkbox("Hospital Kit Package", value=False)
 
@@ -731,13 +742,13 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         st.subheader("👤 Patient Demographics & AI Checker")
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            last_name = st.text_input("Last Name")
+            last_name = st.text_input("Last Name (Blank)")
         with c2:
-            first_name = st.text_input("First Name")
+            first_name = st.text_input("First Name (Blank)")
         with c3:
-            middle_name = st.text_input("Middle Name")
+            middle_name = st.text_input("Middle Name (Blank)")
         with c4:
-            sex = st.selectbox("Sex", ["Male", "Female", "Others"])
+            sex = st.selectbox("Sex", ["None", "Male", "Female", "Others"])
 
         c5, c6 = st.columns(2)
         with c5:
@@ -767,11 +778,11 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
 
         c7, c8, c9 = st.columns(3)
         with c7:
-            shift_set = st.selectbox("Dialysis Shift Slot", ["1ST SET", "2ND SET", "3RD SET", "ONCALL"])
+            shift_set = st.selectbox("Dialysis Shift Slot", ["None", "1ST SET", "2ND SET", "3RD SET", "ONCALL"])
         with c8:
             hosp_mode = st.radio("Hospitalization Mode", ["OPD", "IPD"])
         with c9:
-            payment_selected = st.selectbox("Mode of Payment", ["PHIC", "HMO", "SELF-PAY"])
+            payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
 
         submitted = st.form_submit_button("Submit Record to Google Sheets")
         if submitted:
@@ -821,30 +832,30 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         st.subheader("👤 Patient Demographics & AI Checker")
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            last_name = st.text_input("Last Name")
+            last_name = st.text_input("Last Name (Blank)")
         with c2:
-            first_name = st.text_input("First Name")
+            first_name = st.text_input("First Name (Blank)")
         with c3:
-            middle_name = st.text_input("Middle Name")
+            middle_name = st.text_input("Middle Name (Blank)")
         with c4:
-            sex = st.selectbox("Sex", ["Female", "Male", "Others"])
+            sex = st.selectbox("Sex", ["None", "Female", "Male", "Others"])
 
         c5, c6, c7, c8 = st.columns(4)
         with c5:
             entry_date = st.date_input("Procedure Date", datetime.today())
         with c6:
-            sched_time = st.time_input("Scheduled Time", datetime.now().time())
+            sched_time = st.time_input("Scheduled Time", datetime.now().time()) # System time default
         with c7:
-            actual_time = st.time_input("Actual Time", datetime.now().time())
+            actual_time = st.time_input("Actual Time", datetime.now().time()) # System time default
         with c8:
-            age = st.number_input("Age", min_value=10, max_value=100, value=30)
+            age = st.number_input("Age", min_value=10, max_value=100, value=0)
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical & Surgical Care Team")
         c_att1, c_att2 = st.columns(2)
         with c_att1:
-            attending_physician = st.text_input("Attending Physician Name")
+            attending_physician = st.text_input("Attending Physician Name (Blank)")
         with c_att2:
             attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("OBSTETRICS & GYNAECOLOGY"))
 
@@ -861,33 +872,33 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 
         c_surg1, c_surg2 = st.columns(2)
         with c_surg1:
-            surgeon = st.text_input("Surgeon / OBGYNE Primary Operator")
+            surgeon = st.text_input("Surgeon / OBGYNE Primary Operator (Blank)")
         with c_surg2:
             surgeon_spec = st.selectbox("Surgeon Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("OBSTETRICS & GYNAECOLOGY"))
 
         c_anes1, c_anes2 = st.columns(2)
         with c_anes1:
-            anesthesiologist = st.text_input("Anesthesiologist Name (Optional)")
+            anesthesiologist = st.text_input("Anesthesiologist Name (Blank)")
         with c_anes2:
             anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
         st.subheader("📋 OBGYNE Diagnosis & Procedure Details")
         cd1, cd2 = st.columns(2)
         with cd1:
-            diagnosis = st.text_area("OBGYNE Diagnosis")
+            diagnosis = st.text_area("OBGYNE Diagnosis (Blank)")
         with cd2:
-            procedure = st.text_input("Procedure Name")
+            procedure = st.text_input("Procedure Name (Blank)")
 
         ca, cb, cc, cd = st.columns(4)
         with ca:
             ob_procs = st.multiselect("Procedure Breakdown", ["CS PRIMARY", "CS", "NSD", "D&C", "HYSTERECTOMY", "EXLAP", "OTHER PROCEDURES", "NST"])
         with cb:
-            complexity = st.selectbox("Complexity Tier", ["MAJOR", "MINOR", "DIAGNOSTIC"])
+            complexity = st.selectbox("Complexity Tier", ["None", "MAJOR", "MINOR", "DIAGNOSTIC"])
         with cc:
-            hosp_mode = st.radio("Hospitalization Mode", ["IPD", "OPD"])
+            hosp_mode = st.radio("Hospitalization Mode", ["OPD", "IPD"])
             kit_used = st.checkbox("Hospital Kit Package", value=True)
         with cd:
-            payment_selected = st.selectbox("Mode of Payment", ["PHIC", "HMO", "SELF-PAY"])
+            payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
 
         submitted = st.form_submit_button("Submit Record to Google Sheets")
         if submitted:
@@ -943,30 +954,30 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         st.subheader("👤 Patient Demographics & AI Checker")
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            last_name = st.text_input("Last Name")
+            last_name = st.text_input("Last Name (Blank)")
         with c2:
-            first_name = st.text_input("First Name")
+            first_name = st.text_input("First Name (Blank)")
         with c3:
-            middle_name = st.text_input("Middle Name")
+            middle_name = st.text_input("Middle Name (Blank)")
         with c4:
-            sex = st.selectbox("Sex", ["Male", "Female", "Others"])
+            sex = st.selectbox("Sex", ["None", "Male", "Female", "Others"])
 
         c5, c6, c7, c8 = st.columns(4)
         with c5:
             entry_date = st.date_input("Surgery Date", datetime.today())
         with c6:
-            sched_time = st.time_input("Scheduled Time", datetime.now().time())
+            sched_time = st.time_input("Scheduled Time", datetime.now().time()) # System time default
         with c7:
-            actual_time = st.time_input("Actual Time", datetime.now().time())
+            actual_time = st.time_input("Actual Time", datetime.now().time()) # System time default
         with c8:
-            age = st.number_input("Age", min_value=0, max_value=120, value=35)
+            age = st.number_input("Age", min_value=0, max_value=120, value=0)
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical & Surgical Care Team")
         c_att1, c_att2 = st.columns(2)
         with c_att1:
-            attending_physician = st.text_input("Attending Physician Name")
+            attending_physician = st.text_input("Attending Physician Name (Blank)")
         with c_att2:
             attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS)
 
@@ -983,22 +994,22 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 
         c_surg1, c_surg2 = st.columns(2)
         with c_surg1:
-            surgeon = st.text_input("Primary Surgeon")
+            surgeon = st.text_input("Primary Surgeon (Blank)")
         with c_surg2:
             surgeon_spec = st.selectbox("Surgeon Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL SURGERY"))
 
         c_anes1, c_anes2 = st.columns(2)
         with c_anes1:
-            anesthesiologist = st.text_input("Anesthesiologist Name (Optional)")
+            anesthesiologist = st.text_input("Anesthesiologist Name (Blank)")
         with c_anes2:
             anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL ANAESTHESIOLOGY"))
 
         st.subheader("📋 Pre/Post-Op & Surgical Details")
         cd1, cd2 = st.columns(2)
         with cd1:
-            diagnosis = st.text_area("Pre/Post-Op Diagnosis")
+            diagnosis = st.text_area("Pre/Post-Op Diagnosis (Blank)")
         with cd2:
-            procedure = st.text_area("Surgical Procedure")
+            procedure = st.text_area("Surgical Procedure (Blank)")
 
         all_scc_procs = [
             'EXCISION BIOPSY', 'INCISION AND DRAINAGE', 'WOUND SUTURING & CLOSING AND CHANGE OF DRESSING',
@@ -1014,13 +1025,13 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 
         ca, cb, cc, cd = st.columns(4)
         with ca: 
-            complexity = st.selectbox("Complexity Tier", ["MAJOR", "MEDIUM", "MINOR", "DIAGNOSTICS"])
+            complexity = st.selectbox("Complexity Tier", ["None", "MAJOR", "MEDIUM", "MINOR", "DIAGNOSTICS"])
         with cb: 
             hosp_mode = st.radio("Hospitalization Mode", ["OPD", "IPD"])
         with cc: 
             kit_package = st.checkbox("Hospital Kit Package", value=True)
         with cd: 
-            payment_selected = st.selectbox("Mode of Payment", ["PHIC", "HMO", "SELF-PAY"])
+            payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
 
         submitted = st.form_submit_button("Submit Record to Google Sheets")
         if submitted:
@@ -1076,13 +1087,13 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         st.subheader("👤 Patient Demographics & AI Checker")
         c1, c2, c3, c4 = st.columns(4)
         with c1:
-            last_name = st.text_input("Last Name")
+            last_name = st.text_input("Last Name (Blank)")
         with c2:
-            first_name = st.text_input("First Name")
+            first_name = st.text_input("First Name (Blank)")
         with c3:
-            middle_name = st.text_input("Middle Name")
+            middle_name = st.text_input("Middle Name (Blank)")
         with c4:
-            sex = st.selectbox("Sex", ["Male", "Female", "Others"])
+            sex = st.selectbox("Sex", ["None", "Male", "Female", "Others"])
 
         c5, c6, c7, c8 = st.columns(4)
         with c5:
@@ -1100,7 +1111,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         st.subheader("👨‍⚕️ Medical Care Team")
         c_att1, c_att2 = st.columns(2)
         with c_att1:
-            attending_physician = st.text_input("Attending Physician Name")
+            attending_physician = st.text_input("Attending Physician Name (Blank)")
         with c_att2:
             attending_spec = st.selectbox("Attending Physician Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=get_spec_index("GENERAL PAEDIATRICS"))
 
@@ -1119,16 +1130,16 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         with c10:
             admitted_from = st.selectbox("Admitted From", HOSPITAL_UNIT_AREAS)
         with c11:
-            admitted_to = st.selectbox("Admitted To", ["NICU", "PICU", "NSU", "PCN", "OUTBORN", "ROOM-IN"])
+            admitted_to = st.selectbox("Admitted To", ["None", "NICU", "PICU", "NSU", "PCN", "OUTBORN", "ROOM-IN"])
         with c12:
             transferred_to = st.selectbox("Transferred To", HOSPITAL_UNIT_AREAS)
         with c13:
             hosp_mode = st.radio("Hospitalization Mode", ["IPD", "OPD"])
 
-        payment_selected = st.selectbox("Mode of Payment", ["PHIC", "HMO", "SELF-PAY"])
+        payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
 
         st.subheader("📋 Diagnosis & Diagnostic Flags")
-        diagnosis = st.text_area("Diagnosis Text")
+        diagnosis = st.text_area("Diagnosis Text (Blank)")
         diag_flags = st.multiselect("Diagnostic Flags", ["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY"])
 
         submitted = st.form_submit_button("Submit Record to Google Sheets")
