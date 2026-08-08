@@ -638,7 +638,7 @@ else:
     MODULES = allowed_modules
 
 st.sidebar.markdown("### 🧭 Department Navigation")
-selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
+selected_sheet = st.sidebar.selectbox("Select Target Department Module", MODULES, index=0)
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📥 Export Reports")
@@ -773,10 +773,10 @@ if selected_sheet == "Hospital Information System":
     st.dataframe(summary_df, use_container_width=True)
 
     # ---------------------------------------------------------
-    # HOSPITAL-WIDE ACTIVE & MAY GO HOME PATIENT ROSTER
+    # ACTIVE PATIENT ROSTER
     # ---------------------------------------------------------
     st.markdown("---")
-    st.subheader("📋 Hospital-Wide Active Patient Roster (Active & May Go Home)")
+    st.subheader("📋 Active Patient Roster")
     st.markdown("Aggregated live roster displaying patients currently tagged as **Active** or **May Go Home** across all hospital departments.")
 
     all_roster_frames = []
