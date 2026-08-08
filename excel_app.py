@@ -1,6 +1,5 @@
 import streamlit as st
 import gspread
-from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 import pandas as pd
 import os
@@ -205,20 +204,24 @@ def get_month_str(date_obj, fmt_style="numeric_prefix"):
     return month_name
 
 # ---------------------------------------------------------
-# 4. GOOGLE SHEETS CONNECTION & SETUP
+# 4. GOOGLE SHEETS CONNECTION & SETUP (USING GOOGLE-AUTH)
 # ---------------------------------------------------------
 @st.cache_resource
 def init_google_sheets():
+    from google.oauth2.service_account import Credentials
     scope = [
-        "https://spreadsheets.google.com/feeds",
+        "https://www.googleapis.com/auth/spreadsheets",
         "https://www.googleapis.com/auth/drive"
     ]
     
     if "gcp_service_account" in st.secrets:
         creds_dict = dict(st.secrets["gcp_service_account"])
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+    elif os.path.exists("credentials.json"):
+        creds = Credentials.from_service_account_file("credentials.json", scopes=scope)
     else:
-        creds = ServiceAccountCredentials.from_json_keyfile_name("credentials.json", scope)
+        st.error("Google Cloud credentials not found! Please configure Streamlit Secrets (`gcp_service_account`) in your Streamlit Cloud app settings, or place your `credentials.json` file in the root directory for local testing.")
+        st.stop()
         
     client = gspread.authorize(creds)
     spreadsheet_title = "MTCMC_CENSUS_MASTERFILES_SYSTEM"
@@ -504,7 +507,7 @@ elif selected_sheet == "ENDO":
                 'SEX': sex,
                 'AGE': age,
                 'DIAGNOSIS': diagnosis_text,
-                'PROCEDURE': procedure,
+                'PROCEDURE': procedure_text,
                 'PROCEDURE CATEGORIES': ", ".join(selected_procs) if selected_procs else "None",
                 'ATTENDING PHYSICIAN': attending_physician if attending_physician else "N/A",
                 'ATTENDING SPECIALIZATION': attending_spec,
