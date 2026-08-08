@@ -1408,7 +1408,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key="ob_att_input").strip().upper()
         with c_doc2:
-            attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="ob_spec_input")
+            attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="ob_spec_input")
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
@@ -1506,7 +1506,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 # FORM 5: Surgical Care Complex (OR Main)
 # ---------------------------------------------------------
 elif selected_sheet == "Surgical Care Complex (OR Main)":
-    st.header("🩻 Surgical Care Complex Patient Registration")
+    st.header("🩲 Surgical Care Complex Patient Registration")
     ph_now = get_ph_time()
     
     with st.form("scc_form", clear_on_submit=True):
@@ -1673,7 +1673,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key="scu_att_input").strip().upper()
         with c_doc2:
-            attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scu_spec_input")
+            attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scu_spec_input")
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
