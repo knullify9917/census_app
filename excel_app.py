@@ -624,7 +624,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 # FORM 2: Endoscopy Unit (ENDO)
 # ---------------------------------------------------------
 elif selected_sheet == "Endoscopy Unit (ENDO)":
-    st.header("Endoscopy Unit Patient Registration")
+    st.header("Endoscopy Unit (ENDO) Patient Registration")
     ph_now = get_ph_time()
     st.subheader("👨‍⚕️ Co-Management Physician Settings")
     num_comanage = st.number_input("Number of Co-Managing Physicians to Add", min_value=0, max_value=10, value=0, step=1, key="num_cm_endo")
