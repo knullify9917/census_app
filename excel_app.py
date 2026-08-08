@@ -5,13 +5,47 @@ import pandas as pd
 import os
 
 # ---------------------------------------------------------
-# 1. PAGE CONFIGURATION
+# 1. PAGE CONFIGURATION & BRANDING STYLING
 # ---------------------------------------------------------
 st.set_page_config(
     page_title="PATIENT DATA RECORDING SYSTEM",
     layout="wide",
     initial_sidebar_state="expanded"
 )
+
+# Custom CSS matching the MTCMC & Mount Grace Hospital logo color scheme (Royal Blue, Teal, Red accents)
+st.markdown("""
+<style>
+    .stApp {
+        background-color: #f8fafc;
+    }
+    h1, h2, h3 {
+        color: #1e3a8a !important; /* Royal Blue from logo circle */
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    }
+    .stButton>button {
+        background-color: #1e3a8a;
+        color: white;
+        border-radius: 6px;
+        border: none;
+        font-weight: bold;
+    }
+    .stButton>button:hover {
+        background-color: #1d4ed8;
+        color: white;
+    }
+    div.stMetric {
+        background-color: #ffffff;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border-left: 5px solid #0d9488; /* Teal accent matching 'Calcutta' text */
+    }
+    .sidebar .sidebar-content {
+        background-color: #ffffff;
+    }
+</style>
+""", unsafe_allow_html=True)
 
 REGULAR_FONT_SIZE = 10
 
@@ -278,7 +312,7 @@ def ensure_google_sheets_exist():
     if "Hospital Information System" not in existing_worksheets:
         try:
             ws_sum = sh.add_worksheet(title="Hospital Information System", rows=100, cols=4)
-            ws_sum.update('A1:D1', [["METRO TERESA MEDICAL CENTER (MTCMC)", "", "", ""]])
+            ws_sum.update('A1:D1', [["MOTHER TERESA OF CALCUTTA MEDICAL CENTER", "", "", ""]])
             ws_sum.update('A4:D4', [['Department / Module', 'Total Census Records', 'Daily Patient Census', 'Monthly Patient Census']])
         except Exception:
             pass
@@ -357,7 +391,8 @@ ensure_google_sheets_exist()
 # ---------------------------------------------------------
 # 6. STREAMLIT APP INTERFACE
 # ---------------------------------------------------------
-st.title("PATIENT DATA RECORDING SYSTEM")
+st.title("MOTHER TERESA OF CALCUTTA MEDICAL CENTER")
+st.subheader("Patient Data Recording System")
 st.markdown("All data entries are securely stored on our hospital database.")
 
 MODULES = [
