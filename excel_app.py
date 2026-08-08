@@ -82,12 +82,55 @@ REGULAR_FONT_SIZE = 10
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
 
-# User Database with Administrator Role Only
+# User Database with Administrator and Department Staff Accounts
 USER_DATABASE = {
     "admin": {
         "password": hash_password("admin123"),
         "role": "Administrator",
-        "name": "System Administrator"
+        "name": "System Administrator",
+        "modules": "All"
+    },
+    "ecc_staff": {
+        "password": hash_password("ecc2026"),
+        "role": "ECC Staff",
+        "name": "Emergency Care Staff",
+        "modules": ["Hospital Information System", "Emergency Care Complex (ECC)"]
+    },
+    "scc_staff": {
+        "password": hash_password("scc2026"),
+        "role": "SCC Staff",
+        "name": "Surgical Care Staff",
+        "modules": ["Hospital Information System", "Surgical Care Complex (OR Main)"]
+    },
+    "endo_staff": {
+        "password": hash_password("endo2026"),
+        "role": "ENDO Staff",
+        "name": "Endoscopy Unit Staff",
+        "modules": ["Hospital Information System", "Endoscopy Unit (ENDO)"]
+    },
+    "hdu_staff": {
+        "password": hash_password("hdu2026"),
+        "role": "HDU Staff",
+        "name": "Hemodialysis Unit Staff",
+        "modules": ["Hospital Information System", "Hemodialysis Unit (HDU)"]
+    },
+    "nsu_staff": {
+        "password": hash_password("nsu2026"),
+        "role": "Special Care Staff",
+        "name": "Special Care Unit Staff",
+        "modules": ["Hospital Information System", "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"]
+    },
+    "obgyne_staff": {
+        "password": hash_password("obgyne2026"),
+        "role": "OBGYNE Staff",
+        "name": "OBGYNE Care Staff",
+        "modules": ["Hospital Information System", "OBGYNE Care Complex (LRDR-OB Surgery)"]
+    },
+    "nsgcon_staff": {
+        "password": hash_password("nsgcon2026"),
+        "role": "Nursing Administration",
+        "name": "Nursing Control Staff",
+        "modules": "All"
     }
 }
 
@@ -111,7 +154,7 @@ if not st.session_state["authenticated"]:
         st.markdown("""
             <div style="text-align: center; margin-bottom: 20px;">
                 <h2 style="color: #1e3a8a; margin-bottom: 5px;">MTCMC Secure Portal</h2>
-                <p style="color: #0f766e; font-weight: 600;">Please sign in with your hospital administrator credentials</p>
+                <p style="color: #0f766e; font-weight: 600;">Please sign in with your hospital staff credentials</p>
             </div>
         """, unsafe_allow_html=True)
         
@@ -484,7 +527,7 @@ def check_existing_patient_ai(sheet_name, last_name, fn, curr_date_str):
 ensure_google_sheets_exist()
 
 # ---------------------------------------------------------
-# 6. STREAMLIT APP INTERFACE (HEADER & ADMIN SIDEBAR)
+# 6. STREAMLIT APP INTERFACE (HEADER & RBAC SIDEBAR)
 # ---------------------------------------------------------
 st.markdown("""
 <style>
@@ -559,15 +602,24 @@ if st.sidebar.button("Sign Out"):
 
 st.sidebar.markdown("---")
 
-MODULES = [
-    "Hospital Information System", 
-    "Emergency Care Complex (ECC)", 
-    "Endoscopy Unit (ENDO)", 
-    "Hemodialysis Unit (HDU)", 
-    "OBGYNE Care Complex (LRDR-OB Surgery)", 
-    "Surgical Care Complex (OR Main)", 
-    "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
-]
+# Role-Based Access Control (RBAC) Module Visibility
+logged_user_key = st.session_state["username"]
+user_info = USER_DATABASE.get(logged_user_key, {})
+allowed_modules = user_info.get("modules", "All")
+
+if allowed_modules == "All":
+    MODULES = [
+        "Hospital Information System", 
+        "Emergency Care Complex (ECC)", 
+        "Endoscopy Unit (ENDO)", 
+        "Hemodialysis Unit (HDU)", 
+        "OBGYNE Care Complex (LRDR-OB Surgery)", 
+        "Surgical Care Complex (OR Main)", 
+        "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
+    ]
+else:
+    MODULES = allowed_modules
+
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
 
 st.markdown("---")
