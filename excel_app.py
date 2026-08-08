@@ -541,7 +541,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         with c5:
             entry_date = st.date_input("Date", datetime.today())
         with c6:
-            entry_time = st.time_input("Time", datetime.now().time()) # Defaults to system time
+            entry_time = st.time_input("Time", value=datetime.now().time()) # System time default
         with c7:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c8:
@@ -630,9 +630,9 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         with c5:
             entry_date = st.date_input("Procedure Date", datetime.today())
         with c6:
-            sched_time = st.time_input("Scheduled Time", datetime.now().time()) # System time default
+            sched_time = st.time_input("Scheduled Time", value=datetime.now().time()) # System time default
         with c7:
-            actual_time = st.time_input("Actual Time", datetime.now().time()) # System time default
+            actual_time = st.time_input("Actual Time", value=datetime.now().time()) # System time default
         with c8:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
 
@@ -844,9 +844,9 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         with c5:
             entry_date = st.date_input("Procedure Date", datetime.today())
         with c6:
-            sched_time = st.time_input("Scheduled Time", datetime.now().time()) # System time default
+            sched_time = st.time_input("Scheduled Time", value=datetime.now().time()) # System time default
         with c7:
-            actual_time = st.time_input("Actual Time", datetime.now().time()) # System time default
+            actual_time = st.time_input("Actual Time", value=datetime.now().time()) # System time default
         with c8:
             age = st.number_input("Age", min_value=10, max_value=100, value=0)
 
@@ -895,7 +895,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         with cb:
             complexity = st.selectbox("Complexity Tier", ["None", "MAJOR", "MINOR", "DIAGNOSTIC"])
         with cc:
-            hosp_mode = st.radio("Hospitalization Mode", ["OPD", "IPD"])
+            hosp_mode = st.radio("Hospitalization Mode", ["IPD", "OPD"])
             kit_used = st.checkbox("Hospital Kit Package", value=True)
         with cd:
             payment_selected = st.selectbox("Mode of Payment", ["None", "PHIC", "HMO", "SELF-PAY"])
@@ -966,9 +966,9 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         with c5:
             entry_date = st.date_input("Surgery Date", datetime.today())
         with c6:
-            sched_time = st.time_input("Scheduled Time", datetime.now().time()) # System time default
+            sched_time = st.time_input("Scheduled Time", value=datetime.now().time()) # System time default
         with c7:
-            actual_time = st.time_input("Actual Time", datetime.now().time()) # System time default
+            actual_time = st.time_input("Actual Time", value=datetime.now().time()) # System time default
         with c8:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
 
