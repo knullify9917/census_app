@@ -140,20 +140,47 @@ SPECIALTIES_BY_FIELD = {
     ]
 }
 
-# Build sorted plain dropdown options exactly as written
 SPECIALTY_DROPDOWN_OPTIONS = ["OTHERS"]
-
 for field in sorted(SPECIALTIES_BY_FIELD.keys()):
     for spec in sorted(SPECIALTIES_BY_FIELD[field]):
         SPECIALTY_DROPDOWN_OPTIONS.append(spec)
 
+# ---------------------------------------------------------
+# 3. STREAMLINED, NON-SPARSE EXCEL SHEET HEADERS
+# ---------------------------------------------------------
 SHEET_HEADERS = {
-    "ECC TOP DISEASES": ['MONTH', 'DATE', 'TIME', 'PATIENT', 'AGE', 'DIAGNOSIS', 'ACUTE GASTROENTERITIS', 'DENGUE FEVER', 'HYPERTENSION', 'GASTROESOPHAGEAL REFLUX DISEASE', 'URINARY TRACT INFECTION', 'BRONCHIAL ASTHMA', 'DIABETES MELLITUS', 'RESPIRATORY TRACT INECTION', 'ELECTROLYTE IMBALANCE', 'ACUTE TONSILLOPHARYNGITIS', 'ANIMAL BITE', 'VERTIGO', 'HYPERSENSITIVITY REACTION', 'INFECTED WOUND', 'ACUTE CORONARY SYNDROME', 'SYSTEMIC VIRAL ILLNESS', 'FRACTURE', 'OTHER CASES', 'PHYSICIAN', 'NEUROLOGY', 'IM & CARDIO', 'PULMO', 'GENERAL SURGERY', 'ORTHOPEDICS', 'NEPHROLOGY', 'UROLOGY', 'TCVS', 'OBGYNE', 'PEDIATRICS', 'FAMILY MED', 'IPD', 'OPD', 'ICU', 'PICU', 'CASE COUNT'],
-    "ENDO": ['MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'PATIENT', 'AGE', 'DIAGNOSIS', 'PROCEDURE', 'PHYSICIAN', 'GASTROENTEROLOGIST', 'ENT', 'PULMONOLOGIST', 'ANESTHESIOLOGIST', 'ANESTHESIA', 'GASTROSCOPY', 'COLONOSCOPY', 'NASAL PROCEDURE', 'PEG PROCEDURE', 'ERCP', 'PROCTOSIGMOIDOSCOPY', 'PARACENTESIS', 'BRONCHOSCOPY', 'OTHER PROCEDURES', 'THERAPEUTIC', 'DIAGNOSTICS', 'IPD', 'OPD', 'HMO', 'PHIC', 'SELF-PAY', 'CASE COUNT'],
-    "HDU": ['MONTH', 'DATE', 'TRUE DATE', 'PATIENT', 'DIAGNOSIS', '1ST SET', '2ND SET', '3RD SET', 'ONCALL', 'OPD', 'IPD', 'PHYSICIAN', 'NEPHROLOGY', 'CASE COUNT'],
-    "OBGYNE CASES": ['MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'PATIENT', 'AGE', 'DIAGNOSIS', 'PROCEDURE', 'CS PRIMARY', 'CS', 'NSD', 'D&C', 'HYSTERECTOMY', 'EXLAP', 'OTHER PROCEDURES', 'NST', 'SURGEON', 'OBGYNE', 'ANESTHESIOLOGIST', 'ANESTHESIA', 'IPD', 'OPD', 'MAJOR', 'MINOR', 'DIAGNOSTIC', 'KIT', 'HMO', 'SELF-PAY', 'CASE COUNT'],
-    "SCC CASES": ['MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'PATIENT', 'AGE', 'DIAGNOSIS', 'PROCEDURE', 'EXCISION BIOPSY', 'INCISION AND DRAINAGE', 'WOUND SUTURING & CLOSING AND CHANGE OF DRESSING', 'PLEURAL CATH INSERTION', 'COLOSTOMY', 'DEBRIDEMENT', 'ANAL BIOPSY', 'CORE NEEDLE BIOPSY', 'THYROIDECTOMY', 'PAROTIDECTOMY', 'MASTECTOMY', 'CHOLECYSTECTOMY', 'APPENDECTOMY', 'TONSILLECTOMY', 'HERNIORRHAPY', 'CHANGE OF TRACHEOSTOMY', 'LAPAROTOMY', 'GASTROSTOMY TUBE INSERTION', 'OPTHA SURGERY', 'PLASTIC SURGERY', 'SPINE SURGERY', 'CRANIOTOMY', 'MASTOIDECTOMY', 'TYMPANOPLASTY', 'MAXILLECTOMY', 'ORTHO SURGERY', 'MICROLARYNGEAL SURGERY', 'HYSTEROSCOPY', 'ULTRASOUND GUIDED', 'MIS', 'AVF', 'IJ CATH', 'PERM CATH/ FEMORAL CATH', 'PROCTOSCOPY', 'CHOLEDOSCOPY', 'DENTAL PROCEDURES', 'OTHER PROCEDURES', 'SURGEON', 'GENERAL SURGERY', 'OPHTHALMOLOGY', 'NEUROSURGERY', 'INTERVENTIONAL RADIOLOGY', 'ORTHOPEDICS', 'EENT', 'COLORECTAL', 'UROLOGY', 'DENTAL SURGERY', 'TCVS', 'PEDIATRIC SURGERY', 'OBGYNE', 'ANESTHESIOLOGIST', 'ANESTHESIA', 'IPD', 'OPD', 'MAJOR', 'MEDIUM', 'MINOR', 'DIAGNOSTICS', 'KIT', 'HMO', 'PHIC', 'SELF-PAY', 'CASE COUNT'],
-    "SCU CASES": ['MONTH', 'DATE', 'PATIENT', 'AOG', 'AGE (YEAR)', 'AGE (MONTH)', 'AGE (DAY)', 'MALE', 'FEMALE', 'DIAGNOSIS', 'PNEUMONIA', 'SEPSIS', 'PCAP', 'SURGERY', 'ER', 'GNU', 'NICU', 'PICU', 'OUTBORN', 'NSU', 'ATTENDING PHYSICIAN', 'PEDIATRICS', 'NEONATOLOGY', 'PULMONOLOGY', 'HEMETOLOGY / ONCOLOGY', 'NEUROSURGERY', 'GENERAL SURGERY', 'CASE COUNT']
+    "ECC TOP DISEASES": [
+        'MONTH', 'DATE', 'TIME', 'PATIENT', 'AGE', 'DIAGNOSIS', 
+        'DISEASE CATEGORIES', 'PHYSICIAN', 'PHYSICIAN SPECIALTY', 
+        'PATIENT TYPE / CLASSIFICATION', 'TRANSFERRED TO', 'CASE COUNT'
+    ],
+    "ENDO": [
+        'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'PATIENT', 'AGE', 
+        'DIAGNOSIS', 'PROCEDURE', 'PROCEDURE CATEGORIES', 'PHYSICIAN', 
+        'ATTENDING SPECIALTY', 'GASTROENTEROLOGIST', 'ENT SPECIALIST', 
+        'ANESTHESIOLOGIST', 'PROCEDURE NATURE', 'SETTING', 'PAYMENT METHOD', 'CASE COUNT'
+    ],
+    "HDU": [
+        'MONTH', 'DATE', 'TRUE DATE', 'PATIENT', 'DIAGNOSIS', 'PHYSICIAN', 
+        'PHYSICIAN SPECIALTY', 'DIALYSIS SHIFT SLOT', 'PATIENT TYPE', 'CASE COUNT'
+    ],
+    "OBGYNE CASES": [
+        'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'PATIENT', 'AGE', 
+        'DIAGNOSIS', 'PROCEDURE', 'PROCEDURE BREAKDOWN', 'SURGEON / OBGYNE', 
+        'ATTENDING SPECIALTY', 'ANESTHESIOLOGIST', 'COMPLEXITY TIER', 
+        'CARE SETTING', 'KIT USED', 'PAYMENT CHANNEL', 'CASE COUNT'
+    ],
+    "SCC CASES": [
+        'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'PATIENT', 'AGE', 
+        'DIAGNOSIS', 'PROCEDURE', 'SURGICAL PROCEDURE FLAGS', 'PRIMARY SURGEON', 
+        'SURGICAL DEPARTMENT / SPECIALTY', 'ANESTHESIOLOGIST', 'COMPLEXITY TIER', 
+        'PATIENT SETTING', 'BILLING CHANNELS', 'CASE COUNT'
+    ],
+    "SCU CASES": [
+        'MONTH', 'DATE', 'PATIENT', 'AOG', 'AGE', 'GENDER', 'DIAGNOSIS', 
+        'DIAGNOSTIC FLAGS', 'SCU UNIT LOCATION', 'ATTENDING PHYSICIAN', 
+        'SUBSPECIALTIES', 'CASE COUNT'
+    ]
 }
 
 def get_month_str(date_obj, fmt_style="numeric_prefix"):
@@ -170,38 +197,76 @@ def get_month_str(date_obj, fmt_style="numeric_prefix"):
     return month_name
 
 def ensure_excel_and_sheets_exist():
+    need_rebuild = False
     if not os.path.exists(EXCEL_FILE):
-        wb = openpyxl.Workbook()
-        wb.remove(wb.active)
+        need_rebuild = True
     else:
-        wb = openpyxl.load_workbook(EXCEL_FILE)
+        try:
+            wb = openpyxl.load_workbook(EXCEL_FILE)
+            for s_name, cols in SHEET_HEADERS.items():
+                if s_name not in wb.sheetnames:
+                    need_rebuild = True
+                    break
+                else:
+                    ws = wb[s_name]
+                    curr_cols = [ws.cell(row=4, column=c).value for c in range(1, ws.max_column + 1)]
+                    if curr_cols != cols:
+                        need_rebuild = True
+                        break
+        except Exception:
+            need_rebuild = True
 
-    modified = False
-    if "Dashboard & Summary" not in wb.sheetnames:
+    if need_rebuild:
+        wb = openpyxl.Workbook()
+        wb.remove(wb.active)  # remove default sheet
+
+        # Dashboard & Summary Sheet
         ws_sum = wb.create_sheet(title="Dashboard & Summary", index=0)
+        ws_sum.views.sheetView[0].showGridLines = True
         ws_sum.cell(row=1, column=1, value="METRO TERESA MEDICAL CENTER (MTCMC)").font = BOLD_FONT
-        headers = ['Department / Module', 'Total Census Records', 'Active Column Count', 'Source Masterfile']
-        for c, h in enumerate(headers, 1):
+        ws_sum.cell(row=2, column=1, value="Census Masterfile Registry & Data Entry Dashboard").font = REGULAR_FONT
+        sum_headers = ['Department / Module', 'Total Census Records', 'Active Column Count', 'Source Masterfile']
+        for c, h in enumerate(sum_headers, 1):
             cell = ws_sum.cell(row=4, column=c, value=h)
             cell.fill = HEADER_FILL
             cell.font = HEADER_FONT
-        modified = True
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+            cell.border = THIN_BORDER
 
-    for s_name, cols in SHEET_HEADERS.items():
-        if s_name not in wb.sheetnames:
+        for r_idx, (s_name, cols) in enumerate(SHEET_HEADERS.items(), start=5):
+            ws_sum.cell(row=r_idx, column=1, value=s_name).font = BOLD_FONT
+            ws_sum.cell(row=r_idx, column=2, value=0).font = REGULAR_FONT
+            ws_sum.cell(row=r_idx, column=3, value=len(cols)).font = REGULAR_FONT
+            ws_sum.cell(row=r_idx, column=4, value=f"MTCMC CENSUS - {s_name} MASTERFILE").font = REGULAR_FONT
+            for c in range(1, 5):
+                cell = ws_sum.cell(row=r_idx, column=c)
+                cell.border = THIN_BORDER
+                if c in [2, 3]:
+                    cell.alignment = Alignment(horizontal='center', vertical='center')
+
+        for c in range(1, 5):
+            col_letter = openpyxl.utils.get_column_letter(c)
+            ws_sum.column_dimensions[col_letter].width = 32
+
+        # Create Department Sheets
+        for s_name, cols in SHEET_HEADERS.items():
             ws = wb.create_sheet(title=s_name)
             ws.views.sheetView[0].showGridLines = True
             ws.cell(row=1, column=1, value=f"MTCMC CLINICAL CENSUS - {s_name} MASTERFILE").font = BOLD_FONT
+            ws.cell(row=2, column=1, value="Streamlined Clinical Census Register").font = REGULAR_FONT
+
             for c_idx, col_name in enumerate(cols, start=1):
                 cell = ws.cell(row=4, column=c_idx, value=col_name)
                 cell.fill = HEADER_FILL
                 cell.font = HEADER_FONT
-                cell.alignment = Alignment(horizontal='center', vertical='center')
+                cell.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
                 cell.border = THIN_BORDER
-            ws.freeze_panes = "A5"
-            modified = True
+                col_letter = openpyxl.utils.get_column_letter(c_idx)
+                ws.column_dimensions[col_letter].width = max(len(col_name) + 4, 16)
 
-    if modified:
+            ws.row_dimensions[4].height = 28
+            ws.freeze_panes = "A5"
+
         wb.save(EXCEL_FILE)
 
 def append_record_to_excel(sheet_name, row_dict):
@@ -289,8 +354,10 @@ if selected_sheet == "ECC TOP DISEASES":
             physician = st.text_input("Attending Physician Name")
             specialty_sel = st.selectbox("Physician Specialty", SPECIALTY_DROPDOWN_OPTIONS)
         with c3:
-            location = st.selectbox("Care Location", ["OPD", "IPD", "ICU", "PICU"])
-            diagnosis_text = st.text_area("Clinical Diagnosis")
+            case_classification = st.selectbox("Patient Type / Case Classification", ["IPD", "OPD", "Private Case", "House Case (Walk-in)"])
+            transferred_to = st.selectbox("Transferred To", ["None", "GNU", "PICU", "ICU"])
+
+        diagnosis_text = st.text_area("Clinical Diagnosis")
 
         disease_options = [
             'ACUTE GASTROENTERITIS', 'DENGUE FEVER', 'HYPERTENSION', 'GASTROESOPHAGEAL REFLUX DISEASE',
@@ -310,33 +377,13 @@ if selected_sheet == "ECC TOP DISEASES":
                 'PATIENT': patient_name,
                 'AGE': str(age),
                 'DIAGNOSIS': diagnosis_text,
+                'DISEASE CATEGORIES': ", ".join(selected_diseases) if selected_diseases else "None",
                 'PHYSICIAN': physician,
-                'IPD': (location == "IPD"),
-                'OPD': (location == "OPD"),
-                'ICU': (location == "ICU"),
-                'PICU': (location == "PICU"),
-                'CASE COUNT': 1.0
+                'PHYSICIAN SPECIALTY': specialty_sel,
+                'PATIENT TYPE / CLASSIFICATION': case_classification,
+                'TRANSFERRED TO': transferred_to,
+                'CASE COUNT': 1
             }
-            for d in selected_diseases:
-                row_data[d] = 1.0
-
-            # Map specialty to ECC column names
-            ecc_map = {
-                "NEUROLOGY": "NEUROLOGY",
-                "INTERNAL MEDICINE": "IM & CARDIO",
-                "CARDIOLOGY": "IM & CARDIO",
-                "RESPIRATORY MEDICINE": "PULMO",
-                "GENERAL SURGERY": "GENERAL SURGERY",
-                "ORTHOPAEDIC SURGERY": "ORTHOPEDICS",
-                "NEPHROLOGY": "NEPHROLOGY",
-                "UROLOGY": "UROLOGY",
-                "THORACIC / CARDIOTHORACIC SURGERY": "TCVS",
-                "OBSTETRICS & GYNAECOLOGY": "OBGYNE",
-                "GENERAL PAEDIATRICS": "PEDIATRICS",
-                "FAMILY MEDICINE": "FAMILY MED"
-            }
-            if specialty_sel in ecc_map:
-                row_data[ecc_map[specialty_sel]] = 1.0
 
             if append_record_to_excel("ECC TOP DISEASES", row_data):
                 st.success("Successfully saved to `ECC TOP DISEASES` sheet!")
@@ -383,18 +430,17 @@ elif selected_sheet == "ENDO":
                 'AGE': age,
                 'DIAGNOSIS': diagnosis_text,
                 'PROCEDURE': procedure_text,
+                'PROCEDURE CATEGORIES': ", ".join(selected_procs) if selected_procs else "None",
                 'PHYSICIAN': physician,
+                'ATTENDING SPECIALTY': specialty_sel,
+                'GASTROENTEROLOGIST': gastro if gastro else "N/A",
+                'ENT SPECIALIST': ent if ent else "N/A",
+                'ANESTHESIOLOGIST': anesthesiologist if anesthesiologist else "N/A",
+                'PROCEDURE NATURE': proc_type,
+                'SETTING': setting,
+                'PAYMENT METHOD': payment,
                 'CASE COUNT': 1
             }
-            if gastro: row_data['GASTROENTEROLOGIST'] = "Gastroenterologist"
-            if ent: row_data['ENT'] = "ENT"
-            if anesthesiologist:
-                row_data['ANESTHESIOLOGIST'] = anesthesiologist
-                row_data['ANESTHESIA'] = "Anesthesia"
-            for p in selected_procs: row_data[p] = 1.0
-            row_data[proc_type] = 1.0
-            row_data[setting] = 1.0
-            row_data[payment] = 1.0
 
             if append_record_to_excel("ENDO", row_data):
                 st.success("Successfully saved to `ENDO` sheet!")
@@ -428,10 +474,10 @@ elif selected_sheet == "HDU":
                 'PATIENT': patient_name,
                 'DIAGNOSIS': diagnosis,
                 'PHYSICIAN': physician,
-                'NEPHROLOGY': "NEPHROLOGY",
-                shift_set: "1" if shift_set == "1ST SET" else 1.0,
-                patient_type: 1.0,
-                'CASE COUNT': 1.0
+                'PHYSICIAN SPECIALTY': specialty_sel,
+                'DIALYSIS SHIFT SLOT': shift_set,
+                'PATIENT TYPE': patient_type,
+                'CASE COUNT': 1
             }
 
             if append_record_to_excel("HDU", row_data):
@@ -479,18 +525,16 @@ elif selected_sheet == "OBGYNE CASES":
                 'AGE': float(age),
                 'DIAGNOSIS': diagnosis,
                 'PROCEDURE': procedure,
-                'SURGEON': surgeon,
-                'OBGYNE': "OBGYNE",
-                complexity: 1.0,
-                setting: 1.0,
-                payment: 1.0,
-                'CASE COUNT': 1.0
+                'PROCEDURE BREAKDOWN': ", ".join(ob_procs) if ob_procs else "None",
+                'SURGEON / OBGYNE': surgeon,
+                'ATTENDING SPECIALTY': specialty_sel,
+                'ANESTHESIOLOGIST': anesthesiologist if anesthesiologist else "N/A",
+                'COMPLEXITY TIER': complexity,
+                'CARE SETTING': setting,
+                'KIT USED': "Yes" if kit_used else "No",
+                'PAYMENT CHANNEL': payment,
+                'CASE COUNT': 1
             }
-            if anesthesiologist:
-                row_data['ANESTHESIOLOGIST'] = anesthesiologist
-                row_data['ANESTHESIA'] = "ANESTHESIA"
-            if kit_used: row_data['KIT'] = 1.0
-            for flag in ob_procs: row_data[flag] = 1.0
 
             if append_record_to_excel("OBGYNE CASES", row_data):
                 st.success("Successfully saved to `OBGYNE CASES` sheet!")
@@ -544,35 +588,15 @@ elif selected_sheet == "SCC CASES":
                 'AGE': float(age),
                 'DIAGNOSIS': diagnosis,
                 'PROCEDURE': procedure,
-                'SURGEON': surgeon,
-                complexity: 1.0,
-                setting: 1.0,
-                'CASE COUNT': 1.0
+                'SURGICAL PROCEDURE FLAGS': ", ".join(selected_scc_procs) if selected_scc_procs else "None",
+                'PRIMARY SURGEON': surgeon,
+                'SURGICAL DEPARTMENT / SPECIALTY': specialty_sel,
+                'ANESTHESIOLOGIST': anesthesiologist if anesthesiologist else "N/A",
+                'COMPLEXITY TIER': complexity,
+                'PATIENT SETTING': setting,
+                'BILLING CHANNELS': ", ".join(billing) if billing else "None",
+                'CASE COUNT': 1
             }
-
-            # Map specialty selection to SCC column
-            scc_map = {
-                "GENERAL SURGERY": "GENERAL SURGERY",
-                "OPHTHALMOLOGY": "OPHTHALMOLOGY",
-                "NEUROSURGERY": "NEUROSURGERY",
-                "INTERVENTIONAL RADIOLOGY": "INTERVENTIONAL RADIOLOGY",
-                "ORTHOPAEDIC SURGERY": "ORTHOPEDICS",
-                "OTORHINOLARYNGOLOGY (ENT)": "EENT",
-                "COLORECTAL SURGERY": "COLORECTAL",
-                "UROLOGY": "UROLOGY",
-                "DENTAL SURGERY": "DENTAL SURGERY",
-                "THORACIC / CARDIOTHORACIC SURGERY": "TCVS",
-                "PAEDIATRIC SURGERY": "PEDIATRIC SURGERY",
-                "OBSTETRICS & GYNAECOLOGY": "OBGYNE"
-            }
-            if specialty_sel in scc_map:
-                row_data[scc_map[specialty_sel]] = scc_map[specialty_sel]
-
-            if anesthesiologist:
-                row_data['ANESTHESIOLOGIST'] = anesthesiologist
-                row_data['ANESTHESIA'] = "ANESTHESIA"
-            for p in selected_scc_procs: row_data[p] = 1.0
-            for b in billing: row_data[b] = 1.0
 
             if append_record_to_excel("SCC CASES", row_data):
                 st.success("Successfully saved to `SCC CASES` sheet!")
@@ -603,41 +627,26 @@ elif selected_sheet == "SCU CASES":
 
         submitted = st.form_submit_button("Submit Record to Excel Sheet")
         if submitted:
+            age_str_parts = []
+            if age_y > 0: age_str_parts.append(f"{age_y} Yrs")
+            if age_m > 0: age_str_parts.append(f"{age_m} Mos")
+            if age_d > 0: age_str_parts.append(f"{age_d} Days")
+            age_formatted = ", ".join(age_str_parts) if age_str_parts else "Neonate / Infant"
+
             row_data = {
                 'MONTH': get_month_str(entry_date, "numeric_prefix"),
                 'DATE': entry_date.strftime("%m/%d/%Y"),
                 'PATIENT': patient_name,
-                'AOG': aog if aog else None,
+                'AOG': aog if aog else "N/A",
+                'AGE': age_formatted,
+                'GENDER': gender,
                 'DIAGNOSIS': diagnosis,
+                'DIAGNOSTIC FLAGS': ", ".join(diag_flags) if diag_flags else "None",
+                'SCU UNIT LOCATION': scu_unit,
                 'ATTENDING PHYSICIAN': physician,
-                scu_unit: 1.0,
+                'SUBSPECIALTIES': ", ".join(subspecialties) if subspecialties else "None",
                 'CASE COUNT': 1
             }
-            if age_y > 0: row_data['AGE (YEAR)'] = float(age_y)
-            if age_m > 0: row_data['AGE (MONTH)'] = float(age_m)
-            if age_d > 0: row_data['AGE (DAY)'] = float(age_d)
-            
-            if gender == "MALE": row_data['MALE'] = 1
-            else: row_data['FEMALE'] = 1.0
-            
-            for d in diag_flags: row_data[d] = 1.0
-            
-            scu_map = {
-                "GENERAL PAEDIATRICS": "PEDIATRICS",
-                "PAEDIATRICS AND CHILD HEALTH": "PEDIATRICS",
-                "NEONATOLOGY": "NEONATOLOGY",
-                "RESPIRATORY MEDICINE": "PULMONOLOGY",
-                "PAEDIATRIC RESPIRATORY MEDICINE": "PULMONOLOGY",
-                "CLINICAL HAEMATOLOGY": "HEMETOLOGY / ONCOLOGY",
-                "MEDICAL ONCOLOGY": "HEMETOLOGY / ONCOLOGY",
-                "PAEDIATRIC HAEMATOLOGY & ONCOLOGY": "HEMETOLOGY / ONCOLOGY",
-                "NEUROSURGERY": "NEUROSURGERY",
-                "GENERAL SURGERY": "GENERAL SURGERY",
-                "PAEDIATRIC SURGERY": "GENERAL SURGERY"
-            }
-            for s_name in subspecialties:
-                if s_name in scu_map:
-                    row_data[scu_map[s_name]] = scu_map[s_name]
 
             if append_record_to_excel("SCU CASES", row_data):
                 st.success("Successfully saved to `SCU CASES` sheet!")
