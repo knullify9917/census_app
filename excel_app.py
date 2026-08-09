@@ -621,6 +621,54 @@ def clean_display_df(df):
             d_clean = d_clean.iloc[:, 1:]
     return d_clean
 
+def get_editor_column_config(columns, is_historical=True):
+    config = {}
+    for col in columns:
+        col_upper = str(col).upper()
+        if is_historical and col_upper in [
+            'DATE', 'TRUE DATE', 'ADMISSION DATE', 'DEPARTMENT / UNIT', 
+            'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 'ATTENDING PHYSICIAN'
+        ]:
+            config[col] = st.column_config.TextColumn(col, disabled=True, width="small")
+        elif col_upper in ['PATIENT STATUS', 'STATUS']:
+            config[col] = st.column_config.SelectboxColumn(col, options=["ACTIVE", "MGH", "DISCHARGED", "CAB"], width="medium")
+        elif col_upper == 'SEX':
+            config[col] = st.column_config.SelectboxColumn(col, options=["MALE", "FEMALE", "OTHERS"], width="small")
+        elif col_upper == 'MODE OF PAYMENT':
+            config[col] = st.column_config.SelectboxColumn(col, options=["PHIC", "HMO", "SELF-PAY", "CHARITY"], width="medium")
+        elif col_upper == 'HOSPITALIZATION MODE':
+            config[col] = st.column_config.SelectboxColumn(col, options=["INPATIENT", "OUTPATIENT"], width="medium")
+        else:
+            config[col] = st.column_config.TextColumn(col, width="medium")
+    return config
+
+def display_paginated_dataframe(df, key_prefix="pag", is_historical=True):
+    if df is None or df.empty:
+        st.info("No records to display.")
+        return df
+    
+    clean_df = clean_display_df(df)
+    total_rows = len(clean_df)
+    editor_config = get_editor_column_config(clean_df.columns, is_historical=is_historical)
+    
+    if total_rows <= 100:
+        return st.data_editor(clean_df, use_container_width=True, num_rows="fixed", key=f"{key_prefix}_editor", column_config=editor_config)
+    
+    st.markdown(f"**Total Records:** `{total_rows}` (Showing 100 records per page for optimal performance)")
+    page_size = 100
+    total_pages = (total_rows - 1) // page_size + 1
+    page_num = st.selectbox("Select Page", range(1, total_pages + 1), key=f"{key_prefix}_page_sel")
+    
+    start_idx = (page_num - 1) * page_size
+    end_idx = min(start_idx + page_size, total_rows)
+    page_df = clean_df.iloc[start_idx:end_idx].copy()
+    
+    edited_page = st.data_editor(page_df, use_container_width=True, num_rows="fixed", key=f"{key_prefix}_editor_p{page_num}", column_config=editor_config)
+    
+    full_df = clean_df.copy()
+    full_df.iloc[start_idx:end_idx] = edited_page
+    return full_df
+
 # ---------------------------------------------------------
 # UI HEADER & SIDEBAR NAVIGATION
 # ---------------------------------------------------------
@@ -1488,7 +1536,6 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
 
                     submit_update = st.form_submit_button("💾 Save Patient Orders Update")
                     if submit_update:
-                        # Append or update data
                         if up_status:
                             dept_df_up.loc[matched_idx, 'PATIENT STATUS'] = up_status
                         if up_procs:
@@ -2396,8 +2443,7 @@ if selected_sheet not in ["Hospital Information System", "Pareto Tally Sheet"]:
     sheet_df = read_google_sheet(selected_sheet)
     if not sheet_df.empty:
         clean_s_df = clean_display_df(sheet_df)
-        edited_sheet_df = display_paginated_dataframe(clean_s_df, key_prefix=f"dept_direct_{selected_sheet}", is_historical=True)
-        
+        st.dataframe(clean_s_df, use_container_width=True)
         st.caption(f"Showing records for `{selected_sheet}` (Total: {len(sheet_df)} records)")
     else:
         st.info(f"Google Sheets worksheet `{selected_sheet}` currently has no records.")
