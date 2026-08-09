@@ -1,6 +1,6 @@
 import streamlit as st
 import gspread
-from datetime import datetime, time
+from datetime import datetime
 from zoneinfo import ZoneInfo
 import pandas as pd
 import os
@@ -10,6 +10,7 @@ import base64
 import concurrent.futures
 import threading
 import sqlite3
+import time as py_time
 
 # ---------------------------------------------------------
 # 1. PAGE CONFIGURATION & LOGO-MATCHED BLUE/GREEN COLORWAY
@@ -441,7 +442,7 @@ def safe_gspread_call(func, *args, **kwargs):
                         return func(*args, **kwargs)
                     except Exception:
                         raise e
-                time.sleep(backoff)
+                py_time.sleep(backoff)
                 backoff *= 2
     return None
 
@@ -683,7 +684,6 @@ if st.session_state["role"] == "Administrator":
         if st.button("🧹 Execute Full Wipe", type="primary"):
             if confirm_system_wipe:
                 try:
-                    # Wipe Google Sheets
                     for s_name, cols in SHEET_HEADERS.items():
                         try:
                             ws = sh.worksheet(s_name)
@@ -692,9 +692,8 @@ if st.session_state["role"] == "Administrator":
                             ws.update('A4', [cols])
                         except Exception:
                             pass
-                        time.sleep(0.5)
+                        py_time.sleep(0.5)
 
-                    # Wipe SQLite Local DB
                     conn = get_sqlite_conn()
                     cursor = conn.cursor()
                     for s_name, cols in SHEET_HEADERS.items():
