@@ -10,6 +10,7 @@ import base64
 import random
 import time
 import concurrent.futures
+import sqlite3
 
 # ---------------------------------------------------------
 # 1. PAGE CONFIGURATION & LOGO-MATCHED BLUE/GREEN COLORWAY
@@ -174,6 +175,8 @@ if "role" not in st.session_state:
     st.session_state["role"] = ""
 if "name" not in st.session_state:
     st.session_state["name"] = ""
+if "df_cache" not in st.session_state:
+    st.session_state["df_cache"] = {}
 
 for form_key in ["ecc", "endo", "hdu", "ob", "scc", "scu", "1c", "2a", "2b", "2c", "2d", "3a", "3b", "3c", "4a"]:
     if f"cm_list_{form_key}" not in st.session_state:
@@ -329,6 +332,44 @@ def get_month_str(date_obj, fmt_style="numeric_prefix"):
         return f"{month_num}.{date_obj.strftime('%B')} "
     return month_name
 
+# ---------------------------------------------------------
+# HYBRID SQLITE BACKEND SETUP
+# ---------------------------------------------------------
+def get_sqlite_conn():
+    return sqlite3.connect("hospital_local.sqlite", check_same_thread=False)
+
+def init_local_sqlite():
+    conn = get_sqlite_conn()
+    cursor = conn.cursor()
+    for s_name, cols in SHEET_HEADERS.items():
+        cols_def = ", ".join([f'"{col}" TEXT' for col in cols])
+        cursor.execute(f'CREATE TABLE IF NOT EXISTS "{s_name}" ({cols_def})')
+    conn.commit()
+    conn.close()
+
+init_local_sqlite()
+
+def sync_df_to_sqlite(sheet_name, df):
+    if df is None or df.empty:
+        return
+    conn = get_sqlite_conn()
+    try:
+        df.to_sql(sheet_name, conn, if_exists='replace', index=False)
+    except Exception:
+        pass
+    conn.close()
+
+def read_sqlite_sheet(sheet_name):
+    conn = get_sqlite_conn()
+    try:
+        df = pd.read_sql(f'SELECT * FROM "{sheet_name}"', conn)
+        conn.close()
+        if not df.empty:
+            return df
+    except Exception:
+        conn.close()
+    return pd.DataFrame()
+
 @st.cache_resource
 def init_google_sheets():
     from google.oauth2.service_account import Credentials
@@ -393,6 +434,10 @@ def append_record_to_google_sheet(sheet_name, row_dict):
             val = row_dict.get(h, "")
             row_values.append("" if (val is None or pd.isna(val)) else str(val).upper())
         ws.append_row(row_values)
+        
+        # Update local SQLite cache
+        df_local = read_google_sheet(sheet_name, force_refresh=True)
+        sync_df_to_sqlite(sheet_name, df_local)
         return True
     except Exception as e:
         st.error(f"Error saving to Google Sheets: {e}")
@@ -420,39 +465,53 @@ def update_google_sheet_from_df(sheet_name, df):
             
         if rows_to_update:
             ws.update('A5', rows_to_update)
+            
+        sync_df_to_sqlite(sheet_name, df)
         return True
     except Exception as e:
         st.error(f"Error updating Google Sheets: {e}")
         return False
 
-# PERFORMANCE OPTIMIZATION: Extended Cache TTL (300s / 5 minutes)
+# PERFORMANCE OPTIMIZATION: Extended Cache TTL (300s) + Range Fetching ('A4:V2000') + Session State
 @st.cache_data(ttl=300)
-def read_google_sheet(sheet_name):
+def fetch_cloud_sheet(sheet_name):
     ensure_google_sheets_exist()
     try:
         ws = sh.worksheet(sheet_name)
-        data = ws.get_all_values()
-        if len(data) >= 4:
-            headers = data[3]
-            rows = data[4:]
+        data = ws.get('A4:V2000') # Restrict fetch range for speed
+        if data and len(data) >= 1:
+            headers = data[0]
+            rows = data[1:]
             if rows:
                 return pd.DataFrame(rows, columns=headers[:len(rows[0])])
-    except Exception as e:
-        st.warning(f"Note: Could not load sheet '{sheet_name}'.")
+    except Exception:
+        pass
     return pd.DataFrame()
+
+def read_google_sheet(sheet_name, force_refresh=False):
+    if not force_refresh and sheet_name in st.session_state["df_cache"]:
+        return st.session_state["df_cache"][sheet_name]
+    
+    # Try fetching from cloud first
+    df = fetch_cloud_sheet(sheet_name)
+    if df.empty:
+        # Fallback to local SQLite
+        df = read_sqlite_sheet(sheet_name)
+    else:
+        sync_df_to_sqlite(sheet_name, df)
+        
+    st.session_state["df_cache"][sheet_name] = df
+    return df
 
 # PERFORMANCE OPTIMIZATION: Concurrent Parallel Sheet Fetching
 def read_multiple_sheets_parallel(sheet_names):
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-        future_to_sheet = {executor.submit(read_google_sheet, s): s for s in sheet_names}
-        results = {}
-        for future in concurrent.futures.as_completed(future_to_sheet):
-            s = future_to_sheet[future]
-            try:
-                results[s] = future.result()
-            except Exception:
-                results[s] = pd.DataFrame()
-    return results
+    uncached = [s for s in sheet_names if s not in st.session_state["df_cache"]]
+    if uncached:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+            future_to_sheet = {executor.submit(read_google_sheet, s): s for s in uncached}
+            for future in concurrent.futures.as_completed(future_to_sheet):
+                pass
+    return {s: st.session_state["df_cache"].get(s, read_google_sheet(s)) for s in sheet_names}
 
 def check_existing_patient_ai(sheet_name, last_name, fn, curr_date_str):
     df = read_google_sheet(sheet_name)
@@ -820,6 +879,7 @@ if st.session_state["role"] == "Administrator":
                                 ws.update('A4', [SHEET_HEADERS[s_name]])
                             except Exception:
                                 pass
+                        sync_df_to_sqlite(s_name, pd.DataFrame())
                     st.sidebar.success("Successfully wiped app data!")
                     st.rerun()
                 except Exception as e:
@@ -874,7 +934,7 @@ st.sidebar.markdown("<p style='font-size: 0.85rem; color: #0f766e; font-style: i
 
 if st.sidebar.button("🔄 Refresh Data"):
     st.cache_data.clear()
-    st.cache_resource.clear()
+    st.session_state["df_cache"] = {}
     st.toast("Reloaded latest census & patient records from Google Sheets.", icon="🔄")
     st.rerun()
 
@@ -892,9 +952,10 @@ if selected_sheet == "Hospital Information System":
 st.markdown("---")
 
 # ---------------------------------------------------------
-# MODULE: HOSPITAL INFORMATION SYSTEM (LANDING PAGE)
+# MODULE: HOSPITAL INFORMATION SYSTEM (LANDING PAGE) - ISOLATED VIA FRAGMENT
 # ---------------------------------------------------------
-if selected_sheet == "Hospital Information System":
+@st.fragment
+def render_hospital_summary_fragment():
     st.header("🏥 Hospital Summary")
     st.markdown("This is the current active census summary today.")
 
@@ -921,7 +982,7 @@ if selected_sheet == "Hospital Information System":
 
     summary_data = []
 
-    # PERFORMANCE OPTIMIZATION: Fetch all department sheets in parallel
+    # Parallel batch fetch
     dept_data_map = read_multiple_sheets_parallel(department_sheets)
 
     for dept in department_sheets:
@@ -991,9 +1052,6 @@ if selected_sheet == "Hospital Information System":
 
     st.markdown("---")
 
-    # ---------------------------------------------------------
-    # ACTIVE PATIENT ROSTER (Directly Editable Table)
-    # ---------------------------------------------------------
     st.subheader("📋 Active Patient Census & Direct Editor")
     st.markdown("Aggregated live roster displaying active, MGH, and CAB patients from General Nursing Units, along with all active patients admitted in the Special Care Complex. **Directly edit patient information and statuses in the table below.** *(Admission dates and table headers are locked to prevent overlaps).*")
 
@@ -1028,7 +1086,7 @@ if selected_sheet == "Hospital Information System":
             gnu_mapped['Admission Date'] = gnu_filtered.get('DATE', '')
             gnu_mapped['Department / Unit'] = gnu_filtered.get('SOURCE DEPARTMENT', '')
             gnu_mapped['Room No.'] = gnu_filtered.get('ROOM NO', 'N/A')
-            gnu_mapped['Name of Patient'] = gnu_filtered['NAME OF PATIENT']
+            gnu_mapped['Name of Patient'] = gnu_mapped['Name of Patient'] if 'Name of Patient' in gnu_mapped else gnu_filtered['NAME OF PATIENT']
             gnu_mapped['Age'] = gnu_filtered.get('AGE', '')
             gnu_mapped['Diagnosis'] = gnu_filtered.get('DIAGNOSIS', '')
             gnu_mapped['Attending Physician'] = gnu_filtered.get('ATTENDING PHYSICIAN', '')
@@ -1073,6 +1131,7 @@ if selected_sheet == "Hospital Information System":
         
         if st.button("💾 Save Active Census Changes", type="primary"):
             st.cache_data.clear()
+            st.session_state["df_cache"] = {}
             st.success("Successfully saved active census changes!")
             st.rerun()
 
@@ -1106,12 +1165,16 @@ if selected_sheet == "Hospital Information System":
         if st.button(f"💾 Save Changes to `{selected_dept_view}`", type="primary"):
             if update_google_sheet_from_df(selected_dept_view, edited_dept_df):
                 st.cache_data.clear()
+                st.session_state["df_cache"] = {}
                 st.success(f"Successfully updated records for `{selected_dept_view}` in Google Sheets!")
                 st.rerun()
             else:
                 st.error("Failed to update Google Sheets. Please check permissions or connection.")
     else:
         st.info(f"No records found yet for {selected_dept_view}.")
+
+if selected_sheet == "Hospital Information System":
+    render_hospital_summary_fragment()
 
 # ---------------------------------------------------------
 # GENERIC REGISTRATION FORM FOR GNU UNITS
@@ -1812,7 +1875,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 # ---------------------------------------------------------
 elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
     baby_icon_html = get_custom_icon_html("baby_feet_icon.png", width=38)
-    st.markdown(f"<h2>{baby_icon_html} Special Care Complex Patient Registration</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2>{baby_icon_html} Special Care Unit Patient Registration</h2>", unsafe_allow_html=True)
     ph_now = get_ph_time()
 
     with st.form("scu_form", clear_on_submit=True):
@@ -1868,7 +1931,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         with c14:
             patient_status = st.selectbox("Patient Status", ["ACTIVE", "MGH", "DISCHARGED", "CAB"], index=0)
 
-        payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY", "CHARITY"], index=0)
+        payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY"], index=0)
 
         st.subheader("📋 Clinical & Diagnostic Details")
         diagnosis = st.text_area("Diagnosis Text", value="").strip().upper()
@@ -1901,7 +1964,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
             cm_specs_str = "; ".join([item['spec'] for item in valid_cm]) if valid_cm else "N/A"
 
             row_data = {
-                'MONTH': get_month_str(entry_date, "full_month"),
+                'MONTH': get_month_str(entry_date, "numeric_prefix"),
                 'DATE': curr_date_str,
                 'LAST NAME': last_name,
                 'FIRST NAME': first_name,
@@ -1939,7 +2002,15 @@ if selected_sheet != "Hospital Information System":
     sheet_df = read_google_sheet(selected_sheet)
     if not sheet_df.empty:
         clean_s_df = clean_display_df(sheet_df)
-        st.dataframe(clean_s_df, use_container_width=True)
-        st.caption(f"Showing records for `{selected_sheet}` (Total: {len(sheet_df)} records)")
+        editor_config = get_editor_column_config(clean_s_df.columns)
+        edited_s_df = st.data_editor(clean_s_df, use_container_width=True, num_rows="fixed", key=f"editor_bottom_{selected_sheet}", column_config=editor_config)
+        if st.button(f"💾 Save Updates to `{selected_sheet}`", type="primary"):
+            if update_google_sheet_from_df(selected_sheet, edited_s_df):
+                st.cache_data.clear()
+                st.session_state["df_cache"] = {}
+                st.success(f"Successfully updated records for `{selected_sheet}`!")
+                st.rerun()
+            else:
+                st.error("Failed to update Google Sheets.")
     else:
         st.info(f"Google Sheets worksheet `{selected_sheet}` currently has no records.")
