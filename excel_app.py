@@ -299,6 +299,14 @@ ECC_SHEET_HEADER = [
     'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CASE COUNT', 'SEEDED_TRIAL'
 ]
 
+HDU_SHEET_HEADER = [
+    'MONTH', 'DATE', 'TRUE DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
+    'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
+    'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
+    'DIALYSIS SHIFT SLOT', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 
+    'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CASE COUNT', 'SEEDED_TRIAL'
+]
+
 SHEET_HEADERS = {
     "Emergency Care Complex (ECC)": ECC_SHEET_HEADER,
     "Endoscopy Unit (ENDO)": [
@@ -319,12 +327,7 @@ SHEET_HEADERS = {
     "General Nursing Unit (GNU 3B)": GNU_SHEET_HEADER,
     "General Nursing Unit (GNU 3C)": GNU_SHEET_HEADER,
     "General Nursing Unit (GNU 4A)": GNU_SHEET_HEADER,
-    "Hemodialysis Unit (HDU)": [
-        'MONTH', 'DATE', 'TRUE DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'DIAGNOSIS', 
-        'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
-        'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-        'DIALYSIS SHIFT SLOT', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT', 'SEEDED_TRIAL'
-    ],
+    "Hemodialysis Unit (HDU)": HDU_SHEET_HEADER,
     "OBGYNE Care Complex (LRDR-OB Surgery)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
         'PRE-OP DIAGNOSIS', 'POST-OP DIAGNOSIS', 'PROCEDURE NAME', 'SURGICAL PROCEDURE', 'PROCEDURE CATEGORY', 
@@ -749,6 +752,16 @@ if st.session_state["role"] == "Administrator":
                         'HOSPITALIZATION MODE': "INPATIENT", 'CASE TYPE': "PRIVATE CASE", 'HOSPITAL KIT PACKAGE': "YES",
                         'MODE OF PAYMENT': pay_mode, 'ADMITTED TO': "ECC", 
                         'PROCEDURES': "IV HYDRATION", 'DIAGNOSTIC EXAMINATIONS': "CBC, X-RAY", 'MEDICATIONS': "PARACETAMOL", 'SPECIAL ENDORSEMENTS': "STABLE",
+                        'CASE COUNT': 1, 'SEEDED_TRIAL': 'YES'
+                    }
+                elif target_dept == "Hemodialysis Unit (HDU)":
+                    row_data = {
+                        'MONTH': get_month_str(ph_now_display.date(), "numeric_prefix"), 'DATE': date_str, 'TRUE DATE': "0",
+                        'LAST NAME': ln, 'FIRST NAME': fn, 'MIDDLE NAME': mn, 'SEX': sex, 'AGE': age,
+                        'DIAGNOSIS': "CHRONIC KIDNEY DISEASE STAGE 5 ON HD", 'ATTENDING PHYSICIAN': "DR. A. CRUZ", 'ATTENDING SPECIALIZATION': "NEPHROLOGY",
+                        'CO-MANAGEMENT PHYSICIAN': "N/A", 'CO-MANAGEMENT SPECIALIZATION': "N/A", 'DIALYSIS SHIFT SLOT': "1ST SET",
+                        'HOSPITALIZATION MODE': "OUTPATIENT", 'HOSPITAL KIT PACKAGE': "YES", 'MODE OF PAYMENT': pay_mode, 'PATIENT STATUS': stat,
+                        'PROCEDURES': "HEMODIALYSIS", 'DIAGNOSTIC EXAMINATIONS': "CREATININE", 'MEDICATIONS': "EPO", 'SPECIAL ENDORSEMENTS': "STABLE",
                         'CASE COUNT': 1, 'SEEDED_TRIAL': 'YES'
                     }
                 else:
@@ -1661,23 +1674,25 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         with c5:
             sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
 
-        c_d1, _ = st.columns([1, 1])
+        c_d1, c_d2 = st.columns([1, 1])
         with c_d1:
             entry_date = st.date_input("Dialysis Date", datetime.today())
+        with c_d2:
+            shift_set = st.selectbox("Dialysis Shift Slot", ["Select Slot", "1ST SET", "2ND SET", "3RD SET", "ON-CALL"], index=0)
 
         curr_date_str = entry_date.strftime("%B %d, %Y")
 
         # 2. Hospitalization Plan
         st.subheader("2. Hospitalization Plan")
-        c7, c8, c9, c10 = st.columns(4)
-        with c7:
-            shift_set = st.selectbox("Dialysis Shift Slot", ["Select Slot", "1ST SET", "2ND SET", "3RD SET", "ONCALL"], index=0)
+        c8, c9, c10, c11 = st.columns(4)
         with c8:
             hosp_mode = st.selectbox("Hospitalization Mode", ["Select Mode", "Outpatient", "Inpatient"], index=0)
         with c9:
             payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY"], index=0)
         with c10:
             patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"], index=0)
+        with c11:
+            kit_package_hdu = st.checkbox("Hospital Kit Package", value=False, key="hdu_kit")
 
         # 3. Medical Care Team
         st.subheader("3. Medical Care Team")
@@ -1705,7 +1720,10 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
 
         # 5. Diagnostics Procedures and Treatment Plans
         st.subheader("5. Diagnostics Procedures and Treatment Plans")
-        kit_package_hdu = st.checkbox("Hospital Kit Package", value=False, key="hdu_kit")
+        hdu_procedures = st.text_area("Procedures", value="", key="hdu_procs").strip().upper()
+        hdu_diagnostic_exams = st.text_area("Diagnostic Examinations", value="", key="hdu_diags").strip().upper()
+        hdu_medications = st.text_area("Medications", value="", key="hdu_meds").strip().upper()
+        hdu_special_endorsements = st.text_area("Special Endorsements", value="", key="hdu_ends").strip().upper()
 
         submitted = st.form_submit_button("Submit Record")
         if submitted:
@@ -1736,6 +1754,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
                 'FIRST NAME': sanitize_medical_text(first_name),
                 'MIDDLE NAME': sanitize_medical_text(middle_name),
                 'SEX': sex,
+                'AGE': str(age),
                 'DIAGNOSIS': sanitize_medical_text(diagnosis),
                 'ATTENDING PHYSICIAN': final_attending,
                 'ATTENDING SPECIALIZATION': attending_spec,
@@ -1746,6 +1765,10 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
                 'HOSPITAL KIT PACKAGE': "YES" if kit_package_hdu else "NO",
                 'MODE OF PAYMENT': payment_selected,
                 'PATIENT STATUS': patient_status,
+                'PROCEDURES': sanitize_medical_text(hdu_procedures),
+                'DIAGNOSTIC EXAMINATIONS': sanitize_medical_text(hdu_diagnostic_exams),
+                'MEDICATIONS': sanitize_medical_text(hdu_medications),
+                'SPECIAL ENDORSEMENTS': sanitize_medical_text(hdu_special_endorsements),
                 'CASE COUNT': 1,
                 'SEEDED_TRIAL': 'NO'
             }
