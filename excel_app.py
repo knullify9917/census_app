@@ -174,16 +174,6 @@ if "role" not in st.session_state:
 if "name" not in st.session_state:
     st.session_state["name"] = ""
 
-# Session state keys for pre-filling patient registration form values
-if "form_prefill_room" not in st.session_state: st.session_state["form_prefill_room"] = ""
-if "form_prefill_ln" not in st.session_state: st.session_state["form_prefill_ln"] = ""
-if "form_prefill_fn" not in st.session_state: st.session_state["form_prefill_fn"] = ""
-if "form_prefill_mn" not in st.session_state: st.session_state["form_prefill_mn"] = ""
-if "form_prefill_age" not in st.session_state: st.session_state["form_prefill_age"] = 0
-if "form_prefill_diag" not in st.session_state: st.session_state["form_prefill_diag"] = ""
-if "form_prefill_doc" not in st.session_state: st.session_state["form_prefill_doc"] = ""
-if "form_prefill_status" not in st.session_state: st.session_state["form_prefill_status"] = "ACTIVE"
-
 for form_key in ["ecc", "endo", "hdu", "ob", "scc", "scu", "1c", "2a", "2b", "2c", "2d", "3a", "3b", "3c", "4a"]:
     if f"cm_list_{form_key}" not in st.session_state:
         st.session_state[f"cm_list_{form_key}"] = []
@@ -402,6 +392,35 @@ def append_record_to_google_sheet(sheet_name, row_dict):
         return True
     except Exception as e:
         st.error(f"Error saving to Google Sheets: {e}")
+        return False
+
+def update_google_sheet_from_df(sheet_name, df):
+    ensure_google_sheets_exist()
+    try:
+        ws = sh.worksheet(sheet_name)
+        ws.clear()
+        headers = SHEET_HEADERS.get(sheet_name, df.columns.tolist())
+        ws.update('A1', [[f"MTCMC CLINICAL CENSUS - {sheet_name} MASTERFILE"]])
+        ws.update('A4', [headers])
+        
+        rows_to_update = []
+        for _, row in df.iterrows():
+            row_vals = ["" if (val is None or pd.isna(val)) else str(val).upper() for val in row if val in headers or headers.index(headers[list(row.index).index(val)]) < len(headers)]
+            # Match strictly to headers
+            mapped_vals = []
+            for h in headers:
+                if h in row:
+                    v = row[h]
+                    mapped_vals.append("" if (v is None or pd.isna(v)) else str(v).upper())
+                else:
+                    mapped_vals.append("")
+            rows_to_update.append(mapped_vals)
+            
+        if rows_to_update:
+            ws.update('A5', rows_to_update)
+        return True
+    except Exception as e:
+        st.error(f"Error updating Google Sheets: {e}")
         return False
 
 @st.cache_data(ttl=60)
@@ -932,10 +951,10 @@ if selected_sheet == "Hospital Information System":
     st.markdown("---")
 
     # ---------------------------------------------------------
-    # ACTIVE PATIENT ROSTER WITH CLICK-TO-AUTO-FILL PRE-POPULATION
+    # ACTIVE PATIENT ROSTER
     # ---------------------------------------------------------
     st.subheader("📋 Active Patient Roster")
-    st.markdown("Aggregated live roster displaying active, MGH, and CAB patients. **Select a patient from the dropdown below to automatically load their information into the General Nursing Unit data entry fields for quick updating.**")
+    st.markdown("Aggregated live roster displaying active, MGH, and CAB patients from General Nursing Units, along with all active patients admitted in the Special Care Complex (excluding discharged patients).")
 
     roster_combined_frames = []
 
@@ -969,9 +988,6 @@ if selected_sheet == "Hospital Information System":
             gnu_mapped['Department / Unit'] = gnu_filtered.get('SOURCE DEPARTMENT', '')
             gnu_mapped['Room No.'] = gnu_filtered.get('ROOM NO', 'N/A')
             gnu_mapped['Name of Patient'] = gnu_filtered['NAME OF PATIENT']
-            gnu_mapped['Last Name'] = gnu_filtered.get('LAST NAME', '')
-            gnu_mapped['First Name'] = gnu_filtered.get('FIRST NAME', '')
-            gnu_mapped['Middle Name'] = gnu_filtered.get('MIDDLE NAME', '')
             gnu_mapped['Age'] = gnu_filtered.get('AGE', '')
             gnu_mapped['Diagnosis'] = gnu_filtered.get('DIAGNOSIS', '')
             gnu_mapped['Attending Physician'] = gnu_filtered.get('ATTENDING PHYSICIAN', '')
@@ -1001,9 +1017,6 @@ if selected_sheet == "Hospital Information System":
             scu_mapped['Department / Unit'] = "SPECIAL CARE COMPLEX (" + scu_filtered.get('ADMITTED TO', 'NICU') + ")"
             scu_mapped['Room No.'] = "N/A"
             scu_mapped['Name of Patient'] = scu_filtered['NAME OF PATIENT']
-            scu_mapped['Last Name'] = scu_filtered.get('LAST NAME', '')
-            scu_mapped['First Name'] = scu_filtered.get('FIRST NAME', '')
-            scu_mapped['Middle Name'] = scu_filtered.get('MIDDLE NAME', '')
             scu_mapped['Age'] = scu_filtered.get('AGE', '')
             scu_mapped['Diagnosis'] = scu_filtered.get('DIAGNOSIS', '')
             scu_mapped['Attending Physician'] = scu_filtered.get('ATTENDING PHYSICIAN', '')
@@ -1012,31 +1025,8 @@ if selected_sheet == "Hospital Information System":
 
     if roster_combined_frames:
         final_master_roster = pd.concat(roster_combined_frames, ignore_index=True)
-        
-        # Interactive selection dropdown that automatically triggers pre-fill session state variables
-        patient_options = ["-- Click to Select & Populate Patient --"] + final_master_roster['Name of Patient'].tolist()
-        selected_roster_patient = st.selectbox("👆 Select Patient from Roster to Auto-Fill Data Entry", patient_options)
-        
-        if selected_roster_patient != "-- Click to Select & Populate Patient --":
-            p_data = final_master_roster[final_master_roster['Name of Patient'] == selected_roster_patient].iloc[0]
-            st.session_state["form_prefill_room"] = str(p_data.get('Room No.', ''))
-            st.session_state["form_prefill_ln"] = str(p_data.get('Last Name', ''))
-            st.session_state["form_prefill_fn"] = str(p_data.get('First Name', ''))
-            st.session_state["form_prefill_mn"] = str(p_data.get('Middle Name', ''))
-            try:
-                st.session_state["form_prefill_age"] = int(float(str(p_data.get('Age', 0)).replace(" YRS", "").strip()))
-            except Exception:
-                st.session_state["form_prefill_age"] = 0
-            st.session_state["form_prefill_diag"] = str(p_data.get('Diagnosis', ''))
-            st.session_state["form_prefill_doc"] = str(p_data.get('Attending Physician', ''))
-            st.session_state["form_prefill_status"] = str(p_data.get('Status', 'ACTIVE'))
-            
-            source_dept = p_data.get('Department / Unit', '')
-            st.success(f"Successfully loaded **{selected_roster_patient}**! Navigate to `{source_dept}` in the sidebar to view and update their pre-filled registration form.")
-
-        display_roster_df = clean_display_df(final_master_roster[['Admission Date', 'Department / Unit', 'Room No.', 'Name of Patient', 'Age', 'Diagnosis', 'Attending Physician', 'Status']])
-        st.dataframe(display_roster_df, use_container_width=True)
-        st.caption(f"Showing {len(display_roster_df)} active non-discharged roster entries.")
+        st.dataframe(clean_display_df(final_master_roster), use_container_width=True)
+        st.caption(f"Showing {len(final_master_roster)} active non-discharged roster entries.")
     else:
         st.info("No active patient roster records found.")
 
@@ -1046,35 +1036,33 @@ if selected_sheet == "Hospital Information System":
     st.dataframe(clean_display_df(summary_df), use_container_width=True)
 
     st.markdown("---")
-    st.subheader("📑 Department Summary")
-    selected_dept_view = st.selectbox("Select Department to Tally & Inspect", department_sheets)
+    st.subheader("📑 Department Summary & Direct Editor")
+    st.markdown("Select a department below to view and **directly edit patient information, diagnoses, treatments, and statuses** in real time.")
+    
+    selected_dept_view = st.selectbox("Select Department to Inspect & Edit", department_sheets)
     
     dept_df = read_google_sheet(selected_dept_view)
     if not dept_df.empty:
-        st.write(f"Showing all records for **{selected_dept_view}** (Total: {len(dept_df)} records)")
-        if selected_dept_view.startswith("General Nursing Unit (GNU") and 'LAST NAME' in dept_df.columns and 'PATIENT STATUS' in dept_df.columns:
-            dept_df['PATIENT & STATUS'] = dept_df['LAST NAME'].astype(str).str.strip() + ", " + dept_df['FIRST NAME'].astype(str).str.strip() + " [" + dept_df['PATIENT STATUS'].astype(str).str.strip() + "]"
-
-        if selected_dept_view == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)" and 'ADMITTED TO' in dept_df.columns:
+        cleaned_dept_df = clean_display_df(dept_df)
+        
+        if selected_dept_view == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)" and 'ADMITTED TO' in cleaned_dept_df.columns:
             st.markdown("##### 📍 Sort & Filter by Admitted Area")
-            admit_areas = sorted(dept_df['ADMITTED TO'].dropna().unique().tolist())
+            admit_areas = sorted(cleaned_dept_df['ADMITTED TO'].dropna().unique().tolist())
             selected_area = st.selectbox("Select Admitted To Area", ["All Areas"] + admit_areas)
             if selected_area != "All Areas":
-                dept_df = dept_df[dept_df['ADMITTED TO'] == selected_area]
-                st.write(f"Filtered to **{selected_area}** ({len(dept_df)} records)")
+                cleaned_dept_df = cleaned_dept_df[cleaned_dept_df['ADMITTED TO'] == selected_area]
 
-        preferred_cols = ['DATE', 'PATIENT & STATUS', 'ROOM NO', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'DIAGNOSIS', 'PATIENT STATUS', 'HOSPITALIZATION MODE', 'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION', 'ATTENDING PHYSICIAN', 'MODE OF PAYMENT']
-        display_cols = [c for c in preferred_cols if c in dept_df.columns]
-        if not display_cols:
-            display_cols = dept_df.columns.tolist()
-
-        if 'MODE OF PAYMENT' in dept_df.columns and selected_dept_view != "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
-            st.markdown("##### 💳 Breakdown by Mode of Payment")
-            payment_counts = dept_df['MODE OF PAYMENT'].value_counts().reset_index()
-            payment_counts.columns = ['Mode of Payment', 'Count']
-            st.bar_chart(payment_counts.set_index('Mode of Payment'))
-            
-        st.dataframe(clean_display_df(dept_df[display_cols]), use_container_width=True)
+        # Interactive Data Editor for real-time updates and treatment changes
+        st.markdown(f"**Editable Census Table for `{selected_dept_view}`:** Make changes directly in the table cells, then click **Save Changes to Database** below.")
+        edited_dept_df = st.data_editor(cleaned_dept_df, use_container_width=True, num_rows="dynamic", key=f"editor_{selected_dept_view}")
+        
+        if st.button(f"💾 Save Changes to `{selected_dept_view}`", type="primary"):
+            if update_google_sheet_from_df(selected_dept_view, edited_dept_df):
+                st.cache_data.clear()
+                st.success(f"Successfully updated records for `{selected_dept_view}` in Google Sheets!")
+                st.rerun()
+            else:
+                st.error("Failed to update Google Sheets. Please check permissions or connection.")
     else:
         st.info(f"No records found yet for {selected_dept_view}.")
 
@@ -1083,10 +1071,30 @@ if selected_sheet == "Hospital Information System":
 # ---------------------------------------------------------
 elif selected_sheet.startswith("General Nursing Unit (GNU"):
     gnu_title = selected_sheet
-    st.header(f"🛏️ {gnu_title} Patient Registration")
+    st.header(f"🛏️ {gnu_title} Patient Registration & Direct Census Editor")
     ph_now = get_ph_time()
     form_key_slug = gnu_title.replace("General Nursing Unit (", "").replace(")", "").strip().lower()
     
+    # Direct Editable Census Table for this Specific Department Module
+    st.subheader(f"📋 Live Department Census Editor: {gnu_title}")
+    st.markdown("Modify patient information, diagnoses, medications, or statuses directly in the table below and save changes instantly.")
+    
+    raw_dept_df = read_google_sheet(gnu_title)
+    if not raw_dept_df.empty:
+        clean_dept_df = clean_display_df(raw_dept_df)
+        edited_dept_df = st.data_editor(clean_dept_df, use_container_width=True, num_rows="dynamic", key=f"editor_dept_{gnu_title}")
+        if st.button(f"💾 Save Census Updates for `{gnu_title}`", type="primary"):
+            if update_google_sheet_from_df(gnu_title, edited_dept_df):
+                st.cache_data.clear()
+                st.success("Successfully updated department records in Google Sheets!")
+                st.rerun()
+            else:
+                st.error("Failed to update Google Sheets.")
+    else:
+        st.info("No records found in this department yet.")
+
+    st.markdown("---")
+    st.subheader("➕ Register New Patient")
     with st.form(f"gnu_form_{form_key_slug}", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -1096,17 +1104,17 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
         with c2:
             entry_time_str = civilian_time_input_field("Time", key_suffix=f"gnu_{form_key_slug}_time")
         with c3:
-            room_no = st.text_input("Room No.", value=st.session_state.get("form_prefill_room", "")).strip().upper()
+            room_no = st.text_input("Room No.", value="").strip().upper()
 
         c_n1, c_n2, c_n3, c_n4, c_n5 = st.columns([2, 2, 2, 1, 1.5])
         with c_n1:
-            last_name = st.text_input("Last Name", value=st.session_state.get("form_prefill_ln", "")).strip().upper()
+            last_name = st.text_input("Last Name", value="").strip().upper()
         with c_n2:
-            first_name = st.text_input("First Name", value=st.session_state.get("form_prefill_fn", "")).strip().upper()
+            first_name = st.text_input("First Name", value="").strip().upper()
         with c_n3:
-            middle_name = st.text_input("Middle Name", value=st.session_state.get("form_prefill_mn", "")).strip().upper()
+            middle_name = st.text_input("Middle Name", value="").strip().upper()
         with c_n4:
-            age = st.number_input("Age", min_value=0, max_value=120, value=int(st.session_state.get("form_prefill_age", 0)))
+            age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c_n5:
             sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
 
@@ -1116,17 +1124,14 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
         with c_h2:
             payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY", "CHARITY"], index=0)
         with c_h3:
-            default_status_val = st.session_state.get("form_prefill_status", "ACTIVE").upper()
-            status_options = ["ACTIVE", "MGH", "DISCHARGED", "CAB"]
-            status_idx = status_options.index(default_status_val) if default_status_val in status_options else 0
-            patient_status = st.selectbox("Patient Status", status_options, index=status_idx)
+            patient_status = st.selectbox("Patient Status", ["ACTIVE", "MGH", "DISCHARGED", "CAB"], index=0)
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name", value=st.session_state.get("form_prefill_doc", ""), key=f"gnu_{form_key_slug}_att").strip().upper()
+            attending_physician = st.text_input("Attending Physician Name", value="", key=f"gnu_{form_key_slug}_att").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key=f"gnu_{form_key_slug}_spec")
 
@@ -1139,7 +1144,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
         st.subheader("📋 Clinical & Diagnostic Details")
-        diagnosis_text = st.text_area("Clinical Diagnosis", value=st.session_state.get("form_prefill_diag", "")).strip().upper()
+        diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip().upper()
 
         st.subheader("📋 Procedures & Diagnostics")
         procedures_text = st.text_area("Procedures", value="", key=f"gnu_{form_key_slug}_procs").strip().upper()
@@ -1189,34 +1194,43 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
             if append_record_to_google_sheet(gnu_title, row_data):
                 st.success(f"Successfully saved to Google Sheets `{gnu_title}` tab!")
                 st.session_state[cm_list_key] = []
-                # Clear prefill state after successful save
-                st.session_state["form_prefill_room"] = ""
-                st.session_state["form_prefill_ln"] = ""
-                st.session_state["form_prefill_fn"] = ""
-                st.session_state["form_prefill_mn"] = ""
-                st.session_state["form_prefill_age"] = 0
-                st.session_state["form_prefill_diag"] = ""
-                st.session_state["form_prefill_doc"] = ""
-                st.session_state["form_prefill_status"] = "ACTIVE"
 
 # ---------------------------------------------------------
 # FORM 1: Emergency Care Complex (ECC)
 # ---------------------------------------------------------
 elif selected_sheet == "Emergency Care Complex (ECC)":
-    st.header("🚑 Emergency Care Complex Patient Registration")
+    st.header("🚑 Emergency Care Complex Patient Registration & Direct Census Editor")
     ph_now = get_ph_time()
+    
+    st.subheader("📋 Live ECC Census Editor")
+    raw_ecc_df = read_google_sheet("Emergency Care Complex (ECC)")
+    if not raw_ecc_df.empty:
+        clean_ecc_df = clean_display_df(raw_ecc_df)
+        edited_ecc_df = st.data_editor(clean_ecc_df, use_container_width=True, num_rows="dynamic", key="editor_ecc")
+        if st.button("💾 Save ECC Census Updates", type="primary"):
+            if update_google_sheet_from_df("Emergency Care Complex (ECC)", edited_ecc_df):
+                st.cache_data.clear()
+                st.success("Successfully updated ECC records in Google Sheets!")
+                st.rerun()
+            else:
+                st.error("Failed to update Google Sheets.")
+    else:
+        st.info("No records in ECC yet.")
+
+    st.markdown("---")
+    st.subheader("➕ Register New ECC Patient")
     with st.form("ecc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value=st.session_state.get("form_prefill_ln", "")).strip().upper()
+            last_name = st.text_input("Last Name", value="").strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value=st.session_state.get("form_prefill_fn", "")).strip().upper()
+            first_name = st.text_input("First Name", value="").strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value=st.session_state.get("form_prefill_mn", "")).strip().upper()
+            middle_name = st.text_input("Middle Name", value="").strip().upper()
         with c4:
-            age = st.number_input("Age", min_value=0, max_value=120, value=int(st.session_state.get("form_prefill_age", 0)))
+            age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c5:
             sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
 
@@ -1241,7 +1255,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name", value=st.session_state.get("form_prefill_doc", ""), key="ecc_att_input").strip().upper()
+            attending_physician = st.text_input("Attending Physician Name", value="", key="ecc_att_input").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="ecc_spec_input")
 
@@ -1253,7 +1267,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
         st.subheader("📋 Clinical & Diagnostic Details")
-        diagnosis_text = st.text_area("Clinical Diagnosis", value=st.session_state.get("form_prefill_diag", "")).strip().upper()
+        diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip().upper()
 
         disease_options = [
             'ACUTE GASTROENTERITIS', 'DENGUE FEVER', 'HYPERTENSION', 'GASTROESOPHAGEAL REFLUX DISEASE',
@@ -1308,21 +1322,38 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 # FORM 2: Endoscopy Unit (ENDO)
 # ---------------------------------------------------------
 elif selected_sheet == "Endoscopy Unit (ENDO)":
-    st.header("🔬 Endoscopy Unit Patient Registration")
+    st.header("🔬 Endoscopy Unit Patient Registration & Direct Census Editor")
     ph_now = get_ph_time()
     
+    st.subheader("📋 Live Endoscopy Unit Census Editor")
+    raw_endo_df = read_google_sheet("Endoscopy Unit (ENDO)")
+    if not raw_endo_df.empty:
+        clean_endo_df = clean_display_df(raw_endo_df)
+        edited_endo_df = st.data_editor(clean_endo_df, use_container_width=True, num_rows="dynamic", key="editor_endo")
+        if st.button("💾 Save Endoscopy Unit Updates", type="primary"):
+            if update_google_sheet_from_df("Endoscopy Unit (ENDO)", edited_endo_df):
+                st.cache_data.clear()
+                st.success("Successfully updated Endoscopy records in Google Sheets!")
+                st.rerun()
+            else:
+                st.error("Failed to update Google Sheets.")
+    else:
+        st.info("No records in Endoscopy Unit yet.")
+
+    st.markdown("---")
+    st.subheader("➕ Register New Endoscopy Patient")
     with st.form("endo_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value=st.session_state.get("form_prefill_ln", "")).strip().upper()
+            last_name = st.text_input("Last Name", value="").strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value=st.session_state.get("form_prefill_fn", "")).strip().upper()
+            first_name = st.text_input("First Name", value="").strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value=st.session_state.get("form_prefill_mn", "")).strip().upper()
+            middle_name = st.text_input("Middle Name", value="").strip().upper()
         with c4:
-            age = st.number_input("Age", min_value=0, max_value=120, value=int(st.session_state.get("form_prefill_age", 0)))
+            age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c5:
             sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
 
@@ -1339,7 +1370,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name", value=st.session_state.get("form_prefill_doc", ""), key="endo_att_input").strip().upper()
+            attending_physician = st.text_input("Attending Physician Name", value="", key="endo_att_input").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="endo_spec_input")
 
@@ -1358,7 +1389,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         st.subheader("📋 Clinical & Diagnostic Details")
         cd1, cd2 = st.columns(2)
         with cd1:
-            diagnosis_text = st.text_input("Clinical Diagnosis", value=st.session_state.get("form_prefill_diag", "")).strip().upper()
+            diagnosis_text = st.text_input("Clinical Diagnosis", value="").strip().upper()
         with cd2:
             procedure_text = st.text_input("Procedure Name", value="").strip().upper()
 
@@ -1429,20 +1460,37 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 # ---------------------------------------------------------
 elif selected_sheet == "Hemodialysis Unit (HDU)":
     hdu_icon_html = get_custom_icon_html("medical_icon.png", width=38)
-    st.markdown(f"<h2>{hdu_icon_html} Hemodialysis Unit Patient Registration</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2>{hdu_icon_html} Hemodialysis Unit Patient Registration & Direct Census Editor</h2>", unsafe_allow_html=True)
 
+    st.subheader("📋 Live Hemodialysis Unit Census Editor")
+    raw_hdu_df = read_google_sheet("Hemodialysis Unit (HDU)")
+    if not raw_hdu_df.empty:
+        clean_hdu_df = clean_display_df(raw_hdu_df)
+        edited_hdu_df = st.data_editor(clean_hdu_df, use_container_width=True, num_rows="dynamic", key="editor_hdu")
+        if st.button("💾 Save HDU Census Updates", type="primary"):
+            if update_google_sheet_from_df("Hemodialysis Unit (HDU)", edited_hdu_df):
+                st.cache_data.clear()
+                st.success("Successfully updated HDU records in Google Sheets!")
+                st.rerun()
+            else:
+                st.error("Failed to update Google Sheets.")
+    else:
+        st.info("No records in Hemodialysis Unit yet.")
+
+    st.markdown("---")
+    st.subheader("➕ Register New HDU Patient")
     with st.form("hdu_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value=st.session_state.get("form_prefill_ln", "")).strip().upper()
+            last_name = st.text_input("Last Name", value="").strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value=st.session_state.get("form_prefill_fn", "")).strip().upper()
+            first_name = st.text_input("First Name", value="").strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value=st.session_state.get("form_prefill_mn", "")).strip().upper()
+            middle_name = st.text_input("Middle Name", value="").strip().upper()
         with c4:
-            age = st.number_input("Age", min_value=0, max_value=120, value=int(st.session_state.get("form_prefill_age", 0)))
+            age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c5:
             sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
 
@@ -1450,13 +1498,13 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         with c_d1:
             entry_date = st.date_input("Dialysis Date", datetime.today())
 
-        diagnosis = st.text_input("Diagnosis", value=st.session_state.get("form_prefill_diag", "")).strip().upper()
+        diagnosis = st.text_input("Diagnosis", value="").strip().upper()
         curr_date_str = entry_date.strftime("%B %d, %Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician", value=st.session_state.get("form_prefill_doc", ""), key="hdu_att_input").strip().upper()
+            attending_physician = st.text_input("Attending Physician", value="", key="hdu_att_input").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="hdu_spec_input")
 
@@ -1523,21 +1571,38 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
 # ---------------------------------------------------------
 elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
     ob_icon_html = get_custom_icon_html("pregnant_icon.png", width=38)
-    st.markdown(f"<h2>{ob_icon_html} OBGYNE Care Complex Patient Registration</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2>{ob_icon_html} OBGYNE Care Complex Patient Registration & Direct Census Editor</h2>", unsafe_allow_html=True)
     ph_now = get_ph_time()
     
+    st.subheader("📋 Live OBGYNE Census Editor")
+    raw_ob_df = read_google_sheet("OBGYNE Care Complex (LRDR-OB Surgery)")
+    if not raw_ob_df.empty:
+        clean_ob_df = clean_display_df(raw_ob_df)
+        edited_ob_df = st.data_editor(clean_ob_df, use_container_width=True, num_rows="dynamic", key="editor_ob")
+        if st.button("💾 Save OBGYNE Census Updates", type="primary"):
+            if update_google_sheet_from_df("OBGYNE Care Complex (LRDR-OB Surgery)", edited_ob_df):
+                st.cache_data.clear()
+                st.success("Successfully updated OBGYNE records in Google Sheets!")
+                st.rerun()
+            else:
+                st.error("Failed to update Google Sheets.")
+    else:
+        st.info("No records in OBGYNE Unit yet.")
+
+    st.markdown("---")
+    st.subheader("➕ Register New OBGYNE Patient")
     with st.form("obgyne_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value=st.session_state.get("form_prefill_ln", "")).strip().upper()
+            last_name = st.text_input("Last Name", value="").strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value=st.session_state.get("form_prefill_fn", "")).strip().upper()
+            first_name = st.text_input("First Name", value="").strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value=st.session_state.get("form_prefill_mn", "")).strip().upper()
+            middle_name = st.text_input("Middle Name", value="").strip().upper()
         with c4:
-            age = st.number_input("Age", min_value=10, max_value=100, value=int(st.session_state.get("form_prefill_age", 10)))
+            age = st.number_input("Age", min_value=10, max_value=100, value=10)
         with c5:
             sex = st.selectbox("Sex", ["Select Sex", "Female", "Male", "Others"], index=0)
 
@@ -1554,7 +1619,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name", value=st.session_state.get("form_prefill_doc", ""), key="ob_att_input").strip().upper()
+            attending_physician = st.text_input("Attending Physician Name", value="", key="ob_att_input").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="ob_spec_input")
 
@@ -1574,7 +1639,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         
         cd1, cd2 = st.columns(2)
         with cd1:
-            pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value=st.session_state.get("form_prefill_diag", "")).strip().upper()
+            pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="").strip().upper()
         with cd2:
             post_op_diagnosis = st.text_area("Post-Op Diagnosis", value="").strip().upper()
 
@@ -1655,21 +1720,38 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 # ---------------------------------------------------------
 elif selected_sheet == "Surgical Care Complex (OR Main)":
     surgery_icon_html = get_custom_icon_html("surgery_icon.png", width=38)
-    st.markdown(f"<h2>{surgery_icon_html} Surgical Care Complex Patient Registration</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2>{surgery_icon_html} Surgical Care Complex Patient Registration & Direct Census Editor</h2>", unsafe_allow_html=True)
     ph_now = get_ph_time()
     
+    st.subheader("📋 Live Surgical Care Census Editor")
+    raw_scc_df = read_google_sheet("Surgical Care Complex (OR Main)")
+    if not raw_scc_df.empty:
+        clean_scc_df = clean_display_df(raw_scc_df)
+        edited_scc_df = st.data_editor(clean_scc_df, use_container_width=True, num_rows="dynamic", key="editor_scc")
+        if st.button("💾 Save Surgical Care Updates", type="primary"):
+            if update_google_sheet_from_df("Surgical Care Complex (OR Main)", edited_scc_df):
+                st.cache_data.clear()
+                st.success("Successfully updated Surgical Care records in Google Sheets!")
+                st.rerun()
+            else:
+                st.error("Failed to update Google Sheets.")
+    else:
+        st.info("No records in Surgical Care Complex yet.")
+
+    st.markdown("---")
+    st.subheader("➕ Register New Surgical Patient")
     with st.form("scc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value=st.session_state.get("form_prefill_ln", "")).strip().upper()
+            last_name = st.text_input("Last Name", value="").strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value=st.session_state.get("form_prefill_fn", "")).strip().upper()
+            first_name = st.text_input("First Name", value="").strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value=st.session_state.get("form_prefill_mn", "")).strip().upper()
+            middle_name = st.text_input("Middle Name", value="").strip().upper()
         with c4:
-            age = st.number_input("Age", min_value=0, max_value=120, value=int(st.session_state.get("form_prefill_age", 0)))
+            age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c5:
             sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
 
@@ -1686,7 +1768,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name", value=st.session_state.get("form_prefill_doc", ""), key="scc_att_input").strip().upper()
+            attending_physician = st.text_input("Attending Physician Name", value="", key="scc_att_input").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scc_spec_input")
 
@@ -1706,7 +1788,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         
         cd1, cd2 = st.columns(2)
         with cd1:
-            pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value=st.session_state.get("form_prefill_diag", "")).strip().upper()
+            pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="").strip().upper()
         with cd2:
             post_op_diagnosis = st.text_area("Post-Op Diagnosis", value="").strip().upper()
 
@@ -1789,18 +1871,35 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 # ---------------------------------------------------------
 elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
     baby_icon_html = get_custom_icon_html("baby_feet_icon.png", width=38)
-    st.markdown(f"<h2>{baby_icon_html} Special Care Unit Patient Registration</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2>{baby_icon_html} Special Care Unit Patient Registration & Direct Census Editor</h2>", unsafe_allow_html=True)
 
+    st.subheader("📋 Live Special Care Complex Census Editor")
+    raw_scu_df = read_google_sheet("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)")
+    if not raw_scu_df.empty:
+        clean_scu_df = clean_display_df(raw_scu_df)
+        edited_scu_df = st.data_editor(clean_scu_df, use_container_width=True, num_rows="dynamic", key="editor_scu")
+        if st.button("💾 Save Special Care Updates", type="primary"):
+            if update_google_sheet_from_df("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", edited_scu_df):
+                st.cache_data.clear()
+                st.success("Successfully updated Special Care records in Google Sheets!")
+                st.rerun()
+            else:
+                st.error("Failed to update Google Sheets.")
+    else:
+        st.info("No records in Special Care Complex yet.")
+
+    st.markdown("---")
+    st.subheader("➕ Register New Special Care Patient")
     with st.form("scu_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value=st.session_state.get("form_prefill_ln", "")).strip().upper()
+            last_name = st.text_input("Last Name", value="").strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value=st.session_state.get("form_prefill_fn", "")).strip().upper()
+            first_name = st.text_input("First Name", value="").strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value=st.session_state.get("form_prefill_mn", "")).strip().upper()
+            middle_name = st.text_input("Middle Name", value="").strip().upper()
         with c4:
             sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
         with c5:
@@ -1821,7 +1920,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name", value=st.session_state.get("form_prefill_doc", ""), key="scu_att_input").strip().upper()
+            attending_physician = st.text_input("Attending Physician Name", value="", key="scu_att_input").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scu_spec_input")
 
@@ -1847,7 +1946,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY"], index=0)
 
         st.subheader("📋 Clinical & Diagnostic Details")
-        diagnosis = st.text_area("Diagnosis Text", value=st.session_state.get("form_prefill_diag", "")).strip().upper()
+        diagnosis = st.text_area("Diagnosis Text", value="").strip().upper()
         diag_flags = st.multiselect("Diagnosis Category", ["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY"])
 
         submitted = st.form_submit_button("Submit Record")
@@ -1904,7 +2003,14 @@ if selected_sheet != "Hospital Information System":
 
     sheet_df = read_google_sheet(selected_sheet)
     if not sheet_df.empty:
-        st.dataframe(clean_display_df(sheet_df.tail(10)), use_container_width=True)
-        st.caption(f"Showing last 10 entries of `{selected_sheet}` (Total: {len(sheet_df)} records)")
+        clean_s_df = clean_display_df(sheet_df)
+        edited_s_df = st.data_editor(clean_s_df, use_container_width=True, num_rows="dynamic", key=f"editor_bottom_{selected_sheet}")
+        if st.button(f"💾 Save Updates to `{selected_sheet}`", type="primary"):
+            if update_google_sheet_from_df(selected_sheet, edited_s_df):
+                st.cache_data.clear()
+                st.success(f"Successfully updated records for `{selected_sheet}`!")
+                st.rerun()
+            else:
+                st.error("Failed to update Google Sheets.")
     else:
         st.info(f"Google Sheets worksheet `{selected_sheet}` currently has no records.")
