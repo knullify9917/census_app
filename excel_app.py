@@ -394,6 +394,8 @@ def append_record_to_google_sheet(sheet_name, row_dict):
         st.error(f"Error saving to Google Sheets: {e}")
         return False
 
+# PERFORMANCE OPTIMIZATION: Cache Google Sheet reads with @st.cache_data (TTL=60s)
+@st.cache_data(ttl=60)
 def read_google_sheet(sheet_name):
     ensure_google_sheets_exist()
     try:
@@ -490,7 +492,7 @@ st.sidebar.markdown("### 🧭 Department Navigation")
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
 
 # ---------------------------------------------------------
-# ADMIN SEEDER TOOL (SPECIFIC GNU & HDU TARGET REGISTRATION OPTION)
+# ADMIN SEEDER TOOL (5 PATIENTS, MIDDLE NAME, HDU OPTION, 30s FREQUENCY)
 # ---------------------------------------------------------
 if st.session_state["role"] == "Administrator":
     st.sidebar.markdown("---")
@@ -681,7 +683,6 @@ if st.session_state["role"] == "Administrator":
                     append_record_to_google_sheet("Hemodialysis Unit (HDU)", hdu_data)
 
                 else:
-                    # Specific General Nursing Unit selected
                     gnu_data = {
                         'MONTH': get_month_str(ph_now_display.date(), "full_month"),
                         'DATE': date_str,
@@ -792,6 +793,7 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("<p style='font-size: 0.85rem; color: #0f766e; font-style: italic; margin-bottom: 10px;'>All data entries are securely stored on our hospital database.</p>", unsafe_allow_html=True)
 
 if st.sidebar.button("🔄 Refresh Data"):
+    st.cache_data.clear() # Clear cached sheet data on manual refresh
     st.cache_resource.clear()
     st.toast("Reloaded latest census & patient records from Google Sheets.", icon="🔄")
     st.rerun()
