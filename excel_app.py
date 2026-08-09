@@ -947,7 +947,7 @@ if selected_sheet == "Hospital Information System":
 st.markdown("---")
 
 # ---------------------------------------------------------
-# MODULE: PARETO TALLY SHEET (MATCHING Tally Sheet.xlsx OUTLINE)
+# MODULE: PARETO TALLY SHEET
 # ---------------------------------------------------------
 if selected_sheet == "Pareto Tally Sheet":
     st.header("📊 Pareto Tally Sheet & Total Counts")
@@ -958,15 +958,14 @@ if selected_sheet == "Pareto Tally Sheet":
         xls_tally = pd.ExcelFile(tally_file)
         tally_sheets = xls_tally.sheet_names
         
-        st.subheader("📑 Tally Sheet Section Inspector")
-        selected_tally_section = st.selectbox("Select Tally Sheet Section / Template", tally_sheets)
+        st.subheader("📑 Department & Unit Tally Sheet Selector")
+        selected_tally_section = st.selectbox("Choose Department / Unit Tally Sheet", tally_sheets)
         
         # Load raw structure header from tally sheet
         df_tally_raw = pd.read_excel(tally_file, sheet_name=selected_tally_section, header=3)
         
-        st.markdown(f"**Template Outline for `{selected_tally_section}`:**")
+        st.markdown(f"**Tally Outline for `{selected_tally_section}`:**")
         
-        # Department/Unit Filter & Sort Options matching user request
         c_f1, c_f2 = st.columns(2)
         with c_f1:
             sort_column = st.selectbox("Sort Tally Sheet By Column", ["-- None --"] + df_tally_raw.columns.tolist())
@@ -979,7 +978,7 @@ if selected_sheet == "Pareto Tally Sheet":
             display_tally_df = display_tally_df.sort_values(by=sort_column, ascending=is_ascending, na_position='last')
             
         st.dataframe(display_tally_df, use_container_width=True)
-        st.caption(f"Showing template structure for `{selected_tally_section}` (Columns: {len(display_tally_df.columns)}, Rows: {len(display_tally_df)})")
+        st.caption(f"Showing exact template layout for `{selected_tally_section}` (Columns: {len(display_tally_df.columns)}, Total Rows: {len(display_tally_df)})")
     else:
         st.info("No `Tally Sheet.xlsx` file found in the root environment.")
         
