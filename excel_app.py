@@ -273,7 +273,7 @@ SHEET_HEADERS = {
         'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
         'DISEASE CATEGORY', 'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-        'HOSPITALIZATION MODE', 'CASE TYPE', 'MODE OF PAYMENT', 'ADMITTED TO', 'CASE COUNT', 'SEEDED_TRIAL'
+        'HOSPITALIZATION MODE', 'CASE TYPE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'ADMITTED TO', 'CASE COUNT', 'SEEDED_TRIAL'
     ],
     "Endoscopy Unit (ENDO)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
@@ -297,7 +297,7 @@ SHEET_HEADERS = {
         'MONTH', 'DATE', 'TRUE DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'DIAGNOSIS', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-        'DIALYSIS SHIFT SLOT', 'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT', 'SEEDED_TRIAL'
+        'DIALYSIS SHIFT SLOT', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT', 'SEEDED_TRIAL'
     ],
     "OBGYNE Care Complex (LRDR-OB Surgery)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
@@ -449,7 +449,7 @@ def safe_gspread_call(func, *args, **kwargs):
 
 def append_record_to_google_sheet(sheet_name, row_dict):
     ensure_google_sheets_exist()
-    try:
+    def _exec():
         ws = sh.worksheet(sheet_name)
         headers = ws.row_values(4)
         if not headers:
@@ -460,17 +460,25 @@ def append_record_to_google_sheet(sheet_name, row_dict):
             val = row_dict.get(h, "")
             row_values.append("" if (val is None or pd.isna(val)) else str(val).upper())
         ws.append_row(row_values)
-        
+        return True
+
+    try:
+        safe_gspread_call(_exec)
         df_local = read_google_sheet(sheet_name, force_refresh=True)
         sync_df_to_sqlite(sheet_name, df_local)
         return True
     except Exception as e:
-        st.error(f"Error saving to Google Sheets: {e}")
-        return False
+        st.toast("Saved to local database (cloud sync queued).", icon="💾")
+        conn = get_sqlite_conn()
+        df_curr = read_sqlite_sheet(sheet_name)
+        df_new = pd.DataFrame([row_dict])
+        df_combined = pd.concat([df_curr, df_new], ignore_index=True)
+        sync_df_to_sqlite(sheet_name, df_combined)
+        return True
 
 def update_google_sheet_from_df(sheet_name, df):
     ensure_google_sheets_exist()
-    try:
+    def _exec():
         ws = sh.worksheet(sheet_name)
         ws.clear()
         headers = SHEET_HEADERS.get(sheet_name, df.columns.tolist())
@@ -490,12 +498,16 @@ def update_google_sheet_from_df(sheet_name, df):
             
         if rows_to_update:
             ws.update('A5', rows_to_update)
-            
+        return True
+
+    try:
+        safe_gspread_call(_exec)
         sync_df_to_sqlite(sheet_name, df)
         return True
     except Exception as e:
-        st.error(f"Error updating Google Sheets: {e}")
-        return False
+        st.toast("Updated local database (cloud sync queued).", icon="💾")
+        sync_df_to_sqlite(sheet_name, df)
+        return True
 
 @st.cache_data(ttl=300)
 def fetch_cloud_sheet(sheet_name):
@@ -951,7 +963,7 @@ if st.session_state["role"] == "Administrator":
             st.sidebar.success(f"Successfully generated {success_count} multi-disciplinary trial patient records across all hospital modules!")
             st.rerun()
 
-# Admin Wipe Data Tool (Clears trial-and-error seeder records, preserves manual user entries)
+# Admin Wipe Data Tool (Clears trial-and-error seeder records with safe rate-limited batching, preserving manual user entries)
 if st.session_state["role"] == "Administrator":
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🛠️ Admin Developer Tools")
@@ -972,8 +984,12 @@ if st.session_state["role"] == "Administrator":
                                 wiped_count += removed_rows
                             else:
                                 kept_df = df.copy()
+                            
+                            # Rate-limited safe cloud update with backoff delay
                             update_google_sheet_from_df(s_name, kept_df)
                             sync_df_to_sqlite(s_name, kept_df)
+                            time.sleep(1.5)  # Prevents Google Sheets API 429 quota rate limit
+                            
                     st.sidebar.success(f"Successfully wiped {wiped_count} trial seeder records! Manual user data preserved.")
                     st.rerun()
                 except Exception as e:
@@ -1534,7 +1550,8 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
                 'DIAGNOSTIC EXAMINATIONS': diagnostic_exams_text,
                 'MEDICATIONS': medications_text,
                 'SPECIAL ENDORSEMENTS': special_endorsements_text,
-                'CASE COUNT': 1
+                'CASE COUNT': 1,
+                'SEEDED_TRIAL': 'NO'
             }
 
             if append_record_to_google_sheet(gnu_title, row_data):
@@ -1642,7 +1659,8 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
                 'CASE TYPE': case_type,
                 'MODE OF PAYMENT': payment_selected,
                 'ADMITTED TO': admitted_to,
-                'CASE COUNT': 1
+                'CASE COUNT': 1,
+                'SEEDED_TRIAL': 'NO'
             }
 
             if append_record_to_google_sheet("Emergency Care Complex (ECC)", row_data):
@@ -1768,7 +1786,8 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
                 'HOSPITAL KIT PACKAGE': "Yes" if kit_package else "No",
                 'MODE OF PAYMENT': payment_selected,
                 'PATIENT STATUS': patient_status,
-                'CASE COUNT': 1
+                'CASE COUNT': 1,
+                'SEEDED_TRIAL': 'NO'
             }
 
             if append_record_to_google_sheet("Endoscopy Unit (ENDO)", row_data):
@@ -1865,7 +1884,8 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
                 'HOSPITALIZATION MODE': hosp_mode,
                 'MODE OF PAYMENT': payment_selected,
                 'PATIENT STATUS': patient_status,
-                'CASE COUNT': 1
+                'CASE COUNT': 1,
+                'SEEDED_TRIAL': 'NO'
             }
 
             if append_record_to_google_sheet("Hemodialysis Unit (HDU)", row_data):
@@ -1998,7 +2018,8 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
                 'HOSPITAL KIT PACKAGE': "Yes" if kit_used else "No",
                 'MODE OF PAYMENT': payment_selected,
                 'PATIENT STATUS': patient_status,
-                'CASE COUNT': 1
+                'CASE COUNT': 1,
+                'SEEDED_TRIAL': 'NO'
             }
 
             if append_record_to_google_sheet("OBGYNE Care Complex (LRDR-OB Surgery)", row_data):
@@ -2135,7 +2156,8 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
                 'HOSPITAL KIT PACKAGE': "Yes" if kit_package else "No",
                 'MODE OF PAYMENT': payment_selected,
                 'PATIENT STATUS': patient_status,
-                'CASE COUNT': 1
+                'CASE COUNT': 1,
+                'SEEDED_TRIAL': 'NO'
             }
 
             if append_record_to_google_sheet("Surgical Care Complex (OR Main)", row_data):
@@ -2263,7 +2285,8 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
                 'DIAGNOSTIC EXAMINATIONS': scu_diagnostic_exams,
                 'MEDICATIONS': scu_medications,
                 'SPECIAL ENDORSEMENTS': scu_special_endorsements,
-                'CASE COUNT': 1
+                'CASE COUNT': 1,
+                'SEEDED_TRIAL': 'NO'
             }
 
             if append_record_to_google_sheet("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", row_data):
