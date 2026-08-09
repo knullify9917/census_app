@@ -832,13 +832,13 @@ if st.session_state["role"] == "Administrator":
                         'MIDDLE NAME': mn,
                         'SEX': sex,
                         'AGE': age,
-                        'DIAGNOSIS': diagnosis_text,
+                        'DIAGNOSIS': diag_text,
                         'ATTENDING PHYSICIAN': doc,
                         'ATTENDING SPECIALIZATION': "INTERNAL MEDICINE",
                         'CO-MANAGEMENT PHYSICIAN': "N/A",
                         'CO-MANAGEMENT SPECIALIZATION': "N/A",
                         'HOSPITALIZATION MODE': h_mode,
-                        'MODE OF PAYMENT': payment_selected,
+                        'MODE OF PAYMENT': pay_mode,
                         'PATIENT STATUS': stat,
                         'PROCEDURES': "ROUTINE CARE & MONITORING",
                         'DIAGNOSTIC EXAMINATIONS': "CBC, URINALYSIS",
@@ -1571,7 +1571,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         with c4:
             age = st.number_input("Age", min_value=0, max_value=120, value=0)
         with c5:
-            sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
+            sex = st.selectbox("Sex", ["Select Sex", "Female", "Male", "Others"], index=0)
 
         c_d1, c_d2, c_d3 = st.columns(3)
         with c_d1:
@@ -1582,6 +1582,15 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
             actual_time_str = civilian_time_input_field("Actual Time", key_suffix="endo_actual")
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
+
+        st.subheader("🏥 Hospitalization & Payment Details")
+        ch1, ch2, ch3 = st.columns(3)
+        with ch1:
+            hosp_mode = st.selectbox("Hospitalization Mode", ["Select Mode", "INPATIENT", "OUTPATIENT"], index=0)
+        with ch2:
+            payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "CHARITY", "HMO", "PHIC", "SELF-PAY"], index=0)
+        with ch3:
+            patient_status = st.selectbox("Patient Status", ["ACTIVE", "DISCHARGED", "MAY GO HOME"], index=0)
 
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
@@ -1612,16 +1621,10 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         proc_cols = sorted(['GASTROSCOPY', 'COLONOSCOPY', 'NASAL PROCEDURE', 'PEG PROCEDURE', 'ERCP', 'PROCTOSIGMOIDOSCOPY', 'PARACENTESIS', 'BRONCHOSCOPY', 'OTHER PROCEDURES'])
         selected_procs = st.multiselect("Procedure Category", proc_cols)
         
-        ca, cb, cc, cd, ce = st.columns(5)
+        ca, cb = st.columns(2)
         with ca: 
-            proc_type = st.selectbox("Procedure Classification", ["Select Classification", "DIAGNOSTICS", "THERAPEUTICS", "DIAGNOSTICS & THERAPEUTICS"], index=0)
-        with cb: 
-            hosp_mode = st.selectbox("Hospitalization Mode", ["Select Mode", "Outpatient", "Inpatient"], index=0)
-        with cc: 
-            payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY"], index=0)
-        with cd:
-            patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"], index=0)
-        with ce:
+            proc_type = st.selectbox("Procedure Classification", ["Select Classification", "DIAGNOSTICS", "DIAGNOSTICS & THERAPEUTICS", "THERAPEUTICS"], index=0)
+        with cb:
             kit_package = st.checkbox("Hospital Kit Package", value=False)
 
         submitted = st.form_submit_button("Submit Record")
