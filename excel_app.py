@@ -474,8 +474,7 @@ def get_editor_column_config(columns):
     config = {}
     for col in columns:
         col_upper = str(col).upper()
-        # Strictly lock admission dates to prevent overlap/errors, and provide selectboxes for status/sex/payment/mode
-        if col_upper in ['DATE', 'TRUE DATE', 'ADMISSION DATE']:
+        if col_upper in ['DATE', 'TRUE DATE', 'ADMISSION DATE', 'DEPARTMENT / UNIT']:
             config[col] = st.column_config.TextColumn(col, disabled=True)
         elif col_upper in ['PATIENT STATUS', 'STATUS']:
             config[col] = st.column_config.SelectboxColumn(col, options=["ACTIVE", "MGH", "DISCHARGED", "CAB"])
@@ -968,10 +967,10 @@ if selected_sheet == "Hospital Information System":
     st.markdown("---")
 
     # ---------------------------------------------------------
-    # ACTIVE PATIENT ROSTER (Directly Editable Active Patient Census Table)
+    # ACTIVE PATIENT ROSTER (Directly Editable Table)
     # ---------------------------------------------------------
     st.subheader("📋 Active Patient Census & Direct Editor")
-    st.markdown("Aggregated live census table. **You can directly update patient information, treatments, and statuses here** (`num_rows='fixed'` restricts edits to existing rows; admission dates and table headers are locked).")
+    st.markdown("Aggregated live roster displaying active, MGH, and CAB patients from General Nursing Units, along with all active patients admitted in the Special Care Complex. **Directly edit patient information and statuses in the table below.** *(Admission dates and table headers are locked to prevent overlaps).*")
 
     roster_combined_frames = []
 
@@ -1094,28 +1093,10 @@ if selected_sheet == "Hospital Information System":
 # ---------------------------------------------------------
 elif selected_sheet.startswith("General Nursing Unit (GNU"):
     gnu_title = selected_sheet
-    st.header(f"🛏️ {gnu_title} Patient Registration & Direct Census Editor")
+    st.header(f"🛏️ {gnu_title} Patient Registration")
     ph_now = get_ph_time()
     form_key_slug = gnu_title.replace("General Nursing Unit (", "").replace(")", "").strip().lower()
     
-    st.subheader(f"📋 Live Department Census Editor: {gnu_title}")
-    raw_dept_df = read_google_sheet(gnu_title)
-    if not raw_dept_df.empty:
-        clean_dept_df = clean_display_df(raw_dept_df)
-        editor_config = get_editor_column_config(clean_dept_df.columns)
-        edited_dept_df = st.data_editor(clean_dept_df, use_container_width=True, num_rows="fixed", key=f"editor_dept_{gnu_title}", column_config=editor_config)
-        if st.button(f"💾 Save Census Updates for `{gnu_title}`", type="primary"):
-            if update_google_sheet_from_df(gnu_title, edited_dept_df):
-                st.cache_data.clear()
-                st.success("Successfully updated department records in Google Sheets!")
-                st.rerun()
-            else:
-                st.error("Failed to update Google Sheets.")
-    else:
-        st.info("No records in this department yet.")
-
-    st.markdown("---")
-    st.subheader("➕ Register New Patient")
     with st.form(f"gnu_form_{form_key_slug}", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -1220,27 +1201,8 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
 # FORM 1: Emergency Care Complex (ECC)
 # ---------------------------------------------------------
 elif selected_sheet == "Emergency Care Complex (ECC)":
-    st.header("🚑 Emergency Care Complex Patient Registration & Direct Census Editor")
+    st.header("🚑 Emergency Care Complex Patient Registration")
     ph_now = get_ph_time()
-    
-    st.subheader("📋 Live ECC Census Editor")
-    raw_ecc_df = read_google_sheet("Emergency Care Complex (ECC)")
-    if not raw_ecc_df.empty:
-        clean_ecc_df = clean_display_df(raw_ecc_df)
-        editor_config = get_editor_column_config(clean_ecc_df.columns)
-        edited_ecc_df = st.data_editor(clean_ecc_df, use_container_width=True, num_rows="fixed", key="editor_ecc", column_config=editor_config)
-        if st.button("💾 Save ECC Census Updates", type="primary"):
-            if update_google_sheet_from_df("Emergency Care Complex (ECC)", edited_ecc_df):
-                st.cache_data.clear()
-                st.success("Successfully updated ECC records in Google Sheets!")
-                st.rerun()
-            else:
-                st.error("Failed to update Google Sheets.")
-    else:
-        st.info("No records in ECC yet.")
-
-    st.markdown("---")
-    st.subheader("➕ Register New ECC Patient")
     with st.form("ecc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -1344,27 +1306,9 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 # FORM 2: Endoscopy Unit (ENDO)
 # ---------------------------------------------------------
 elif selected_sheet == "Endoscopy Unit (ENDO)":
-    st.header("🔬 Endoscopy Unit Patient Registration & Direct Census Editor")
+    st.header("🔬 Endoscopy Unit Patient Registration")
     ph_now = get_ph_time()
     
-    st.subheader("📋 Live Endoscopy Unit Census Editor")
-    raw_endo_df = read_google_sheet("Endoscopy Unit (ENDO)")
-    if not raw_endo_df.empty:
-        clean_endo_df = clean_display_df(raw_endo_df)
-        editor_config = get_editor_column_config(clean_endo_df.columns)
-        edited_endo_df = st.data_editor(clean_endo_df, use_container_width=True, num_rows="fixed", key="editor_endo", column_config=editor_config)
-        if st.button("💾 Save Endoscopy Unit Updates", type="primary"):
-            if update_google_sheet_from_df("Endoscopy Unit (ENDO)", edited_endo_df):
-                st.cache_data.clear()
-                st.success("Successfully updated Endoscopy records in Google Sheets!")
-                st.rerun()
-            else:
-                st.error("Failed to update Google Sheets.")
-    else:
-        st.info("No records in Endoscopy Unit yet.")
-
-    st.markdown("---")
-    st.subheader("➕ Register New Endoscopy Patient")
     with st.form("endo_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -1483,26 +1427,8 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 # ---------------------------------------------------------
 elif selected_sheet == "Hemodialysis Unit (HDU)":
     hdu_icon_html = get_custom_icon_html("medical_icon.png", width=38)
-    st.markdown(f"<h2>{hdu_icon_html} Hemodialysis Unit Patient Registration & Direct Census Editor</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2>{hdu_icon_html} Hemodialysis Unit Patient Registration</h2>", unsafe_allow_html=True)
 
-    st.subheader("📋 Live Hemodialysis Unit Census Editor")
-    raw_hdu_df = read_google_sheet("Hemodialysis Unit (HDU)")
-    if not raw_hdu_df.empty:
-        clean_hdu_df = clean_display_df(raw_hdu_df)
-        editor_config = get_editor_column_config(clean_hdu_df.columns)
-        edited_hdu_df = st.data_editor(clean_hdu_df, use_container_width=True, num_rows="fixed", key="editor_hdu", column_config=editor_config)
-        if st.button("💾 Save HDU Census Updates", type="primary"):
-            if update_google_sheet_from_df("Hemodialysis Unit (HDU)", edited_hdu_df):
-                st.cache_data.clear()
-                st.success("Successfully updated HDU records in Google Sheets!")
-                st.rerun()
-            else:
-                st.error("Failed to update Google Sheets.")
-    else:
-        st.info("No records in Hemodialysis Unit yet.")
-
-    st.markdown("---")
-    st.subheader("➕ Register New HDU Patient")
     with st.form("hdu_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -1595,27 +1521,9 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
 # ---------------------------------------------------------
 elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
     ob_icon_html = get_custom_icon_html("pregnant_icon.png", width=38)
-    st.markdown(f"<h2>{ob_icon_html} OBGYNE Care Complex Patient Registration & Direct Census Editor</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2>{ob_icon_html} OBGYNE Care Complex Patient Registration</h2>", unsafe_allow_html=True)
     ph_now = get_ph_time()
     
-    st.subheader("📋 Live OBGYNE Census Editor")
-    raw_ob_df = read_google_sheet("OBGYNE Care Complex (LRDR-OB Surgery)")
-    if not raw_ob_df.empty:
-        clean_ob_df = clean_display_df(raw_ob_df)
-        editor_config = get_editor_column_config(clean_ob_df.columns)
-        edited_ob_df = st.data_editor(clean_ob_df, use_container_width=True, num_rows="fixed", key="editor_ob", column_config=editor_config)
-        if st.button("💾 Save OBGYNE Census Updates", type="primary"):
-            if update_google_sheet_from_df("OBGYNE Care Complex (LRDR-OB Surgery)", edited_ob_df):
-                st.cache_data.clear()
-                st.success("Successfully updated OBGYNE records in Google Sheets!")
-                st.rerun()
-            else:
-                st.error("Failed to update Google Sheets.")
-    else:
-        st.info("No records in OBGYNE Unit yet.")
-
-    st.markdown("---")
-    st.subheader("➕ Register New OBGYNE Patient")
     with st.form("obgyne_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -1745,27 +1653,9 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 # ---------------------------------------------------------
 elif selected_sheet == "Surgical Care Complex (OR Main)":
     surgery_icon_html = get_custom_icon_html("surgery_icon.png", width=38)
-    st.markdown(f"<h2>{surgery_icon_html} Surgical Care Complex Patient Registration & Direct Census Editor</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2>{surgery_icon_html} Surgical Care Complex Patient Registration</h2>", unsafe_allow_html=True)
     ph_now = get_ph_time()
     
-    st.subheader("📋 Live Surgical Care Census Editor")
-    raw_scc_df = read_google_sheet("Surgical Care Complex (OR Main)")
-    if not raw_scc_df.empty:
-        clean_scc_df = clean_display_df(raw_scc_df)
-        editor_config = get_editor_column_config(clean_scc_df.columns)
-        edited_scc_df = st.data_editor(clean_scc_df, use_container_width=True, num_rows="fixed", key="editor_scc", column_config=editor_config)
-        if st.button("💾 Save Surgical Care Updates", type="primary"):
-            if update_google_sheet_from_df("Surgical Care Complex (OR Main)", edited_scc_df):
-                st.cache_data.clear()
-                st.success("Successfully updated Surgical Care records in Google Sheets!")
-                st.rerun()
-            else:
-                st.error("Failed to update Google Sheets.")
-    else:
-        st.info("No records in Surgical Care Complex yet.")
-
-    st.markdown("---")
-    st.subheader("➕ Register New Surgical Patient")
     with st.form("scc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -1897,26 +1787,8 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 # ---------------------------------------------------------
 elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
     baby_icon_html = get_custom_icon_html("baby_feet_icon.png", width=38)
-    st.markdown(f"<h2>{baby_icon_html} Special Care Unit Patient Registration & Direct Census Editor</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2>{baby_icon_html} Special Care Unit Patient Registration</h2>", unsafe_allow_html=True)
 
-    st.subheader("📋 Live Special Care Complex Census Editor")
-    raw_scu_df = read_google_sheet("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)")
-    if not raw_scu_df.empty:
-        clean_scu_df = clean_display_df(raw_scu_df)
-        editor_config = get_editor_column_config(clean_scu_df.columns)
-        edited_scu_df = st.data_editor(clean_scu_df, use_container_width=True, num_rows="fixed", key="editor_scu", column_config=editor_config)
-        if st.button("💾 Save Special Care Updates", type="primary"):
-            if update_google_sheet_from_df("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", edited_scu_df):
-                st.cache_data.clear()
-                st.success("Successfully updated Special Care records in Google Sheets!")
-                st.rerun()
-            else:
-                st.error("Failed to update Google Sheets.")
-    else:
-        st.info("No records in Special Care Complex yet.")
-
-    st.markdown("---")
-    st.subheader("➕ Register New Special Care Patient")
     with st.form("scu_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -2031,14 +1903,7 @@ if selected_sheet != "Hospital Information System":
     sheet_df = read_google_sheet(selected_sheet)
     if not sheet_df.empty:
         clean_s_df = clean_display_df(sheet_df)
-        editor_config = get_editor_column_config(clean_s_df.columns)
-        edited_s_df = st.data_editor(clean_s_df, use_container_width=True, num_rows="fixed", key=f"editor_bottom_{selected_sheet}", column_config=editor_config)
-        if st.button(f"💾 Save Updates to `{selected_sheet}`", type="primary"):
-            if update_google_sheet_from_df(selected_sheet, edited_s_df):
-                st.cache_data.clear()
-                st.success(f"Successfully updated records for `{selected_sheet}`!")
-                st.rerun()
-            else:
-                st.error("Failed to update Google Sheets.")
+        st.dataframe(clean_s_df, use_container_width=True)
+        st.caption(f"Showing records for `{selected_sheet}` (Total: {len(sheet_df)} records)")
     else:
         st.info(f"Google Sheets worksheet `{selected_sheet}` currently has no records.")
