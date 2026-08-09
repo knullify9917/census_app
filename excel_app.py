@@ -954,6 +954,18 @@ if selected_sheet == "Pareto Tally Sheet":
     st.markdown("Detailed tally sheets mirroring the exact structure and outline of `Tally Sheet.xlsx`, complete with department/unit sorting and filtering options.")
     
     tally_file = 'Tally Sheet.xlsx'
+    if not os.path.exists(tally_file):
+        try:
+            with pd.ExcelWriter(tally_file, engine='openpyxl') as writer:
+                for s_name, cols in SHEET_HEADERS.items():
+                    pd.DataFrame(columns=cols).to_excel(writer, sheet_name=s_name[:31], index=False)
+                pd.DataFrame(columns=['Month', 'Name of Physician', 'Specialization', 'Total Case']).to_excel(writer, sheet_name='OR Main Doctors', index=False)
+                pd.DataFrame(columns=['Month', 'Name of Physician', 'Specialization', 'Total Case']).to_excel(writer, sheet_name='HDU Doctors', index=False)
+                pd.DataFrame(columns=['Month', 'Name of Physician', 'Specialization', 'Total Case']).to_excel(writer, sheet_name='LRDR-OB Surgery Doctors', index=False)
+                pd.DataFrame(columns=['Month', 'Name of Physician', 'Specialization', 'Total Case']).to_excel(writer, sheet_name='ECC Doctors', index=False)
+        except Exception:
+            pass
+
     if os.path.exists(tally_file):
         xls_tally = pd.ExcelFile(tally_file)
         tally_sheets = xls_tally.sheet_names
@@ -961,9 +973,13 @@ if selected_sheet == "Pareto Tally Sheet":
         st.subheader("📑 Department & Unit Tally Sheet Selector")
         selected_tally_section = st.selectbox("Choose Department / Unit Tally Sheet", tally_sheets)
         
-        # Load raw structure header from tally sheet
-        df_tally_raw = pd.read_excel(tally_file, sheet_name=selected_tally_section, header=3)
-        
+        try:
+            df_tally_raw = pd.read_excel(tally_file, sheet_name=selected_tally_section, header=3)
+            if df_tally_raw.empty:
+                df_tally_raw = pd.read_excel(tally_file, sheet_name=selected_tally_section, header=0)
+        except Exception:
+            df_tally_raw = pd.read_excel(tally_file, sheet_name=selected_tally_section, header=0)
+            
         st.markdown(f"**Tally Outline for `{selected_tally_section}`:**")
         
         c_f1, c_f2 = st.columns(2)
