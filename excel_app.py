@@ -394,7 +394,6 @@ def append_record_to_google_sheet(sheet_name, row_dict):
         st.error(f"Error saving to Google Sheets: {e}")
         return False
 
-# PERFORMANCE OPTIMIZATION: Cache Google Sheet reads with @st.cache_data (TTL=60s)
 @st.cache_data(ttl=60)
 def read_google_sheet(sheet_name):
     ensure_google_sheets_exist()
@@ -492,13 +491,13 @@ st.sidebar.markdown("### 🧭 Department Navigation")
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
 
 # ---------------------------------------------------------
-# ADMIN SEEDER TOOL (5 PATIENTS, MIDDLE NAME, HDU OPTION, 30s FREQUENCY)
+# ADMIN SEEDER TOOL (5 PATIENTS, MIDDLE NAME, AUTO-REGISTER)
 # ---------------------------------------------------------
 if st.session_state["role"] == "Administrator":
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🤖 Admin Intelligent Seeder")
     with st.sidebar.expander("✨ Generate 5 Smart Patients"):
-        st.markdown("Populate 5 realistic patient records with complete middle names and specific target department options.")
+        st.markdown("Populate 5 realistic patient records with complete middle names and auto-register them to their assigned department worksheet.")
         
         gnu_sheets_list = sorted([d for d in sorted_departments if d.startswith("General Nursing Unit")])
         target_registration_dept = st.selectbox(
@@ -793,7 +792,7 @@ st.sidebar.markdown("---")
 st.sidebar.markdown("<p style='font-size: 0.85rem; color: #0f766e; font-style: italic; margin-bottom: 10px;'>All data entries are securely stored on our hospital database.</p>", unsafe_allow_html=True)
 
 if st.sidebar.button("🔄 Refresh Data"):
-    st.cache_data.clear() # Clear cached sheet data on manual refresh
+    st.cache_data.clear()
     st.cache_resource.clear()
     st.toast("Reloaded latest census & patient records from Google Sheets.", icon="🔄")
     st.rerun()
