@@ -405,8 +405,6 @@ def update_google_sheet_from_df(sheet_name, df):
         
         rows_to_update = []
         for _, row in df.iterrows():
-            row_vals = ["" if (val is None or pd.isna(val)) else str(val).upper() for val in row if val in headers or headers.index(headers[list(row.index).index(val)]) < len(headers)]
-            # Match strictly to headers
             mapped_vals = []
             for h in headers:
                 if h in row:
@@ -471,6 +469,23 @@ def clean_display_df(df):
         if first_col.lower() in ['index', 'level_0', 'unnamed: 0']:
             d_clean = d_clean.iloc[:, 1:]
     return d_clean
+
+# Helper to configure columns for st.data_editor mirroring form dropdown options and locking admission dates
+def get_editor_column_config(columns):
+    config = {}
+    for col in columns:
+        col_upper = str(col).upper()
+        if col_upper in ['DATE', 'TRUE DATE']:
+            config[col] = st.column_config.TextColumn(col, disabled=True)
+        elif col_upper == 'PATIENT STATUS':
+            config[col] = st.column_config.SelectboxColumn(col, options=["ACTIVE", "MGH", "DISCHARGED", "CAB"])
+        elif col_upper == 'SEX':
+            config[col] = st.column_config.SelectboxColumn(col, options=["MALE", "FEMALE", "OTHERS"])
+        elif col_upper == 'MODE OF PAYMENT':
+            config[col] = st.column_config.SelectboxColumn(col, options=["PHIC", "HMO", "SELF-PAY", "CHARITY"])
+        elif col_upper == 'HOSPITALIZATION MODE':
+            config[col] = st.column_config.SelectboxColumn(col, options=["INPATIENT", "OUTPATIENT"])
+    return config
 
 # ---------------------------------------------------------
 # UI HEADER & SIDEBAR NAVIGATION
@@ -1037,7 +1052,7 @@ if selected_sheet == "Hospital Information System":
 
     st.markdown("---")
     st.subheader("📑 Department Summary & Direct Editor")
-    st.markdown("Select a department below to view and **directly edit patient information, diagnoses, treatments, and statuses** in real time.")
+    st.markdown("Select a department below to view and **directly edit patient information, diagnoses, treatments, and statuses** in real time. *Note: Admission dates are locked to prevent errors and overlaps.*")
     
     selected_dept_view = st.selectbox("Select Department to Inspect & Edit", department_sheets)
     
@@ -1052,9 +1067,9 @@ if selected_sheet == "Hospital Information System":
             if selected_area != "All Areas":
                 cleaned_dept_df = cleaned_dept_df[cleaned_dept_df['ADMITTED TO'] == selected_area]
 
-        # Interactive Data Editor for real-time updates and treatment changes
-        st.markdown(f"**Editable Census Table for `{selected_dept_view}`:** Make changes directly in the table cells, then click **Save Changes to Database** below.")
-        edited_dept_df = st.data_editor(cleaned_dept_df, use_container_width=True, num_rows="dynamic", key=f"editor_{selected_dept_view}")
+        editor_config = get_editor_column_config(cleaned_dept_df.columns)
+        st.markdown(f"**Editable Census Table for `{selected_dept_view}`:**")
+        edited_dept_df = st.data_editor(cleaned_dept_df, use_container_width=True, num_rows="dynamic", key=f"editor_{selected_dept_view}", column_config=editor_config)
         
         if st.button(f"💾 Save Changes to `{selected_dept_view}`", type="primary"):
             if update_google_sheet_from_df(selected_dept_view, edited_dept_df):
@@ -1075,14 +1090,12 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
     ph_now = get_ph_time()
     form_key_slug = gnu_title.replace("General Nursing Unit (", "").replace(")", "").strip().lower()
     
-    # Direct Editable Census Table for this Specific Department Module
     st.subheader(f"📋 Live Department Census Editor: {gnu_title}")
-    st.markdown("Modify patient information, diagnoses, medications, or statuses directly in the table below and save changes instantly.")
-    
     raw_dept_df = read_google_sheet(gnu_title)
     if not raw_dept_df.empty:
         clean_dept_df = clean_display_df(raw_dept_df)
-        edited_dept_df = st.data_editor(clean_dept_df, use_container_width=True, num_rows="dynamic", key=f"editor_dept_{gnu_title}")
+        editor_config = get_editor_column_config(clean_dept_df.columns)
+        edited_dept_df = st.data_editor(clean_dept_df, use_container_width=True, num_rows="dynamic", key=f"editor_dept_{gnu_title}", column_config=editor_config)
         if st.button(f"💾 Save Census Updates for `{gnu_title}`", type="primary"):
             if update_google_sheet_from_df(gnu_title, edited_dept_df):
                 st.cache_data.clear()
@@ -1091,7 +1104,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
             else:
                 st.error("Failed to update Google Sheets.")
     else:
-        st.info("No records found in this department yet.")
+        st.info("No records in this department yet.")
 
     st.markdown("---")
     st.subheader("➕ Register New Patient")
@@ -1206,7 +1219,8 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
     raw_ecc_df = read_google_sheet("Emergency Care Complex (ECC)")
     if not raw_ecc_df.empty:
         clean_ecc_df = clean_display_df(raw_ecc_df)
-        edited_ecc_df = st.data_editor(clean_ecc_df, use_container_width=True, num_rows="dynamic", key="editor_ecc")
+        editor_config = get_editor_column_config(clean_ecc_df.columns)
+        edited_ecc_df = st.data_editor(clean_ecc_df, use_container_width=True, num_rows="dynamic", key="editor_ecc", column_config=editor_config)
         if st.button("💾 Save ECC Census Updates", type="primary"):
             if update_google_sheet_from_df("Emergency Care Complex (ECC)", edited_ecc_df):
                 st.cache_data.clear()
@@ -1329,7 +1343,8 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
     raw_endo_df = read_google_sheet("Endoscopy Unit (ENDO)")
     if not raw_endo_df.empty:
         clean_endo_df = clean_display_df(raw_endo_df)
-        edited_endo_df = st.data_editor(clean_endo_df, use_container_width=True, num_rows="dynamic", key="editor_endo")
+        editor_config = get_editor_column_config(clean_endo_df.columns)
+        edited_endo_df = st.data_editor(clean_endo_df, use_container_width=True, num_rows="dynamic", key="editor_endo", column_config=editor_config)
         if st.button("💾 Save Endoscopy Unit Updates", type="primary"):
             if update_google_sheet_from_df("Endoscopy Unit (ENDO)", edited_endo_df):
                 st.cache_data.clear()
@@ -1466,7 +1481,8 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
     raw_hdu_df = read_google_sheet("Hemodialysis Unit (HDU)")
     if not raw_hdu_df.empty:
         clean_hdu_df = clean_display_df(raw_hdu_df)
-        edited_hdu_df = st.data_editor(clean_hdu_df, use_container_width=True, num_rows="dynamic", key="editor_hdu")
+        editor_config = get_editor_column_config(clean_hdu_df.columns)
+        edited_hdu_df = st.data_editor(clean_hdu_df, use_container_width=True, num_rows="dynamic", key="editor_hdu", column_config=editor_config)
         if st.button("💾 Save HDU Census Updates", type="primary"):
             if update_google_sheet_from_df("Hemodialysis Unit (HDU)", edited_hdu_df):
                 st.cache_data.clear()
@@ -1578,7 +1594,8 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
     raw_ob_df = read_google_sheet("OBGYNE Care Complex (LRDR-OB Surgery)")
     if not raw_ob_df.empty:
         clean_ob_df = clean_display_df(raw_ob_df)
-        edited_ob_df = st.data_editor(clean_ob_df, use_container_width=True, num_rows="dynamic", key="editor_ob")
+        editor_config = get_editor_column_config(clean_ob_df.columns)
+        edited_ob_df = st.data_editor(clean_ob_df, use_container_width=True, num_rows="dynamic", key="editor_ob", column_config=editor_config)
         if st.button("💾 Save OBGYNE Census Updates", type="primary"):
             if update_google_sheet_from_df("OBGYNE Care Complex (LRDR-OB Surgery)", edited_ob_df):
                 st.cache_data.clear()
@@ -1727,7 +1744,8 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
     raw_scc_df = read_google_sheet("Surgical Care Complex (OR Main)")
     if not raw_scc_df.empty:
         clean_scc_df = clean_display_df(raw_scc_df)
-        edited_scc_df = st.data_editor(clean_scc_df, use_container_width=True, num_rows="dynamic", key="editor_scc")
+        editor_config = get_editor_column_config(clean_scc_df.columns)
+        edited_scc_df = st.data_editor(clean_scc_df, use_container_width=True, num_rows="dynamic", key="editor_scc", column_config=editor_config)
         if st.button("💾 Save Surgical Care Updates", type="primary"):
             if update_google_sheet_from_df("Surgical Care Complex (OR Main)", edited_scc_df):
                 st.cache_data.clear()
@@ -1877,7 +1895,8 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
     raw_scu_df = read_google_sheet("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)")
     if not raw_scu_df.empty:
         clean_scu_df = clean_display_df(raw_scu_df)
-        edited_scu_df = st.data_editor(clean_scu_df, use_container_width=True, num_rows="dynamic", key="editor_scu")
+        editor_config = get_editor_column_config(clean_scu_df.columns)
+        edited_scu_df = st.data_editor(clean_scu_df, use_container_width=True, num_rows="dynamic", key="editor_scu", column_config=editor_config)
         if st.button("💾 Save Special Care Updates", type="primary"):
             if update_google_sheet_from_df("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", edited_scu_df):
                 st.cache_data.clear()
@@ -2004,7 +2023,8 @@ if selected_sheet != "Hospital Information System":
     sheet_df = read_google_sheet(selected_sheet)
     if not sheet_df.empty:
         clean_s_df = clean_display_df(sheet_df)
-        edited_s_df = st.data_editor(clean_s_df, use_container_width=True, num_rows="dynamic", key=f"editor_bottom_{selected_sheet}")
+        editor_config = get_editor_column_config(clean_s_df.columns)
+        edited_s_df = st.data_editor(clean_s_df, use_container_width=True, num_rows="dynamic", key=f"editor_bottom_{selected_sheet}", column_config=editor_config)
         if st.button(f"💾 Save Updates to `{selected_sheet}`", type="primary"):
             if update_google_sheet_from_df(selected_sheet, edited_s_df):
                 st.cache_data.clear()
