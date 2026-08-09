@@ -899,6 +899,9 @@ if st.session_state["role"] == "Administrator":
                 progress_bar.progress((i + 1) / batch_size)
                 py_time.sleep(0.05)
 
+            # Invalidate cache so seeded data appears immediately in the app UI
+            st.cache_data.clear()
+            st.session_state["df_cache"] = {}
             st.sidebar.success(f"Successfully generated {batch_size} multi-disciplinary trial records!")
             st.rerun()
 
@@ -1508,6 +1511,8 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
             }
 
             if append_record_to_google_sheet(gnu_title, row_data):
+                st.cache_data.clear()
+                st.session_state["df_cache"] = {}
                 st.success(f"Successfully saved to Google Sheets `{gnu_title}` tab!")
                 st.session_state[cm_list_key] = []
 
@@ -1636,6 +1641,8 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
             }
 
             if append_record_to_google_sheet("Emergency Care Complex (ECC)", row_data):
+                st.cache_data.clear()
+                st.session_state["df_cache"] = {}
                 st.success("Successfully saved to Google Sheets `Emergency Care Complex (ECC)` tab!")
                 st.session_state["cm_list_ecc"] = []
 
@@ -1770,6 +1777,8 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
             }
 
             if append_record_to_google_sheet("Endoscopy Unit (ENDO)", row_data):
+                st.cache_data.clear()
+                st.session_state["df_cache"] = {}
                 st.success("Successfully saved to Google Sheets `Endoscopy Unit (ENDO)` tab!")
                 st.session_state["cm_list_endo"] = []
 
@@ -1895,6 +1904,8 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
             }
 
             if append_record_to_google_sheet("Hemodialysis Unit (HDU)", row_data):
+                st.cache_data.clear()
+                st.session_state["df_cache"] = {}
                 st.success("Successfully saved to Google Sheets `Hemodialysis Unit (HDU)` tab!")
                 st.session_state["cm_list_hdu"] = []
 
@@ -2038,6 +2049,8 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             }
 
             if append_record_to_google_sheet("OBGYNE Care Complex (LRDR-OB Surgery)", row_data):
+                st.cache_data.clear()
+                st.session_state["df_cache"] = {}
                 st.success("Successfully saved to Google Sheets `OBGYNE Care Complex (LRDR-OB Surgery)` tab!")
                 st.session_state["cm_list_ob"] = []
 
@@ -2186,6 +2199,8 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             }
 
             if append_record_to_google_sheet("Surgical Care Complex (OR Main)", row_data):
+                st.cache_data.clear()
+                st.session_state["df_cache"] = {}
                 st.success("Successfully saved to Google Sheets `Surgical Care Complex (OR Main)` tab!")
                 st.session_state["cm_list_scc"] = []
 
@@ -2322,6 +2337,8 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
             }
 
             if append_record_to_google_sheet("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", row_data):
+                st.cache_data.clear()
+                st.session_state["df_cache"] = {}
                 st.success("Successfully saved to Google Sheets `Special Care Complex (NICU-PICU-NSU/PCN-Outborn)` tab!")
                 st.session_state["cm_list_scu"] = []
 
