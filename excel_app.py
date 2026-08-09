@@ -902,20 +902,7 @@ if selected_sheet == "Pareto Tally Sheet":
             else:
                 st.info("No specializations recorded yet.")
         else:
-            tally_file = 'Tally Sheet.xlsx'
-            matched_tally_sheet = None
-            if os.path.exists(tally_file):
-                xls_t = pd.ExcelFile(tally_file)
-                for ts in xls_t.sheet_names:
-                    if selected_tally_dept.lower()[:5] in ts.lower():
-                        matched_tally_sheet = ts
-                        break
-            if matched_tally_sheet:
-                st.markdown(f"*(Displaying template table from `{matched_tally_sheet}`)*")
-                df_t_doc = pd.read_excel(tally_file, sheet_name=matched_tally_sheet, header=3)
-                st.dataframe(clean_display_df(df_t_doc), use_container_width=True)
-            else:
-                st.info("No doctor specialization breakdown available for this department yet.")
+            st.info("No doctor specialization breakdown available for this department yet.")
     else:
         st.info(f"No records found in live database for `{selected_tally_dept}`.")
 
