@@ -230,7 +230,13 @@ def get_custom_icon_html(filename, width=32):
     return ""
 
 HOSPITAL_UNIT_AREAS = sorted([
-    "None", "ECC", "GNU 1C", "GNU 2A", "GNU 2B", "GNU 2C", "GNU 2D", "GNU 3A", "GNU 3B", "GNU 3C", "GNU 4A", "ICU", "NSU", "PCN", "PICU", "OUTBORN"
+    "None", "ECC", "GNU 1C", "GNU 2A", "GNU 2B", "GNU 2C", "GNU 2D", "GNU 3A", "GNU 3B", "GNU 3C", "GNU 4A", 
+    "MS-ICU (MEDICAL SURGICAL – INTENSIVE CARE UNIT)", 
+    "NICU (NEONATAL INTENSIVE CARE UNIT)", 
+    "PICU (PEDIATRIC INTENSIVE CARE UNIT)", 
+    "NSU (NEWBORN SERVICE UNIT)", 
+    "PCN (PROGRESSIVE CARE UNIT)", 
+    "OUTBORN (OUTBORN BABIES ADMITTED IN THE UNIT)"
 ])
 
 sorted_departments = sorted([
@@ -1074,11 +1080,11 @@ elif selected_sheet == "Hospital Information System":
         nic_count, pic_count, nsu_count, pcn_count, out_count = 0, 0, 0, 0, 0
         if not scu_df.empty and 'ADMITTED TO' in scu_df.columns:
             scu_df['ADMITTED_TO_UP'] = scu_df['ADMITTED TO'].astype(str).str.strip().str.upper()
-            nic_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'NICU'])
-            pic_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'PICU'])
-            nsu_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'NSU'])
-            pcn_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'PCN'])
-            out_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'OUTBORN'])
+            nic_count = len(scu_df[scu_df['ADMITTED_TO_UP'].str.contains('NICU', na=False)])
+            pic_count = len(scu_df[scu_df['ADMITTED_TO_UP'].str.contains('PICU', na=False)])
+            nsu_count = len(scu_df[scu_df['ADMITTED_TO_UP'].str.contains('NSU', na=False)])
+            pcn_count = len(scu_df[scu_df['ADMITTED_TO_UP'].str.contains('PCN', na=False)])
+            out_count = len(scu_df[scu_df['ADMITTED_TO_UP'].str.contains('OUTBORN', na=False)])
 
         w1, w2, w3 = st.columns(3)
         with w1:
