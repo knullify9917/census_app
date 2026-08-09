@@ -951,7 +951,7 @@ st.markdown("---")
 # ---------------------------------------------------------
 if selected_sheet == "Pareto Tally Sheet":
     st.header("📊 Pareto Tally Sheet & Department Analytics")
-    st.markdown("Organized per department with dynamic patient census categorization, specialization breakdowns, doctor census tables, and tallies for Hospitalization Mode, Case Type, Mode of Payment, and Shift Slots.")
+    st.markdown("Organized per department with dynamic patient census categorization, specialization breakdowns, doctor census tables, and cross-tabulation tallies displayed in table format.")
     
     all_dept_options = [
         "Emergency Care Complex (ECC)", 
@@ -996,7 +996,7 @@ if selected_sheet == "Pareto Tally Sheet":
                 if not cat_col: cat_col = col
             if 'SPECIALIZATION' in c_upper:
                 if not spec_col: spec_col = col
-            if 'PHYSICIAN' in c_upper or 'SURGEON' in c_upper:
+            if 'PHYSICIAN' in c_upper or 'SURGEON' in c_upper or 'ATTENDING' in c_upper:
                 if not doc_col: doc_col = col
             if 'HOSPITALIZATION MODE' in c_upper:
                 hosp_mode_col = col
@@ -1004,7 +1004,7 @@ if selected_sheet == "Pareto Tally Sheet":
                 case_type_col = col
             if 'MODE OF PAYMENT' in c_upper or 'PAYMENT' in c_upper:
                 payment_col = col
-            if 'SHIFT' in c_upper or 'SLOT' in c_upper:
+            if 'SHIFT' in c_upper or 'SLOT' in c_upper or 'SET' in c_upper:
                 shift_col = col
 
         col_p1, col_p2 = st.columns(2)
@@ -1026,53 +1026,49 @@ if selected_sheet == "Pareto Tally Sheet":
             else:
                 st.info("No specialization column found for this department.")
 
-        # Special ECC Cross-Tabulation Tally for Hospitalization Mode vs Case Type
-        if selected_tally_dept == "Emergency Care Complex (ECC)" and hosp_mode_col and case_type_col:
-            st.markdown("---")
-            st.markdown("### 🚑 ECC Specific Cross-Tally: Hospitalization Mode vs. Case Type")
-            st.markdown("Table displaying the count of Inpatient vs. Outpatient categorized by Private Case and House Case (Walk-in).")
-            
-            if hosp_mode_col in clean_dept_df.columns and case_type_col in clean_dept_df.columns:
-                ctable = pd.crosstab(
+        # Cross-Tabulation Talliing: Hospitalization Mode vs Case Type / Payment / Shift Slot
+        st.markdown("---")
+        st.markdown(f"### 🔀 Cross-Tabulation Tallies (`{selected_tally_dept}`)")
+        
+        cross_col1, cross_col2 = st.columns(2)
+        with cross_col1:
+            if hosp_mode_col and hosp_mode_col in clean_dept_df.columns and case_type_col and case_type_col in clean_dept_df.columns:
+                st.markdown("##### 🏥 Hospitalization Mode vs. Case Type")
+                ctable_mode_case = pd.crosstab(
                     clean_dept_df[hosp_mode_col].fillna('UNKNOWN'), 
                     clean_dept_df[case_type_col].fillna('UNKNOWN'), 
                     margins=True, 
                     margins_name='Total Cases'
                 ).reset_index()
-                st.dataframe(ctable, use_container_width=True)
-            else:
-                st.info("Hospitalization Mode or Case Type columns not found in ECC data.")
-
-        # Additional Tally Parameters: Hospitalization Mode, Case Type, Mode of Payment, Shift Slot
-        st.markdown("---")
-        st.markdown(f"### 📊 Operational Tally Parameters (`{selected_tally_dept}`)")
-        
-        op_col1, op_col2 = st.columns(2)
-        with op_col1:
-            if hosp_mode_col and hosp_mode_col in clean_dept_df.columns:
+                st.dataframe(ctable_mode_case, use_container_width=True)
+            elif hosp_mode_col and hosp_mode_col in clean_dept_df.columns:
                 st.markdown("##### 🏥 Hospitalization Mode Tally")
                 hm_counts = clean_dept_df[hosp_mode_col].value_counts().reset_index()
                 hm_counts.columns = ['Hospitalization Mode', 'Total Cases']
                 st.dataframe(hm_counts, use_container_width=True)
-            
-            if case_type_col and case_type_col in clean_dept_df.columns:
-                st.markdown("##### 📁 Case Type Tally")
-                ct_counts = clean_dept_df[case_type_col].value_counts().reset_index()
-                ct_counts.columns = ['Case Type', 'Total Cases']
-                st.dataframe(ct_counts, use_container_width=True)
 
-        with op_col2:
-            if payment_col and payment_col in clean_dept_df.columns:
+        with cross_col2:
+            if hosp_mode_col and hosp_mode_col in clean_dept_df.columns and payment_col and payment_col in clean_dept_df.columns:
+                st.markdown("##### 💳 Hospitalization Mode vs. Mode of Payment")
+                ctable_mode_pay = pd.crosstab(
+                    clean_dept_df[hosp_mode_col].fillna('UNKNOWN'), 
+                    clean_dept_df[payment_col].fillna('UNKNOWN'), 
+                    margins=True, 
+                    margins_name='Total Cases'
+                ).reset_index()
+                st.dataframe(ctable_mode_pay, use_container_width=True)
+            elif payment_col and payment_col in clean_dept_df.columns:
                 st.markdown("##### 💳 Mode of Payment Tally")
                 pay_counts = clean_dept_df[payment_col].value_counts().reset_index()
                 pay_counts.columns = ['Mode of Payment', 'Total Cases']
                 st.dataframe(pay_counts, use_container_width=True)
-                
-            if shift_col and shift_col in clean_dept_df.columns:
-                st.markdown("##### ⏱️ Dialysis Shift Slot Tally")
-                sh_counts = clean_dept_df[shift_col].value_counts().reset_index()
-                sh_counts.columns = ['Shift Slot', 'Total Cases']
-                st.dataframe(sh_counts, use_container_width=True)
+
+        # Additional Tally Parameters for HDU / Specialized Units
+        if shift_col and shift_col in clean_dept_df.columns:
+            st.markdown("##### ⏱️ Shift Slot / Schedule Tally")
+            sh_counts = clean_dept_df[shift_col].value_counts().reset_index()
+            sh_counts.columns = ['Shift Slot', 'Total Cases']
+            st.dataframe(sh_counts, use_container_width=True)
 
         st.markdown("---")
         st.markdown(f"### 👨‍⚕️ Doctors Census per Specialization (`{selected_tally_dept}`)")
