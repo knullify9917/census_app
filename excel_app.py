@@ -255,7 +255,7 @@ GNU_SHEET_HEADER = [
     'MONTH', 'DATE', 'TIME', 'ROOM NO', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
     'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
     'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-    'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'PATIENT STATUS', 
+    'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 
     'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CASE COUNT'
 ]
 
@@ -264,7 +264,7 @@ SCU_SHEET_HEADER = [
     'DIAGNOSIS CATEGORY', 'ADMITTED FROM', 'ADMITTED TO', 'TRANSFERRED TO', 
     'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
     'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-    'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'PATIENT STATUS', 
+    'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 
     'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CASE COUNT'
 ]
 
@@ -273,7 +273,7 @@ SHEET_HEADERS = {
         'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
         'DISEASE CATEGORY', 'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-        'HOSPITALIZATION MODE', 'CASE TYPE', 'MODE OF PAYMENT', 'ADMITTED TO', 'CASE COUNT'
+        'HOSPITALIZATION MODE', 'CASE TYPE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'ADMITTED TO', 'CASE COUNT'
     ],
     "Endoscopy Unit (ENDO)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
@@ -297,7 +297,7 @@ SHEET_HEADERS = {
         'MONTH', 'DATE', 'TRUE DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'DIAGNOSIS', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-        'DIALYSIS SHIFT SLOT', 'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
+        'DIALYSIS SHIFT SLOT', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
     ],
     "OBGYNE Care Complex (LRDR-OB Surgery)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
@@ -334,7 +334,7 @@ def get_month_str(date_obj, fmt_style="numeric_prefix"):
     return month_name
 
 # ---------------------------------------------------------
-# HYBRID SQLITE BACKEND & THREAD CONCURRENCY SETUP
+# HYBRID SQLITE BACKEND SETUP
 # ---------------------------------------------------------
 sqlite_lock = threading.Lock()
 
@@ -353,27 +353,6 @@ def init_local_sqlite():
     conn.close()
 
 init_local_sqlite()
-
-sheet_lock = threading.Lock()
-
-def safe_gspread_call(func, *args, **kwargs):
-    max_retries = 3
-    backoff = 1
-    for attempt in range(max_retries):
-        with sheet_lock:
-            try:
-                return func(*args, **kwargs)
-            except Exception as e:
-                if attempt == max_retries - 1:
-                    global sh
-                    try:
-                        sh = init_google_sheets()
-                        return func(*args, **kwargs)
-                    except Exception:
-                        raise e
-                time.sleep(backoff)
-                backoff *= 2
-    return None
 
 def sync_df_to_sqlite(sheet_name, df):
     if df is None or df.empty:
@@ -447,9 +426,30 @@ def ensure_google_sheets_exist():
             except Exception:
                 pass
 
+sheet_lock = threading.Lock()
+
+def safe_gspread_call(func, *args, **kwargs):
+    max_retries = 3
+    backoff = 1
+    for attempt in range(max_retries):
+        with sheet_lock:
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    global sh
+                    try:
+                        sh = init_google_sheets()
+                        return func(*args, **kwargs)
+                    except Exception:
+                        raise e
+                time.sleep(backoff)
+                backoff *= 2
+    return None
+
 def append_record_to_google_sheet(sheet_name, row_dict):
     ensure_google_sheets_exist()
-    def _execute():
+    try:
         ws = sh.worksheet(sheet_name)
         headers = ws.row_values(4)
         if not headers:
@@ -460,26 +460,17 @@ def append_record_to_google_sheet(sheet_name, row_dict):
             val = row_dict.get(h, "")
             row_values.append("" if (val is None or pd.isna(val)) else str(val).upper())
         ws.append_row(row_values)
+        
+        df_local = read_google_sheet(sheet_name, force_refresh=True)
+        sync_df_to_sqlite(sheet_name, df_local)
         return True
-    
-    with sheet_lock:
-        try:
-            safe_gspread_call(_execute)
-            df_local = read_google_sheet(sheet_name, force_refresh=True)
-            sync_df_to_sqlite(sheet_name, df_local)
-            return True
-        except Exception as e:
-            st.toast("Saved to local database (cloud sync queued).", icon="💾")
-            conn = get_sqlite_conn()
-            df_curr = read_sqlite_sheet(sheet_name)
-            df_new = pd.DataFrame([row_dict])
-            df_combined = pd.concat([df_curr, df_new], ignore_index=True)
-            sync_df_to_sqlite(sheet_name, df_combined)
-            return True
+    except Exception as e:
+        st.error(f"Error saving to Google Sheets: {e}")
+        return False
 
 def update_google_sheet_from_df(sheet_name, df):
     ensure_google_sheets_exist()
-    def _execute():
+    try:
         ws = sh.worksheet(sheet_name)
         ws.clear()
         headers = SHEET_HEADERS.get(sheet_name, df.columns.tolist())
@@ -499,17 +490,12 @@ def update_google_sheet_from_df(sheet_name, df):
             
         if rows_to_update:
             ws.update('A5', rows_to_update)
+            
+        sync_df_to_sqlite(sheet_name, df)
         return True
-
-    with sheet_lock:
-        try:
-            safe_gspread_call(_execute)
-            sync_df_to_sqlite(sheet_name, df)
-            return True
-        except Exception as e:
-            st.toast("Updated local database (cloud sync queued).", icon="💾")
-            sync_df_to_sqlite(sheet_name, df)
-            return True
+    except Exception as e:
+        st.error(f"Error updating Google Sheets: {e}")
+        return False
 
 @st.cache_data(ttl=300)
 def fetch_cloud_sheet(sheet_name):
@@ -701,72 +687,50 @@ st.sidebar.markdown("### 🧭 Department Navigation")
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
 
 # ---------------------------------------------------------
-# ADMIN SEEDER TOOL
+# ADMIN SEEDER TOOL (MULTI-DISCIPLINARY CENSUS GENERATOR)
 # ---------------------------------------------------------
 if st.session_state["role"] == "Administrator":
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🤖 Admin Intelligent Seeder")
-    with st.sidebar.expander("✨ Generate 5 Smart Patients"):
-        st.markdown("Populate 5 realistic patient records with complete middle names and auto-register them to their assigned department worksheet.")
+    with st.sidebar.expander("✨ Generate Multi-Disciplinary Batch"):
+        st.markdown("Randomize and distribute multi-disciplinary patient cases (Surgery, OB-GYNE/Labor & Delivery, Endoscopy, Hemodialysis, Special Care, and GNUs) across hospital departments.")
         
-        gnu_sheets_list = sorted([d for d in sorted_departments if d.startswith("General Nursing Unit")])
-        target_registration_dept = st.selectbox(
-            "Target Department Registration", 
-            ["ECC (Default with Unit Admittance)", "Hemodialysis Unit (HDU)"] + gnu_sheets_list,
-            index=0
-        )
-        
-        include_hdu_seeder = st.checkbox("Include Hemodialysis Unit (HDU) Patients", value=True)
+        batch_size = st.selectbox("Batch Size", [5, 10, 20], index=0)
         seeder_freq = st.selectbox("Creation Frequency", ["Instant (0.5s Safe Delay)", "Every 30 Seconds per Batch"], index=0)
         
-        if st.button("🚀 Generate 5 Smart Patients", type="primary"):
+        if st.button("🚀 Generate Multi-Disciplinary Batch", type="primary"):
             first_names = ["JUAN", "MARIA", "JOSE", "ANA", "PEDRO", "LUIS", "CARMEN", "ROSA", "ANTONIO", "FRANCISCO", "ELENA", "SOFIA", "MIGUEL", "CARLOS", "LUCIA"]
             complete_middle_names = ["SANTOS", "REYES", "GARCIA", "TORRES", "FLORES", "RAMOS", "MENDOZA", "CASTRO", "DIZON", "BAUTISTA", "SANTIA", "VILLANUEVA", "AQUINO", "DELA CRUZ", "PASCUAL"]
             last_names = ["SANTOS", "REYES", "CRUZ", "BAUTISTA", "OCAMPO", "GARCIA", "MENDOZA", "TORRES", "FLORES", "GONZALES", "RAMOS", "AQUINO", "DEL ROSARIO", "PASCUAL"]
             
-            realistic_diagnoses = [
-                ("ACUTE GASTROENTERITIS", "ACUTE GASTROENTERITIS"),
-                ("DENGUE FEVER WITH WARNING SIGNS", "DENGUE FEVER"),
-                ("ESSENTIAL HYPERTENSION", "HYPERTENSION"),
-                ("URINARY TRACT INFECTION", "URINARY TRACT INFECTION"),
-                ("BRONCHIAL ASTHMA EXACERBATION", "BRONCHIAL ASTHMA"),
-                ("TYPE 2 DIABETES MELLITUS WITH KETOACIDOSIS", "DIABETES MELLITUS"),
-                ("COMMUNITY ACQUIRED PNEUMONIA HIGH RISK", "RESPIRATORY TRACT INECTION"),
-                ("ACUTE CORONARY SYNDROME STEMI", "ACUTE CORONARY SYNDROME"),
-                ("CHRONIC KIDNEY DISEASE STAGE 5", "CHRONIC RENAL FAILURE"),
-                ("END STAGE RENAL DISEASE ON HD", "KIDNEY FAILURE")
-            ]
-            
-            hosp_modes = ["INPATIENT", "OUTPATIENT"]
-            case_types = ["PRIVATE CASE", "HOUSE CASE (WALK-IN)"]
-            payment_modes = ["PHIC", "HMO", "SELF-PAY", "CHARITY"]
-            physicians = ["DR. E. SANTOS", "DR. M. REYES", "DR. A. CRUZ", "DR. J. BAUTISTA", "DR. R. OCAMPO"]
-            statuses = ["ACTIVE", "MGH", "DISCHARGED", "CAB"]
-            gnu_list = gnu_sheets_list
-            scu_areas = ["NICU", "PICU", "NSU", "PCN", "OUTBORN"]
+            department_targets = [
+                "Emergency Care Complex (ECC)",
+                "Surgical Care Complex (OR Main)",
+                "OBGYNE Care Complex (LRDR-OB Surgery)",
+                "Endoscopy Unit (ENDO)",
+                "Hemodialysis Unit (HDU)",
+                "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
+            ] + sorted([d for d in sorted_departments if d.startswith("General Nursing Unit")])
 
             success_count = 0
             progress_bar = st.sidebar.progress(0)
             
-            for i in range(5):
+            for i in range(batch_size):
                 fn = random.choice(first_names)
                 mn = random.choice(complete_middle_names)
                 ln = random.choice(last_names)
-                sex = random.choice(["MALE", "FEMALE"])
-                age = str(random.randint(1, 85))
-                diag_pair = random.choice(realistic_diagnoses)
-                diag_text = diag_pair[0]
-                diag_cat = diag_pair[1]
-                doc = random.choice(physicians)
-                stat = random.choice(statuses)
-                h_mode = random.choice(hosp_modes)
-                c_type = random.choice(case_types)
-                pay_mode = random.choice(payment_modes)
+                sex = random.choice(["MALE", "FEMALE", "FEMALE" if i%2==0 else "MALE"])
+                age = str(random.randint(1, 80))
+                h_mode = random.choice(["INPATIENT", "OUTPATIENT"])
+                pay_mode = random.choice(["PHIC", "HMO", "SELF-PAY", "CHARITY"])
+                stat = random.choice(["ACTIVE", "MGH", "DISCHARGED", "CAB"])
                 room = f"RM-{random.randint(101, 499)}"
                 date_str = ph_now_display.strftime("%m/%d/%Y")
                 time_str = "10:00 AM"
+                
+                target_dept = department_targets[i % len(department_targets)]
 
-                if target_registration_dept == "ECC (Default with Unit Admittance)":
+                if target_dept == "Emergency Care Complex (ECC)":
                     ecc_data = {
                         'MONTH': get_month_str(ph_now_display.date(), "full_month"),
                         'DATE': date_str,
@@ -776,102 +740,117 @@ if st.session_state["role"] == "Administrator":
                         'MIDDLE NAME': mn,
                         'SEX': sex,
                         'AGE': age,
-                        'DIAGNOSIS': diag_text,
-                        'DISEASE CATEGORY': diag_cat,
-                        'ATTENDING PHYSICIAN': doc,
-                        'ATTENDING SPECIALIZATION': "INTERNAL MEDICINE",
+                        'DIAGNOSIS': "ACUTE ABDOMEN / TRAUMA CASE",
+                        'DISEASE CATEGORY': "ACUTE GASTROENTERITIS",
+                        'ATTENDING PHYSICIAN': "DR. E. SANTOS",
+                        'ATTENDING SPECIALIZATION': "EMERGENCY MEDICINE",
                         'CO-MANAGEMENT PHYSICIAN': "N/A",
                         'CO-MANAGEMENT SPECIALIZATION': "N/A",
                         'HOSPITALIZATION MODE': h_mode,
-                        'CASE TYPE': c_type,
+                        'CASE TYPE': random.choice(["PRIVATE CASE", "HOUSE CASE (WALK-IN)"]),
                         'MODE OF PAYMENT': pay_mode,
                         'ADMITTED TO': random.choice(HOSPITAL_UNIT_AREAS),
                         'CASE COUNT': 1
                     }
                     append_record_to_google_sheet("Emergency Care Complex (ECC)", ecc_data)
 
-                    choice_unit = random.choice(['gnu', 'scu', 'hdu'] if include_hdu_seeder else ['gnu', 'scu'])
-                    if choice_unit == 'gnu':
-                        target_gnu = random.choice(gnu_list)
-                        gnu_data = {
-                            'MONTH': get_month_str(ph_now_display.date(), "full_month"),
-                            'DATE': date_str,
-                            'TIME': time_str,
-                            'ROOM NO': room,
-                            'LAST NAME': ln,
-                            'FIRST NAME': fn,
-                            'MIDDLE NAME': mn,
-                            'SEX': sex,
-                            'AGE': age,
-                            'DIAGNOSIS': diag_text,
-                            'ATTENDING PHYSICIAN': doc,
-                            'ATTENDING SPECIALIZATION': "INTERNAL MEDICINE",
-                            'CO-MANAGEMENT PHYSICIAN': "N/A",
-                            'CO-MANAGEMENT SPECIALIZATION': "N/A",
-                            'HOSPITALIZATION MODE': h_mode,
-                            'MODE OF PAYMENT': pay_mode,
-                            'PATIENT STATUS': stat,
-                            'PROCEDURES': "ROUTINE CARE & MONITORING",
-                            'DIAGNOSTIC EXAMINATIONS': "CBC, URINALYSIS",
-                            'MEDICATIONS': "IV FLUIDS, ORAL MEDS",
-                            'SPECIAL ENDORSEMENTS': "STABLE",
-                            'CASE COUNT': 1
-                        }
-                        append_record_to_google_sheet(target_gnu, gnu_data)
-                    elif choice_unit == 'hdu':
-                        epoch = datetime(1899, 12, 30)
-                        true_date_num = str((datetime.combine(ph_now_display.date(), datetime.min.time()) - epoch).days)
-                        hdu_data = {
-                            'MONTH': get_month_str(ph_now_display.date(), "numeric_prefix"),
-                            'DATE': date_str,
-                            'TRUE DATE': true_date_num,
-                            'LAST NAME': ln,
-                            'FIRST NAME': fn,
-                            'MIDDLE NAME': mn,
-                            'SEX': sex,
-                            'DIAGNOSIS': diag_text,
-                            'ATTENDING PHYSICIAN': doc,
-                            'ATTENDING SPECIALIZATION': "NEPHROLOGY",
-                            'CO-MANAGEMENT PHYSICIAN': "N/A",
-                            'CO-MANAGEMENT SPECIALIZATION': "N/A",
-                            'DIALYSIS SHIFT SLOT': random.choice(["1ST SET", "2ND SET", "3RD SET"]),
-                            'HOSPITALIZATION MODE': h_mode,
-                            'MODE OF PAYMENT': pay_mode,
-                            'PATIENT STATUS': stat,
-                            'CASE COUNT': 1
-                        }
-                        append_record_to_google_sheet("Hemodialysis Unit (HDU)", hdu_data)
-                    else:
-                        scu_data = {
-                            'MONTH': get_month_str(ph_now_display.date(), "numeric_prefix"),
-                            'DATE': date_str,
-                            'LAST NAME': ln,
-                            'FIRST NAME': fn,
-                            'MIDDLE NAME': mn,
-                            'SEX': sex,
-                            'AOG': "38 WKS",
-                            'AGE': f"{age} YRS",
-                            'DIAGNOSIS': diag_text,
-                            'DIAGNOSIS CATEGORY': diag_cat,
-                            'ADMITTED FROM': "ECC",
-                            'ADMITTED TO': random.choice(scu_areas),
-                            'TRANSFERRED TO': "NONE",
-                            'ATTENDING PHYSICIAN': doc,
-                            'ATTENDING SPECIALIZATION': "PAEDIATRICS",
-                            'CO-MANAGEMENT PHYSICIAN': "N/A",
-                            'CO-MANAGEMENT SPECIALIZATION': "N/A",
-                            'HOSPITALIZATION MODE': h_mode,
-                            'MODE OF PAYMENT': pay_mode,
-                            'PATIENT STATUS': stat,
-                            'PROCEDURES': "ROUTINE CARE",
-                            'DIAGNOSTIC EXAMINATIONS': "CBC",
-                            'MEDICATIONS': "VITAMINS",
-                            'SPECIAL ENDORSEMENTS': "NONE",
-                            'CASE COUNT': 1
-                        }
-                        append_record_to_google_sheet("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", scu_data)
+                elif target_dept == "Surgical Care Complex (OR Main)":
+                    scc_data = {
+                        'MONTH': get_month_str(ph_now_display.date(), "numeric_prefix"),
+                        'DATE': date_str,
+                        'SCHEDULED TIME': "09:00 AM",
+                        'ACTUAL TIME': "09:30 AM",
+                        'LAST NAME': ln,
+                        'FIRST NAME': fn,
+                        'MIDDLE NAME': mn,
+                        'SEX': sex,
+                        'AGE': float(age),
+                        'PRE-OP DIAGNOSIS': "ACUTE APPENDICITIS",
+                        'POST-OP DIAGNOSIS': "ACUTE SUPPURATIVE APPENDICITIS",
+                        'PROCEDURE': "OPEN APPENDECTOMY / CHOLECYSTECTOMY",
+                        'PROCEDURE CATEGORY': "APPENDECTOMY",
+                        'ATTENDING PHYSICIAN': "DR. M. REYES",
+                        'ATTENDING SPECIALIZATION': "GENERAL SURGERY",
+                        'CO-MANAGEMENT PHYSICIAN': "N/A",
+                        'CO-MANAGEMENT SPECIALIZATION': "N/A",
+                        'PRIMARY SURGEON': "DR. J. BAUTISTA",
+                        'SURGEON SPECIALIZATION': "GENERAL SURGERY",
+                        'ANESTHESIOLOGIST': "DR. A. CRUZ",
+                        'ANESTHESIOLOGIST SPECIALIZATION': "GENERAL ANAESTHESIOLOGY",
+                        'COMPLEXITY TIER': "MAJOR",
+                        'HOSPITALIZATION MODE': "INPATIENT",
+                        'HOSPITAL KIT PACKAGE': "YES",
+                        'MODE OF PAYMENT': pay_mode,
+                        'PATIENT STATUS': stat,
+                        'CASE COUNT': 1
+                    }
+                    append_record_to_google_sheet("Surgical Care Complex (OR Main)", scc_data)
 
-                elif target_registration_dept == "Hemodialysis Unit (HDU)":
+                elif target_dept == "OBGYNE Care Complex (LRDR-OB Surgery)":
+                    ob_data = {
+                        'MONTH': get_month_str(ph_now_display.date(), "numeric_prefix"),
+                        'DATE': date_str,
+                        'SCHEDULED TIME': "08:00 AM",
+                        'ACTUAL TIME': "08:15 AM",
+                        'LAST NAME': ln,
+                        'FIRST NAME': fn,
+                        'MIDDLE NAME': mn,
+                        'SEX': "FEMALE",
+                        'AGE': float(age),
+                        'PRE-OP DIAGNOSIS': "FULL TERM PREGNANCY IN LABOR",
+                        'POST-OP DIAGNOSIS': "TERM PREGNANCY DELIVERED VIA LSCS",
+                        'PROCEDURE NAME': "CESAREAN SECTION / NORMAL SPONTANEOUS DELIVERY",
+                        'SURGICAL PROCEDURE': "PRIMARY LSCS",
+                        'PROCEDURE CATEGORY': "CS PRIMARY",
+                        'ATTENDING PHYSICIAN': "DR. R. OCAMPO",
+                        'ATTENDING SPECIALIZATION': "OBSTETRICS & GYNAECOLOGY",
+                        'CO-MANAGEMENT PHYSICIAN': "N/A",
+                        'CO-MANAGEMENT SPECIALIZATION': "N/A",
+                        'SURGEON / OBGYNE': "DR. R. OCAMPO",
+                        'SURGEON SPECIALIZATION': "OBSTETRICS & GYNAECOLOGY",
+                        'ANESTHESIOLOGIST': "DR. E. SANTOS",
+                        'ANESTHESIOLOGIST SPECIALIZATION': "PEDIA - ANAESTHESIOLOGY",
+                        'COMPLEXITY TIER': "MAJOR",
+                        'HOSPITALIZATION MODE': "INPATIENT",
+                        'HOSPITAL KIT PACKAGE': "YES",
+                        'MODE OF PAYMENT': pay_mode,
+                        'PATIENT STATUS': stat,
+                        'CASE COUNT': 1
+                    }
+                    append_record_to_google_sheet("OBGYNE Care Complex (LRDR-OB Surgery)", ob_data)
+
+                elif target_dept == "Endoscopy Unit (ENDO)":
+                    endo_data = {
+                        'MONTH': get_month_str(ph_now_display.date(), "mixed"),
+                        'DATE': date_str,
+                        'SCHEDULED TIME': "10:30 AM",
+                        'ACTUAL TIME': "11:00 AM",
+                        'LAST NAME': ln,
+                        'FIRST NAME': fn,
+                        'MIDDLE NAME': mn,
+                        'SEX': sex,
+                        'AGE': age,
+                        'DIAGNOSIS': "UPPER GI BLEEDING / DYSPEPSIA",
+                        'PROCEDURE': "DIAGNOSTIC GASTROSCOPY & COLONOSCOPY",
+                        'PROCEDURE CATEGORY': "GASTROSCOPY",
+                        'ATTENDING PHYSICIAN': "DR. M. REYES",
+                        'ATTENDING SPECIALIZATION': "GASTROENTEROLOGY",
+                        'CO-MANAGEMENT PHYSICIAN': "N/A",
+                        'CO-MANAGEMENT SPECIALIZATION': "N/A",
+                        'SURGEON / PROCEDURALIST': "DR. M. REYES",
+                        'SURGEON SPECIALIZATION': "GASTROENTEROLOGY",
+                        'ANESTHESIOLOGIST': "N/A",
+                        'ANESTHESIOLOGIST SPECIALIZATION': "NONE",
+                        'PROCEDURE NATURE': "DIAGNOSTICS",
+                        'HOSPITALIZATION MODE': "OUTPATIENT",
+                        'HOSPITAL KIT PACKAGE': "NO",
+                        'MODE OF PAYMENT': pay_mode,
+                        'PATIENT STATUS': stat,
+                        'CASE COUNT': 1
+                    }
+                    append_record_to_google_sheet("Endoscopy Unit (ENDO)", endo_data)
+
+                elif target_dept == "Hemodialysis Unit (HDU)":
                     epoch = datetime(1899, 12, 30)
                     true_date_num = str((datetime.combine(ph_now_display.date(), datetime.min.time()) - epoch).days)
                     hdu_data = {
@@ -882,18 +861,48 @@ if st.session_state["role"] == "Administrator":
                         'FIRST NAME': fn,
                         'MIDDLE NAME': mn,
                         'SEX': sex,
-                        'DIAGNOSIS': diag_text,
-                        'ATTENDING PHYSICIAN': doc,
+                        'DIAGNOSIS': "CHRONIC KIDNEY DISEASE STAGE 5 ON HD",
+                        'ATTENDING PHYSICIAN': "DR. A. CRUZ",
                         'ATTENDING SPECIALIZATION': "NEPHROLOGY",
                         'CO-MANAGEMENT PHYSICIAN': "N/A",
                         'CO-MANAGEMENT SPECIALIZATION': "N/A",
                         'DIALYSIS SHIFT SLOT': random.choice(["1ST SET", "2ND SET", "3RD SET"]),
-                        'HOSPITALIZATION MODE': h_mode,
-                        'MODE OF PAYMENT': pay_mode,
+                        'HOSPITALIZATION MODE': "OUTPATIENT",
+                        'MODE OF PAYMENT': "PHIC",
                         'PATIENT STATUS': stat,
                         'CASE COUNT': 1
                     }
                     append_record_to_google_sheet("Hemodialysis Unit (HDU)", hdu_data)
+
+                elif target_dept == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
+                    scu_data = {
+                        'MONTH': get_month_str(ph_now_display.date(), "numeric_prefix"),
+                        'DATE': date_str,
+                        'LAST NAME': ln,
+                        'FIRST NAME': fn,
+                        'MIDDLE NAME': mn,
+                        'SEX': sex,
+                        'AOG': "38 WKS",
+                        'AGE': "NEONATE",
+                        'DIAGNOSIS': "RESPIRATORY DISTRESS SYNDROME / SEPSIS",
+                        'DIAGNOSIS CATEGORY': "SEPSIS",
+                        'ADMITTED FROM': "LRDR",
+                        'ADMITTED TO': random.choice(["NICU", "PICU", "NSU", "PCN"]),
+                        'TRANSFERRED TO': "NONE",
+                        'ATTENDING PHYSICIAN': "DR. E. SANTOS",
+                        'ATTENDING SPECIALIZATION': "NEONATOLOGY",
+                        'CO-MANAGEMENT PHYSICIAN': "N/A",
+                        'CO-MANAGEMENT SPECIALIZATION': "N/A",
+                        'HOSPITALIZATION MODE': "INPATIENT",
+                        'MODE OF PAYMENT': pay_mode,
+                        'PATIENT STATUS': stat,
+                        'PROCEDURES': "SURFACTANT ADMINISTRATION",
+                        'DIAGNOSTIC EXAMINATIONS': "ABG, CBC, X-RAY",
+                        'MEDICATIONS': "IV ANTIBIOTICS",
+                        'SPECIAL ENDORSEMENTS': "STABLE ON O2",
+                        'CASE COUNT': 1
+                    }
+                    append_record_to_google_sheet("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", scu_data)
 
                 else:
                     gnu_data = {
@@ -906,31 +915,31 @@ if st.session_state["role"] == "Administrator":
                         'MIDDLE NAME': mn,
                         'SEX': sex,
                         'AGE': age,
-                        'DIAGNOSIS': diag_text,
-                        'ATTENDING PHYSICIAN': doc,
+                        'DIAGNOSIS': "COMMUNITY ACQUIRED PNEUMONIA",
+                        'ATTENDING PHYSICIAN': "DR. M. REYES",
                         'ATTENDING SPECIALIZATION': "INTERNAL MEDICINE",
                         'CO-MANAGEMENT PHYSICIAN': "N/A",
                         'CO-MANAGEMENT SPECIALIZATION': "N/A",
-                        'HOSPITALIZATION MODE': h_mode,
+                        'HOSPITALIZATION MODE': "INPATIENT",
                         'MODE OF PAYMENT': pay_mode,
                         'PATIENT STATUS': stat,
-                        'PROCEDURES': "ROUTINE CARE & MONITORING",
-                        'DIAGNOSTIC EXAMINATIONS': "CBC, URINALYSIS",
-                        'MEDICATIONS': "IV FLUIDS, ORAL MEDS",
-                        'SPECIAL ENDORSEMENTS': "STABLE",
+                        'PROCEDURES': "IV HYDRATION & OXYGEN THERAPY",
+                        'DIAGNOSTIC EXAMINATIONS': "CBC, CHEST X-RAY",
+                        'MEDICATIONS': "CETRIAXONE",
+                        'SPECIAL ENDORSEMENTS': "FOR REPEAT CBC",
                         'CASE COUNT': 1
                     }
-                    append_record_to_google_sheet(target_registration_dept, gnu_data)
+                    append_record_to_google_sheet(target_dept, gnu_data)
 
                 success_count += 1
-                progress_bar.progress((i + 1) / 5)
+                progress_bar.progress((i + 1) / batch_size)
                 
                 if seeder_freq == "Every 30 Seconds per Batch":
                     time.sleep(30)
                 else:
                     time.sleep(0.05)
 
-            st.sidebar.success(f"Successfully generated {success_count} intelligent patient records to `{target_registration_dept}`!")
+            st.sidebar.success(f"Successfully generated {success_count} multi-disciplinary patient records across all hospital modules!")
             st.rerun()
 
 # Admin Wipe Data Tool
@@ -1361,6 +1370,7 @@ elif selected_sheet == "Hospital Information System":
         if roster_combined_frames:
             final_master_roster = pd.concat(roster_combined_frames, ignore_index=True)
             clean_roster = clean_display_df(final_master_roster)
+            roster_editor_config = get_editor_column_config(clean_roster.columns)
             
             edited_master_roster = display_paginated_dataframe(clean_roster, key_prefix="master_roster")
             
