@@ -60,9 +60,12 @@ st.markdown("""
         border-left: 5px solid #1e3a8a !important;
     }
 
-    /* Form Inputs, Textareas, and Dropdown Controls */
-    div[data-baseweb="select"] > div, input[type="text"], input[type="number"], input[type="password"], textarea {
+    /* Form Inputs, Textareas, and Dropdown Controls (Excluding password fields to prevent login friction) */
+    div[data-baseweb="select"] > div, input[type="text"]:not([type="password"]), input[type="number"], textarea {
         background-color: #ffffff !important; color: #1e3a8a !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; text-transform: uppercase !important;
+    }
+    input[type="password"] {
+        text-transform: none !important;
     }
     div[data-baseweb="select"] span { color: #1e3a8a !important; }
     
@@ -77,9 +80,9 @@ st.markdown("""
         box-shadow: 0 0 0 1px #0f766e !important;
     }
 
-    /* Dropdown Popover Lists & Menus */
+    /* Dropdown Popover Lists & Menus with Enhanced Z-Index */
     div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"] {
-        background-color: #ffffff !important; color: #1e3a8a !important; border: 1px solid #cbd5e1 !important;
+        background-color: #ffffff !important; color: #1e3a8a !important; border: 1px solid #cbd5e1 !important; z-index: 999999 !important; box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
     }
     li[role="option"], div[data-baseweb="menu"] div, option { background-color: #ffffff !important; color: #1e3a8a !important; }
     li[role="option"]:hover, div[data-baseweb="menu"] div:hover { background-color: #f0fdf4 !important; color: #0f766e !important; }
@@ -221,6 +224,11 @@ def civilian_time_input_field(label, key_suffix=""):
     if t_val:
         return t_val.strftime("%I:%M %p")
     return ""
+
+def sanitize_medical_text(text):
+    if not text or pd.isna(text):
+        return ""
+    return " ".join(str(text).strip().upper().split())
 
 def get_custom_icon_html(filename, width=32):
     if os.path.exists(filename):
@@ -394,22 +402,19 @@ def read_sqlite_sheet(sheet_name):
 def init_google_sheets():
     from google.oauth2.service_account import Credentials
     scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-    if "gcp_service_account" in st.secrets:
-        try:
-            creds_dict = dict(st.secrets["gcp_service_account"])
-            if "private_key" in creds_dict:
-                pk = str(creds_dict["private_key"]).strip("'\" \n\r").replace("\\n", "\n")
-                if "-----BEGIN PRIVATE KEY-----" in pk and "-----END PRIVATE KEY-----" in pk:
-                    pk = pk[pk.find("-----BEGIN PRIVATE KEY-----"):pk.find("-----END PRIVATE KEY-----") + len("-----END PRIVATE KEY-----")]
-                creds_dict["private_key"] = pk
-            creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
-        except Exception as e:
-            st.error(f"Error parsing credentials: {e}")
-            st.stop()
-    elif os.path.exists("credentials.json"):
-        creds = Credentials.from_service_account_file("credentials.json", scopes=scope)
-    else:
-        st.error("Google Cloud credentials not found!")
+    if "gcp_service_account" not in st.secrets:
+        st.error("🚨 Critical Error: Google Cloud service account secrets are missing from Streamlit configuration settings.")
+        st.stop()
+    try:
+        creds_dict = dict(st.secrets["gcp_service_account"])
+        if "private_key" in creds_dict:
+            pk = str(creds_dict["private_key"]).strip("'\" \n\r").replace("\\n", "\n")
+            if "-----BEGIN PRIVATE KEY-----" in pk and "-----END PRIVATE KEY-----" in pk:
+                pk = pk[pk.find("-----BEGIN PRIVATE KEY-----"):pk.find("-----END PRIVATE KEY-----") + len("-----END PRIVATE KEY-----")]
+            creds_dict["private_key"] = pk
+        creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
+    except Exception as e:
+        st.error(f"Error parsing secure credentials: {e}")
         st.stop()
     client = gspread.authorize(creds)
     try:
@@ -441,13 +446,21 @@ def ensure_google_sheets_exist():
             except Exception:
                 pass
 
-sheet_lock = threading.Lock()
+_sheet_locks = {}
+_locks_guard = threading.Lock()
 
-def safe_gspread_call(func, *args, **kwargs):
+def get_sheet_lock(sheet_name):
+    with _locks_guard:
+        if sheet_name not in _sheet_locks:
+            _sheet_locks[sheet_name] = threading.Lock()
+        return _sheet_locks[sheet_name]
+
+def safe_gspread_call(sheet_name, func, *args, **kwargs):
     max_retries = 3
     backoff = 1
+    target_lock = get_sheet_lock(sheet_name)
     for attempt in range(max_retries):
-        with sheet_lock:
+        with target_lock:
             try:
                 return func(*args, **kwargs)
             except Exception as e:
@@ -478,7 +491,7 @@ def append_record_to_google_sheet(sheet_name, row_dict):
         return True
 
     try:
-        safe_gspread_call(_exec)
+        safe_gspread_call(sheet_name, _exec)
         df_local = read_google_sheet(sheet_name, force_refresh=True)
         sync_df_to_sqlite(sheet_name, df_local)
         return True
@@ -516,7 +529,7 @@ def update_google_sheet_from_df(sheet_name, df):
         return True
 
     try:
-        safe_gspread_call(_exec)
+        safe_gspread_call(sheet_name, _exec)
         sync_df_to_sqlite(sheet_name, df)
         return True
     except Exception as e:
@@ -531,7 +544,7 @@ def fetch_cloud_sheet(sheet_name):
         ws = sh.worksheet(sheet_name)
         return ws.get('A4:V2000')
     try:
-        data = safe_gspread_call(_get_data)
+        data = safe_gspread_call(sheet_name, _get_data)
         if data and len(data) >= 1:
             headers = [str(h).strip().upper() for h in data[0]]
             rows = data[1:]
@@ -634,17 +647,17 @@ def get_editor_column_config(columns):
     for col in columns:
         col_upper = str(col).upper()
         if col_upper in ['DATE', 'TRUE DATE', 'ADMISSION DATE', 'DEPARTMENT / UNIT', 'SEEDED_TRIAL']:
-            config[col] = st.column_config.TextColumn(col, disabled=True)
+            config[col] = st.column_config.TextColumn(col, disabled=True, width="small")
         elif col_upper in ['PATIENT STATUS', 'STATUS']:
-            config[col] = st.column_config.SelectboxColumn(col, options=["ACTIVE", "MGH", "DISCHARGED", "CAB"])
+            config[col] = st.column_config.SelectboxColumn(col, options=["ACTIVE", "MGH", "DISCHARGED", "CAB"], width="medium")
         elif col_upper == 'SEX':
-            config[col] = st.column_config.SelectboxColumn(col, options=["MALE", "FEMALE", "OTHERS"])
+            config[col] = st.column_config.SelectboxColumn(col, options=["MALE", "FEMALE", "OTHERS"], width="small")
         elif col_upper == 'MODE OF PAYMENT':
-            config[col] = st.column_config.SelectboxColumn(col, options=["PHIC", "HMO", "SELF-PAY", "CHARITY"])
+            config[col] = st.column_config.SelectboxColumn(col, options=["PHIC", "HMO", "SELF-PAY", "CHARITY"], width="medium")
         elif col_upper == 'HOSPITALIZATION MODE':
-            config[col] = st.column_config.SelectboxColumn(col, options=["INPATIENT", "OUTPATIENT"])
+            config[col] = st.column_config.SelectboxColumn(col, options=["INPATIENT", "OUTPATIENT"], width="medium")
         else:
-            config[col] = st.column_config.TextColumn(col)
+            config[col] = st.column_config.TextColumn(col, width="medium")
     return config
 
 # ---------------------------------------------------------
@@ -1114,6 +1127,7 @@ elif selected_sheet == "Hospital Information System":
         st.subheader("📋 Active Patient Census & Direct Editor")
         st.markdown("Aggregated live roster displaying active, MGH, and CAB patients from General Nursing Units, along with all active patients admitted in the Special Care Complex. **Directly edit patient information and statuses in the table below.** *(Admission dates and table headers are locked to prevent overlaps).*")
 
+        show_discharged = st.checkbox("Include recently discharged in roster view", value=False)
         roster_combined_frames = []
 
         gnu_roster_frames = []
@@ -1128,9 +1142,12 @@ elif selected_sheet == "Hospital Information System":
             master_gnu_df = pd.concat(gnu_roster_frames, ignore_index=True)
             if 'PATIENT STATUS' in master_gnu_df.columns:
                 master_gnu_df['PATIENT STATUS'] = master_gnu_df['PATIENT STATUS'].fillna("ACTIVE")
-                gnu_filtered = master_gnu_df[
-                    ~master_gnu_df['PATIENT STATUS'].astype(str).str.strip().str.upper().isin(['DISCHARGED'])
-                ]
+                if not show_discharged:
+                    gnu_filtered = master_gnu_df[
+                        ~master_gnu_df['PATIENT STATUS'].astype(str).str.strip().str.upper().isin(['DISCHARGED'])
+                    ]
+                else:
+                    gnu_filtered = master_gnu_df
             else:
                 gnu_filtered = master_gnu_df
 
@@ -1157,9 +1174,12 @@ elif selected_sheet == "Hospital Information System":
             scu_c = scu_raw_df.copy()
             if 'PATIENT STATUS' in scu_c.columns:
                 scu_c['PATIENT STATUS'] = scu_c['PATIENT STATUS'].fillna("ACTIVE")
-                scu_filtered = scu_c[
-                    ~scu_c['PATIENT STATUS'].astype(str).str.strip().str.upper().isin(['DISCHARGED'])
-                ]
+                if not show_discharged:
+                    scu_filtered = scu_c[
+                        ~scu_c['PATIENT STATUS'].astype(str).str.strip().str.upper().isin(['DISCHARGED'])
+                    ]
+                else:
+                    scu_filtered = scu_c
             else:
                 scu_filtered = scu_c
 
@@ -1193,7 +1213,7 @@ elif selected_sheet == "Hospital Information System":
                 st.success("Successfully saved active census changes!")
                 st.rerun()
 
-            st.caption(f"Showing {len(clean_roster)} active non-discharged roster entries.")
+            st.caption(f"Showing {len(clean_roster)} active roster entries.")
         else:
             st.info("No active patient roster records found.")
 
@@ -1284,6 +1304,12 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
 
         cm_list_key = f"cm_list_{form_key_slug}"
+        if tag_as_cm and attending_physician:
+            doc_name_up = attending_physician.strip().upper()
+            existing_cms = st.session_state.setdefault(cm_list_key, [])
+            if not any(cm['name'] == doc_name_up and cm['spec'] == attending_spec for cm in existing_cms):
+                existing_cms.append({"name": doc_name_up, "spec": attending_spec})
+
         if st.session_state.get(cm_list_key):
             st.markdown("**Current Co-Management Doctors Added:**")
             for idx, cm in enumerate(st.session_state[cm_list_key]):
@@ -1307,10 +1333,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
             if existing_record:
                 st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
 
-            final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
-            if tag_as_cm and attending_physician:
-                st.session_state.setdefault(cm_list_key, []).append({"name": attending_physician.strip().upper(), "spec": attending_spec})
-
+            final_attending = attending_physician if attending_physician else "N/A"
             valid_cm = st.session_state.get(cm_list_key, [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
             cm_specs_str = "; ".join([item['spec'] for item in valid_cm]) if valid_cm else "N/A"
@@ -1320,12 +1343,12 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
                 'DATE': curr_date_str,
                 'TIME': entry_time_str,
                 'ROOM NO': room_no,
-                'LAST NAME': last_name,
-                'FIRST NAME': first_name,
-                'MIDDLE NAME': middle_name,
+                'LAST NAME': sanitize_medical_text(last_name),
+                'FIRST NAME': sanitize_medical_text(first_name),
+                'MIDDLE NAME': sanitize_medical_text(middle_name),
                 'SEX': sex,
                 'AGE': str(age),
-                'DIAGNOSIS': diagnosis_text,
+                'DIAGNOSIS': sanitize_medical_text(diagnosis_text),
                 'ATTENDING PHYSICIAN': final_attending,
                 'ATTENDING SPECIALIZATION': attending_spec,
                 'CO-MANAGEMENT PHYSICIAN': cm_names_str,
@@ -1333,10 +1356,10 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
                 'HOSPITALIZATION MODE': hosp_mode,
                 'MODE OF PAYMENT': payment_selected,
                 'PATIENT STATUS': patient_status,
-                'PROCEDURES': procedures_text,
-                'DIAGNOSTIC EXAMINATIONS': diagnostic_exams_text,
-                'MEDICATIONS': medications_text,
-                'SPECIAL ENDORSEMENTS': special_endorsements_text,
+                'PROCEDURES': sanitize_medical_text(procedures_text),
+                'DIAGNOSTIC EXAMINATIONS': sanitize_medical_text(diagnostic_exams_text),
+                'MEDICATIONS': sanitize_medical_text(medications_text),
+                'SPECIAL ENDORSEMENTS': sanitize_medical_text(special_endorsements_text),
                 'CASE COUNT': 1,
                 'SEEDED_TRIAL': 'NO'
             }
@@ -1392,6 +1415,11 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="ecc_spec_input")
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
+        if tag_as_cm and attending_physician:
+            doc_name_up = attending_physician.strip().upper()
+            existing_cms = st.session_state.setdefault("cm_list_ecc", [])
+            if not any(cm['name'] == doc_name_up and cm['spec'] == attending_spec for cm in existing_cms):
+                existing_cms.append({"name": doc_name_up, "spec": attending_spec})
 
         if st.session_state.get("cm_list_ecc"):
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -1419,10 +1447,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
             if existing_record:
                 st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
 
-            final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
-            if tag_as_cm and attending_physician:
-                st.session_state.setdefault("cm_list_ecc", []).append({"name": attending_physician.strip().upper(), "spec": attending_spec})
-
+            final_attending = attending_physician if attending_physician else "N/A"
             valid_cm = st.session_state.get("cm_list_ecc", [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
             cm_specs_str = "; ".join([item['spec'] for item in valid_cm]) if valid_cm else "N/A"
@@ -1431,12 +1456,12 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
                 'MONTH': get_month_str(entry_date, "full_month"),
                 'DATE': curr_date_str,
                 'TIME': entry_time_str,
-                'LAST NAME': last_name,
-                'FIRST NAME': first_name,
-                'MIDDLE NAME': middle_name,
+                'LAST NAME': sanitize_medical_text(last_name),
+                'FIRST NAME': sanitize_medical_text(first_name),
+                'MIDDLE NAME': sanitize_medical_text(middle_name),
                 'SEX': sex,
                 'AGE': str(age),
-                'DIAGNOSIS': diagnosis_text,
+                'DIAGNOSIS': sanitize_medical_text(diagnosis_text),
                 'DISEASE CATEGORY': ", ".join(selected_diseases) if selected_diseases else "None",
                 'ATTENDING PHYSICIAN': final_attending,
                 'ATTENDING SPECIALIZATION': attending_spec,
@@ -1503,6 +1528,11 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="endo_spec_input")
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
+        if tag_as_cm and attending_physician:
+            doc_name_up = attending_physician.strip().upper()
+            existing_cms = st.session_state.setdefault("cm_list_endo", [])
+            if not any(cm['name'] == doc_name_up and cm['spec'] == attending_spec for cm in existing_cms):
+                existing_cms.append({"name": doc_name_up, "spec": attending_spec})
 
         if st.session_state.get("cm_list_endo"):
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -1539,10 +1569,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
             if existing_record:
                 st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
 
-            final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
-            if tag_as_cm and attending_physician:
-                st.session_state.setdefault("cm_list_endo", []).append({"name": attending_physician.strip().upper(), "spec": attending_spec})
-
+            final_attending = attending_physician if attending_physician else "N/A"
             valid_cm = st.session_state.get("cm_list_endo", [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
             cm_specs_str = "; ".join([item['spec'] for item in valid_cm]) if valid_cm else "N/A"
@@ -1552,13 +1579,13 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
                 'DATE': curr_date_str,
                 'SCHEDULED TIME': sched_time_str,
                 'ACTUAL TIME': actual_time_str,
-                'LAST NAME': last_name,
-                'FIRST NAME': first_name,
-                'MIDDLE NAME': middle_name,
+                'LAST NAME': sanitize_medical_text(last_name),
+                'FIRST NAME': sanitize_medical_text(first_name),
+                'MIDDLE NAME': sanitize_medical_text(middle_name),
                 'SEX': sex,
                 'AGE': age,
-                'DIAGNOSIS': diagnosis_text,
-                'PROCEDURE': procedure_text,
+                'DIAGNOSIS': sanitize_medical_text(diagnosis_text),
+                'PROCEDURE': sanitize_medical_text(procedure_text),
                 'PROCEDURE CATEGORY': ", ".join(selected_procs) if selected_procs else "None",
                 'ATTENDING PHYSICIAN': final_attending,
                 'ATTENDING SPECIALIZATION': attending_spec,
@@ -1618,6 +1645,11 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="hdu_spec_input")
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
+        if tag_as_cm and attending_physician:
+            doc_name_up = attending_physician.strip().upper()
+            existing_cms = st.session_state.setdefault("cm_list_hdu", [])
+            if not any(cm['name'] == doc_name_up and cm['spec'] == attending_spec for cm in existing_cms):
+                existing_cms.append({"name": doc_name_up, "spec": attending_spec})
 
         if st.session_state.get("cm_list_hdu"):
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -1644,12 +1676,13 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
                 st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
 
             epoch = datetime(1899, 12, 30)
-            true_date = str((datetime.combine(entry_date, datetime.min.time()) - epoch).days)
+            selected_dt = datetime.combine(entry_date, datetime.min.time())
+            if selected_dt >= epoch:
+                true_date = str((selected_dt - epoch).days)
+            else:
+                true_date = "0"
             
-            final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
-            if tag_as_cm and attending_physician:
-                st.session_state.setdefault("cm_list_hdu", []).append({"name": attending_physician.strip().upper(), "spec": attending_spec})
-
+            final_attending = attending_physician if attending_physician else "N/A"
             valid_cm = st.session_state.get("cm_list_hdu", [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
             cm_specs_str = "; ".join([item['spec'] for item in valid_cm]) if valid_cm else "N/A"
@@ -1658,11 +1691,11 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
                 'MONTH': get_month_str(entry_date, "numeric_prefix"),
                 'DATE': curr_date_str,
                 'TRUE DATE': true_date,
-                'LAST NAME': last_name,
-                'FIRST NAME': first_name,
-                'MIDDLE NAME': middle_name,
+                'LAST NAME': sanitize_medical_text(last_name),
+                'FIRST NAME': sanitize_medical_text(first_name),
+                'MIDDLE NAME': sanitize_medical_text(middle_name),
                 'SEX': sex,
-                'DIAGNOSIS': diagnosis,
+                'DIAGNOSIS': sanitize_medical_text(diagnosis),
                 'ATTENDING PHYSICIAN': final_attending,
                 'ATTENDING SPECIALIZATION': attending_spec,
                 'CO-MANAGEMENT PHYSICIAN': cm_names_str,
@@ -1720,6 +1753,11 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="ob_spec_input")
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
+        if tag_as_cm and attending_physician:
+            doc_name_up = attending_physician.strip().upper()
+            existing_cms = st.session_state.setdefault("cm_list_ob", [])
+            if not any(cm['name'] == doc_name_up and cm['spec'] == attending_spec for cm in existing_cms):
+                existing_cms.append({"name": doc_name_up, "spec": attending_spec})
 
         if st.session_state.get("cm_list_ob"):
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -1769,10 +1807,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             if existing_record:
                 st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
 
-            final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
-            if tag_as_cm and attending_physician:
-                st.session_state.setdefault("cm_list_ob", []).append({"name": attending_physician.strip().upper(), "spec": attending_spec})
-
+            final_attending = attending_physician if attending_physician else "N/A"
             valid_cm = st.session_state.get("cm_list_ob", [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
             cm_specs_str = "; ".join([item['spec'] for item in valid_cm]) if valid_cm else "N/A"
@@ -1782,15 +1817,15 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
                 'DATE': curr_date_str,
                 'SCHEDULED TIME': sched_time_str,
                 'ACTUAL TIME': actual_time_str,
-                'LAST NAME': last_name,
-                'FIRST NAME': first_name,
-                'MIDDLE NAME': middle_name,
+                'LAST NAME': sanitize_medical_text(last_name),
+                'FIRST NAME': sanitize_medical_text(first_name),
+                'MIDDLE NAME': sanitize_medical_text(middle_name),
                 'SEX': sex,
                 'AGE': float(age),
-                'PRE-OP DIAGNOSIS': pre_op_diagnosis,
-                'POST-OP DIAGNOSIS': post_op_diagnosis,
-                'PROCEDURE NAME': procedure_name,
-                'SURGICAL PROCEDURE': surgical_procedure,
+                'PRE-OP DIAGNOSIS': sanitize_medical_text(pre_op_diagnosis),
+                'POST-OP DIAGNOSIS': sanitize_medical_text(post_op_diagnosis),
+                'PROCEDURE NAME': sanitize_medical_text(procedure_name),
+                'SURGICAL PROCEDURE': sanitize_medical_text(surgical_procedure),
                 'PROCEDURE CATEGORY': ", ".join(selected_ob_procs) if selected_ob_procs else "None",
                 'ATTENDING PHYSICIAN': final_attending,
                 'ATTENDING SPECIALIZATION': attending_spec,
@@ -1854,6 +1889,11 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scc_spec_input")
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
+        if tag_as_cm and attending_physician:
+            doc_name_up = attending_physician.strip().upper()
+            existing_cms = st.session_state.setdefault("cm_list_scc", [])
+            if not any(cm['name'] == doc_name_up and cm['spec'] == attending_spec for cm in existing_cms):
+                existing_cms.append({"name": doc_name_up, "spec": attending_spec})
 
         if st.session_state.get("cm_list_scc"):
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -1908,10 +1948,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             if existing_record:
                 st.info(f"🤖 AI Checker: Patient {last_name}, {first_name} already exists on {curr_date_str}. Additional department info has been merged into their record.")
 
-            final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
-            if tag_as_cm and attending_physician:
-                st.session_state.setdefault("cm_list_scc", []).append({"name": attending_physician.strip().upper(), "spec": attending_spec})
-
+            final_attending = attending_physician if attending_physician else "N/A"
             valid_cm = st.session_state.get("cm_list_scc", [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
             cm_specs_str = "; ".join([item['spec'] for item in valid_cm]) if valid_cm else "N/A"
@@ -1921,14 +1958,14 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
                 'DATE': curr_date_str,
                 'SCHEDULED TIME': sched_time_str,
                 'ACTUAL TIME': actual_time_str,
-                'LAST NAME': last_name,
-                'FIRST NAME': first_name,
-                'MIDDLE NAME': middle_name,
+                'LAST NAME': sanitize_medical_text(last_name),
+                'FIRST NAME': sanitize_medical_text(first_name),
+                'MIDDLE NAME': sanitize_medical_text(middle_name),
                 'SEX': sex,
                 'AGE': float(age),
-                'PRE-OP DIAGNOSIS': pre_op_diagnosis,
-                'POST-OP DIAGNOSIS': post_op_diagnosis,
-                'PROCEDURE': procedure,
+                'PRE-OP DIAGNOSIS': sanitize_medical_text(pre_op_diagnosis),
+                'POST-OP DIAGNOSIS': sanitize_medical_text(post_op_diagnosis),
+                'PROCEDURE': sanitize_medical_text(procedure),
                 'PROCEDURE CATEGORY': ", ".join(selected_scc_procs) if selected_scc_procs else "None",
                 'ATTENDING PHYSICIAN': final_attending,
                 'ATTENDING SPECIALIZATION': attending_spec,
@@ -1994,6 +2031,11 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scu_spec_input")
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
+        if tag_as_cm and attending_physician:
+            doc_name_up = attending_physician.strip().upper()
+            existing_cms = st.session_state.setdefault("cm_list_scu", [])
+            if not any(cm['name'] == doc_name_up and cm['spec'] == attending_spec for cm in existing_cms):
+                existing_cms.append({"name": doc_name_up, "spec": attending_spec})
 
         if st.session_state.get("cm_list_scu"):
             st.markdown("**Current Co-Management Doctors Added:**")
@@ -2039,10 +2081,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
             if age_d > 0: age_str_parts.append(f"{age_d} Days")
             age_formatted = ", ".join(age_str_parts) if age_str_parts else "Neonate / Infant"
 
-            final_attending = "N/A" if tag_as_cm else (attending_physician if attending_physician else "N/A")
-            if tag_as_cm and attending_physician:
-                st.session_state.setdefault("cm_list_scu", []).append({"name": attending_physician.strip().upper(), "spec": attending_spec})
-
+            final_attending = attending_physician if attending_physician else "N/A"
             valid_cm = st.session_state.get("cm_list_scu", [])
             cm_names_str = "; ".join([item['name'] for item in valid_cm]) if valid_cm else "N/A"
             cm_specs_str = "; ".join([item['spec'] for item in valid_cm]) if valid_cm else "N/A"
@@ -2050,13 +2089,13 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
             row_data = {
                 'MONTH': get_month_str(entry_date, "numeric_prefix"),
                 'DATE': curr_date_str,
-                'LAST NAME': last_name,
-                'FIRST NAME': first_name,
-                'MIDDLE NAME': middle_name,
+                'LAST NAME': sanitize_medical_text(last_name),
+                'FIRST NAME': sanitize_medical_text(first_name),
+                'MIDDLE NAME': sanitize_medical_text(middle_name),
                 'SEX': sex,
                 'AOG': aog if aog else "N/A",
                 'AGE': age_formatted,
-                'DIAGNOSIS': diagnosis,
+                'DIAGNOSIS': sanitize_medical_text(diagnosis),
                 'DIAGNOSIS CATEGORY': ", ".join(diag_flags) if diag_flags else "None",
                 'ADMITTED FROM': admitted_from,
                 'ADMITTED TO': admitted_to,
@@ -2068,10 +2107,10 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
                 'HOSPITALIZATION MODE': hosp_mode,
                 'MODE OF PAYMENT': payment_selected,
                 'PATIENT STATUS': patient_status,
-                'PROCEDURES': scu_procedures,
-                'DIAGNOSTIC EXAMINATIONS': scu_diagnostic_exams,
-                'MEDICATIONS': scu_medications,
-                'SPECIAL ENDORSEMENTS': scu_special_endorsements,
+                'PROCEDURES': sanitize_medical_text(scu_procedures),
+                'DIAGNOSTIC EXAMINATIONS': sanitize_medical_text(scu_diagnostic_exams),
+                'MEDICATIONS': sanitize_medical_text(scu_medications),
+                'SPECIAL ENDORSEMENTS': sanitize_medical_text(scu_special_endorsements),
                 'CASE COUNT': 1,
                 'SEEDED_TRIAL': 'NO'
             }
