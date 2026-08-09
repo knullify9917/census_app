@@ -474,7 +474,6 @@ def get_editor_column_config(columns):
     config = {}
     for col in columns:
         col_upper = str(col).upper()
-        # Strictly lock table headers (column labels are read-only in st.data_editor, and lock admission dates)
         if col_upper in ['DATE', 'TRUE DATE']:
             config[col] = st.column_config.TextColumn(col, disabled=True)
         elif col_upper == 'PATIENT STATUS':
@@ -1053,10 +1052,8 @@ if selected_sheet == "Hospital Information System":
     st.dataframe(clean_display_df(summary_df), use_container_width=True)
 
     st.markdown("---")
-    st.subheader("📑 Department Summary & Direct Editor")
-    st.markdown("Select a department below to view and **directly edit existing patient information, treatments, and statuses** (`num_rows='fixed'` restricts edits strictly to existing records; table headers and admission dates are locked).")
-    
-    selected_dept_view = st.selectbox("Select Department to Inspect & Edit", department_sheets)
+    st.subheader("📑 Department Summary")
+    selected_dept_view = st.selectbox("Select Department to Inspect", department_sheets)
     
     dept_df = read_google_sheet(selected_dept_view)
     if not dept_df.empty:
@@ -1069,17 +1066,7 @@ if selected_sheet == "Hospital Information System":
             if selected_area != "All Areas":
                 cleaned_dept_df = cleaned_dept_df[cleaned_dept_df['ADMITTED TO'] == selected_area]
 
-        editor_config = get_editor_column_config(cleaned_dept_df.columns)
-        st.markdown(f"**Editable Census Table for `{selected_dept_view}`:**")
-        edited_dept_df = st.data_editor(cleaned_dept_df, use_container_width=True, num_rows="fixed", key=f"editor_{selected_dept_view}", column_config=editor_config)
-        
-        if st.button(f"💾 Save Changes to `{selected_dept_view}`", type="primary"):
-            if update_google_sheet_from_df(selected_dept_view, edited_dept_df):
-                st.cache_data.clear()
-                st.success(f"Successfully updated records for `{selected_dept_view}` in Google Sheets!")
-                st.rerun()
-            else:
-                st.error("Failed to update Google Sheets. Please check permissions or connection.")
+        st.dataframe(cleaned_dept_df, use_container_width=True)
     else:
         st.info(f"No records found yet for {selected_dept_view}.")
 
@@ -2025,14 +2012,7 @@ if selected_sheet != "Hospital Information System":
     sheet_df = read_google_sheet(selected_sheet)
     if not sheet_df.empty:
         clean_s_df = clean_display_df(sheet_df)
-        editor_config = get_editor_column_config(clean_s_df.columns)
-        edited_s_df = st.data_editor(clean_s_df, use_container_width=True, num_rows="fixed", key=f"editor_bottom_{selected_sheet}", column_config=editor_config)
-        if st.button(f"💾 Save Updates to `{selected_sheet}`", type="primary"):
-            if update_google_sheet_from_df(selected_sheet, edited_s_df):
-                st.cache_data.clear()
-                st.success(f"Successfully updated records for `{selected_sheet}`!")
-                st.rerun()
-            else:
-                st.error("Failed to update Google Sheets.")
+        st.dataframe(clean_s_df, use_container_width=True)
+        st.caption(f"Showing records for `{selected_sheet}` (Total: {len(sheet_df)} records)")
     else:
         st.info(f"Google Sheets worksheet `{selected_sheet}` currently has no records.")
