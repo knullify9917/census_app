@@ -717,13 +717,14 @@ if st.session_state["role"] == "Administrator":
     st.sidebar.markdown("### 🛠️ Admin Control Center")
     
     with st.sidebar.expander("🤖 Admin Intelligent Seeder"):
-        st.markdown("Generate multi-disciplinary trial patient records across departments to check updates and metrics.")
+        st.markdown("Generate accurate multi-disciplinary trial patient records across all hospital departments.")
         batch_size = st.selectbox("Batch Size", [5, 10, 20], index=0)
         
         if st.button("🚀 Generate Trial Batch", type="primary"):
             first_names = ["JUAN", "MARIA", "JOSE", "ANA", "PEDRO", "LUIS", "CARMEN", "ROSA"]
             middle_names = ["SANTOS", "REYES", "GARCIA", "TORRES", "FLORES", "RAMOS"]
             last_names = ["CRUZ", "BAUTISTA", "OCAMPO", "MENDOZA", "GONZALES", "AQUINO"]
+            
             department_targets = [
                 "Emergency Care Complex (ECC)",
                 "Surgical Care Complex (OR Main)",
@@ -745,59 +746,160 @@ if st.session_state["role"] == "Administrator":
                 date_str = ph_now_display.strftime("%m/%d/%Y")
                 target_dept = department_targets[i % len(department_targets)]
 
-                # Build dictionary strictly mapping to expected sheet headers to avoid KeyError
                 headers = SHEET_HEADERS.get(target_dept, [])
                 row_data = {h: "" for h in headers}
                 
-                row_data['MONTH'] = get_month_str(ph_now_display.date(), "full_month")
+                row_data['MONTH'] = get_month_str(ph_now_display.date(), "full_month" if "General Nursing Unit" in target_dept or target_dept=="Emergency Care Complex (ECC)" else "numeric_prefix")
                 row_data['DATE'] = date_str
                 row_data['LAST NAME'] = ln
                 row_data['FIRST NAME'] = fn
                 row_data['MIDDLE NAME'] = mn
                 row_data['SEX'] = sex
-                row_data['AGE'] = age
-                row_data['ATTENDING PHYSICIAN'] = "DR. E. SANTOS"
-                row_data['ATTENDING SPECIALIZATION'] = "INTERNAL MEDICINE"
-                row_data['CO-MANAGEMENT PHYSICIAN'] = "N/A"
-                row_data['CO-MANAGEMENT SPECIALIZATION'] = "N/A"
-                row_data['HOSPITALIZATION MODE'] = "INPATIENT"
-                row_data['HOSPITAL KIT PACKAGE'] = "YES"
                 row_data['MODE OF PAYMENT'] = pay_mode
-                row_data['PATIENT STATUS'] = stat
-                row_data['PROCEDURES'] = "STANDARD CARE"
-                row_data['DIAGNOSTIC EXAMINATIONS'] = "CBC"
-                row_data['MEDICATIONS'] = "VITAMINS"
-                row_data['SPECIAL ENDORSEMENTS'] = "STABLE"
                 row_data['CASE COUNT'] = "1"
                 row_data['SEEDED_TRIAL'] = "YES"
 
                 if target_dept == "Emergency Care Complex (ECC)":
                     row_data['TIME'] = "10:00 AM"
-                    row_data['DIAGNOSIS'] = "ACUTE ABDOMEN"
+                    row_data['AGE'] = age
+                    row_data['DIAGNOSIS'] = "ACUTE GASTROENTERITIS / DEHYDRATION"
                     row_data['DISEASE CATEGORY'] = "ACUTE GASTROENTERITIS"
+                    row_data['ATTENDING PHYSICIAN'] = "DR. E. SANTOS"
+                    row_data['ATTENDING SPECIALIZATION'] = "EMERGENCY MEDICINE"
+                    row_data['CO-MANAGEMENT PHYSICIAN'] = "N/A"
+                    row_data['CO-MANAGEMENT SPECIALIZATION'] = "N/A"
+                    row_data['HOSPITALIZATION MODE'] = "INPATIENT"
                     row_data['CASE TYPE'] = "PRIVATE CASE"
-                    row_data['ADMITTED TO'] = "ECC"
+                    row_data['HOSPITAL KIT PACKAGE'] = "YES"
+                    row_data['ADMITTED TO'] = "GNU 1C"
+                    row_data['PROCEDURES'] = "IV HYDRATION & OXYGEN THERAPY"
+                    row_data['DIAGNOSTIC EXAMINATIONS'] = "CBC, ELECTROLYTES"
+                    row_data['MEDICATIONS'] = "NACL 0.9% 1L, ONDANSETRON"
+                    row_data['SPECIAL ENDORSEMENTS'] = "FOR SERIAL HYDRATION MONITORING"
+
+                elif target_dept == "Surgical Care Complex (OR Main)":
+                    row_data['SCHEDULED TIME'] = "09:00 AM"
+                    row_data['ACTUAL TIME'] = "09:30 AM"
+                    row_data['AGE'] = float(age)
+                    row_data['PRE-OP DIAGNOSIS'] = "ACUTE APPENDICITIS"
+                    row_data['POST-OP DIAGNOSIS'] = "ACUTE SUPPURATIVE APPENDICITIS"
+                    row_data['PROCEDURE'] = "OPEN APPENDECTOMY"
+                    row_data['PROCEDURE CATEGORY'] = "APPENDECTOMY"
+                    row_data['ATTENDING PHYSICIAN'] = "DR. M. REYES"
+                    row_data['ATTENDING SPECIALIZATION'] = "GENERAL SURGERY"
+                    row_data['CO-MANAGEMENT PHYSICIAN'] = "N/A"
+                    row_data['CO-MANAGEMENT SPECIALIZATION'] = "N/A"
+                    row_data['PRIMARY SURGEON'] = "DR. J. BAUTISTA"
+                    row_data['SURGEON SPECIALIZATION'] = "GENERAL SURGERY"
+                    row_data['ANESTHESIOLOGIST'] = "DR. A. CRUZ"
+                    row_data['ANESTHESIOLOGIST SPECIALIZATION'] = "GENERAL ANAESTHESIOLOGY"
+                    row_data['COMPLEXITY TIER'] = "MAJOR"
+                    row_data['HOSPITALIZATION MODE'] = "INPATIENT"
+                    row_data['HOSPITAL KIT PACKAGE'] = "YES"
+                    row_data['PATIENT STATUS'] = stat
+
+                elif target_dept == "OBGYNE Care Complex (LRDR-OB Surgery)":
+                    row_data['SEX'] = "FEMALE"
+                    row_data['SCHEDULED TIME'] = "08:00 AM"
+                    row_data['ACTUAL TIME'] = "08:15 AM"
+                    row_data['AGE'] = float(age)
+                    row_data['PRE-OP DIAGNOSIS'] = "FULL TERM PREGNANCY IN LABOR"
+                    row_data['POST-OP DIAGNOSIS'] = "TERM PREGNANCY DELIVERED VIA PRIMARY LSCS"
+                    row_data['PROCEDURE NAME'] = "LOWER SEGMENT CESAREAN SECTION"
+                    row_data['SURGICAL PROCEDURE'] = "PRIMARY LSCS DUE TO CPD"
+                    row_data['PROCEDURE CATEGORY'] = "CS PRIMARY"
+                    row_data['ATTENDING PHYSICIAN'] = "DR. R. OCAMPO"
+                    row_data['ATTENDING SPECIALIZATION'] = "OBSTETRICS & GYNAECOLOGY"
+                    row_data['CO-MANAGEMENT PHYSICIAN'] = "N/A"
+                    row_data['CO-MANAGEMENT SPECIALIZATION'] = "N/A"
+                    row_data['SURGEON / OBGYNE'] = "DR. R. OCAMPO"
+                    row_data['SURGEON SPECIALIZATION'] = "OBSTETRICS & GYNAECOLOGY"
+                    row_data['ANESTHESIOLOGIST'] = "DR. E. SANTOS"
+                    row_data['ANESTHESIOLOGIST SPECIALIZATION'] = "GENERAL ANAESTHESIOLOGY"
+                    row_data['COMPLEXITY TIER'] = "MAJOR"
+                    row_data['HOSPITALIZATION MODE'] = "INPATIENT"
+                    row_data['HOSPITAL KIT PACKAGE'] = "YES"
+                    row_data['PATIENT STATUS'] = stat
+
+                elif target_dept == "Endoscopy Unit (ENDO)":
+                    row_data['SCHEDULED TIME'] = "10:30 AM"
+                    row_data['ACTUAL TIME'] = "11:00 AM"
+                    row_data['AGE'] = age
+                    row_data['DIAGNOSIS'] = "UPPER GASTROINTESTINAL BLEEDING"
+                    row_data['PROCEDURE'] = "DIAGNOSTIC GASTROSCOPY"
+                    row_data['PROCEDURE CATEGORY'] = "GASTROSCOPY"
+                    row_data['ATTENDING PHYSICIAN'] = "DR. M. REYES"
+                    row_data['ATTENDING SPECIALIZATION'] = "GASTROENTEROLOGY"
+                    row_data['CO-MANAGEMENT PHYSICIAN'] = "N/A"
+                    row_data['CO-MANAGEMENT SPECIALIZATION'] = "N/A"
+                    row_data['SURGEON / PROCEDURALIST'] = "DR. M. REYES"
+                    row_data['SURGEON SPECIALIZATION'] = "GASTROENTEROLOGY"
+                    row_data['ANESTHESIOLOGIST'] = "N/A"
+                    row_data['ANESTHESIOLOGIST SPECIALIZATION'] = "NONE"
+                    row_data['PROCEDURE NATURE'] = "DIAGNOSTICS"
+                    row_data['HOSPITALIZATION MODE'] = "OUTPATIENT"
+                    row_data['HOSPITAL KIT PACKAGE'] = "NO"
+                    row_data['PATIENT STATUS'] = stat
+
                 elif target_dept == "Hemodialysis Unit (HDU)":
                     row_data['TRUE DATE'] = "0"
-                    row_data['DIAGNOSIS'] = "CKD STAGE 5"
+                    row_data['AGE'] = age
+                    row_data['DIAGNOSIS'] = "CHRONIC KIDNEY DISEASE STAGE 5 ON HD"
+                    row_data['ATTENDING PHYSICIAN'] = "DR. A. CRUZ"
+                    row_data['ATTENDING SPECIALIZATION'] = "NEPHROLOGY"
+                    row_data['CO-MANAGEMENT PHYSICIAN'] = "N/A"
+                    row_data['CO-MANAGEMENT SPECIALIZATION'] = "N/A"
                     row_data['DIALYSIS SHIFT SLOT'] = "1ST SET"
-                elif target_dept.startswith("General Nursing Unit"):
-                    row_data['TIME'] = "10:00 AM"
-                    row_data['ROOM NO'] = "RM-101"
-                    row_data['DIAGNOSIS'] = "PNEUMONIA"
+                    row_data['HOSPITALIZATION MODE'] = "OUTPATIENT"
+                    row_data['HOSPITAL KIT PACKAGE'] = "YES"
+                    row_data['PATIENT STATUS'] = stat
+                    row_data['PROCEDURES'] = "HEMODIALYSIS SESSION"
+                    row_data['DIAGNOSTIC EXAMINATIONS'] = "CREATININE, BUN, ELECTROLYTES"
+                    row_data['MEDICATIONS'] = "HEPARIN, EPOETIN ALFA"
+                    row_data['SPECIAL ENDORSEMENTS'] = "AV FISTULA INTACT"
+
                 elif target_dept == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
+                    row_data['AGE'] = "3 DAYS"
                     row_data['AOG'] = "38 WKS"
-                    row_data['DIAGNOSIS'] = "RESPIRATORY DISTRESS"
+                    row_data['DIAGNOSIS'] = "NEONATAL SEPSIS"
                     row_data['DIAGNOSIS CATEGORY'] = "SEPSIS"
                     row_data['ADMITTED FROM'] = "LRDR"
                     row_data['ADMITTED TO'] = "NICU"
                     row_data['TRANSFERRED TO'] = "NONE"
+                    row_data['ATTENDING PHYSICIAN'] = "DR. E. SANTOS"
+                    row_data['ATTENDING SPECIALIZATION'] = "NEONATOLOGY"
+                    row_data['CO-MANAGEMENT PHYSICIAN'] = "N/A"
+                    row_data['CO-MANAGEMENT SPECIALIZATION'] = "N/A"
+                    row_data['HOSPITALIZATION MODE'] = "INPATIENT"
+                    row_data['HOSPITAL KIT PACKAGE'] = "YES"
+                    row_data['PATIENT STATUS'] = stat
+                    row_data['PROCEDURES'] = "OXYGEN THERAPY"
+                    row_data['DIAGNOSTIC EXAMINATIONS'] = "ABG, CBC, X-RAY"
+                    row_data['MEDICATIONS'] = "AMPICILLIN, GENTAMICIN"
+                    row_data['SPECIAL ENDORSEMENTS'] = "STABLE ON O2"
+
+                else: # General Nursing Units
+                    row_data['TIME'] = "10:00 AM"
+                    row_data['ROOM NO'] = f"RM-{random.randint(201, 399)}"
+                    row_data['AGE'] = age
+                    row_data['DIAGNOSIS'] = "COMMUNITY ACQUIRED PNEUMONIA"
+                    row_data['ATTENDING PHYSICIAN'] = "DR. M. REYES"
+                    row_data['ATTENDING SPECIALIZATION'] = "INTERNAL MEDICINE"
+                    row_data['CO-MANAGEMENT PHYSICIAN'] = "N/A"
+                    row_data['CO-MANAGEMENT SPECIALIZATION'] = "N/A"
+                    row_data['HOSPITALIZATION MODE'] = "INPATIENT"
+                    row_data['HOSPITAL KIT PACKAGE'] = "YES"
+                    row_data['PATIENT STATUS'] = stat
+                    row_data['PROCEDURES'] = "OXYGEN INHALATION & IV FLUIDS"
+                    row_data['DIAGNOSTIC EXAMINATIONS'] = "CBC, CHEST X-RAY"
+                    row_data['MEDICATIONS'] = "CEFTRIAXONE"
+                    row_data['SPECIAL ENDORSEMENTS'] = "FOR REPEAT CBC"
 
                 append_record_to_google_sheet(target_dept, row_data)
                 progress_bar.progress((i + 1) / batch_size)
                 py_time.sleep(0.05)
 
-            st.sidebar.success(f"Successfully generated {batch_size} trial patient records!")
+            st.sidebar.success(f"Successfully generated {batch_size} multi-disciplinary trial records!")
             st.rerun()
 
     with st.sidebar.expander("🚨 Full System Wipe (All Depts)"):
