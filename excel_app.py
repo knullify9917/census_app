@@ -922,14 +922,14 @@ if selected_sheet == "Hospital Information System":
     st.markdown("---")
 
     # ---------------------------------------------------------
-    # ACTIVE PATIENT ROSTER (GNU Active/MGH + All Special Care Complex Patients)
+    # ACTIVE PATIENT ROSTER (GNU Active/MGH/CAB + All Special Care Complex Patients EXCLUDING Discharged)
     # ---------------------------------------------------------
     st.subheader("📋 Active Patient Roster")
-    st.markdown("Aggregated live roster displaying active, MGH, and CAB patients from General Nursing Units, along with all patients admitted in the Special Care Complex.")
+    st.markdown("Aggregated live roster displaying active, MGH, and CAB patients from General Nursing Units, along with all active patients admitted in the Special Care Complex (excluding discharged patients).")
 
     roster_combined_frames = []
 
-    # 1. Fetch GNU Active & MGH patients
+    # 1. Fetch GNU Active, MGH, CAB patients (excluding Discharged)
     gnu_roster_frames = []
     for gnu in gnu_sheets:
         gnu_df = read_google_sheet(gnu)
@@ -943,7 +943,7 @@ if selected_sheet == "Hospital Information System":
         if 'PATIENT STATUS' in master_gnu_df.columns:
             master_gnu_df['PATIENT STATUS'] = master_gnu_df['PATIENT STATUS'].fillna("ACTIVE")
             gnu_filtered = master_gnu_df[
-                master_gnu_df['PATIENT STATUS'].astype(str).str.strip().str.upper().isin(['ACTIVE', 'MGH', 'CAB'])
+                ~master_gnu_df['PATIENT STATUS'].astype(str).str.strip().str.upper().isin(['DISCHARGED'])
             ]
         else:
             gnu_filtered = master_gnu_df
@@ -966,31 +966,40 @@ if selected_sheet == "Hospital Information System":
             gnu_mapped['Status'] = gnu_filtered.get('PATIENT STATUS', '')
             roster_combined_frames.append(gnu_mapped)
 
-    # 2. Fetch ALL Special Care Complex patients
+    # 2. Fetch Special Care Complex patients (excluding Discharged)
     scu_raw_df = read_google_sheet(scu_sheet)
     if not scu_raw_df.empty:
         scu_c = scu_raw_df.copy()
-        scu_c['NAME OF PATIENT'] = (
-            scu_c.get('LAST NAME', '').astype(str).str.strip() + ", " +
-            scu_c.get('FIRST NAME', '').astype(str).str.strip() + " " +
-            scu_c.get('MIDDLE NAME', '').astype(str).str.strip()
-        ).str.strip(", ")
+        if 'PATIENT STATUS' in scu_c.columns:
+            scu_c['PATIENT STATUS'] = scu_c['PATIENT STATUS'].fillna("ACTIVE")
+            scu_filtered = scu_c[
+                ~scu_c['PATIENT STATUS'].astype(str).str.strip().str.upper().isin(['DISCHARGED'])
+            ]
+        else:
+            scu_filtered = scu_c
 
-        scu_mapped = pd.DataFrame()
-        scu_mapped['Admission Date'] = scu_c.get('DATE', '')
-        scu_mapped['Department / Unit'] = "SPECIAL CARE COMPLEX (" + scu_c.get('ADMITTED TO', 'NICU') + ")"
-        scu_mapped['Room No.'] = "N/A"
-        scu_mapped['Name of Patient'] = scu_c['NAME OF PATIENT']
-        scu_mapped['Age'] = scu_c.get('AGE', '')
-        scu_mapped['Diagnosis'] = scu_c.get('DIAGNOSIS', '')
-        scu_mapped['Attending Physician'] = scu_c.get('ATTENDING PHYSICIAN', '')
-        scu_mapped['Status'] = scu_c.get('PATIENT STATUS', 'ACTIVE')
-        roster_combined_frames.append(scu_mapped)
+        if not scu_filtered.empty:
+            scu_filtered['NAME OF PATIENT'] = (
+                scu_filtered.get('LAST NAME', '').astype(str).str.strip() + ", " +
+                scu_filtered.get('FIRST NAME', '').astype(str).str.strip() + " " +
+                scu_filtered.get('MIDDLE NAME', '').astype(str).str.strip()
+            ).str.strip(", ")
+
+            scu_mapped = pd.DataFrame()
+            scu_mapped['Admission Date'] = scu_filtered.get('DATE', '')
+            scu_mapped['Department / Unit'] = "SPECIAL CARE COMPLEX (" + scu_filtered.get('ADMITTED TO', 'NICU') + ")"
+            scu_mapped['Room No.'] = "N/A"
+            scu_mapped['Name of Patient'] = scu_filtered['NAME OF PATIENT']
+            scu_mapped['Age'] = scu_filtered.get('AGE', '')
+            scu_mapped['Diagnosis'] = scu_filtered.get('DIAGNOSIS', '')
+            scu_mapped['Attending Physician'] = scu_filtered.get('ATTENDING PHYSICIAN', '')
+            scu_mapped['Status'] = scu_filtered.get('PATIENT STATUS', 'ACTIVE')
+            roster_combined_frames.append(scu_mapped)
 
     if roster_combined_frames:
         final_master_roster = pd.concat(roster_combined_frames, ignore_index=True)
         st.dataframe(clean_display_df(final_master_roster), use_container_width=True)
-        st.caption(f"Showing {len(final_master_roster)} total roster entries (GNU Active/MGH/CAB + All Special Care Complex admissions).")
+        st.caption(f"Showing {len(final_master_roster)} active non-discharged roster entries.")
     else:
         st.info("No active patient roster records found.")
 
