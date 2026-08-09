@@ -60,7 +60,7 @@ st.markdown("""
         border-left: 5px solid #1e3a8a !important;
     }
 
-    /* Form Inputs, Textareas, and Dropdown Controls (Excluding password fields to prevent login friction) */
+    /* Form Inputs, Textareas, and Dropdown Controls */
     div[data-baseweb="select"] > div, input[type="text"]:not([type="password"]), input[type="number"], textarea {
         background-color: #ffffff !important; color: #1e3a8a !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; text-transform: uppercase !important;
     }
@@ -1262,8 +1262,8 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
     form_key_slug = gnu_title.replace("General Nursing Unit (", "").replace(")", "").strip().lower()
     
     with st.form(f"gnu_form_{form_key_slug}", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics")
-        
+        # 1. Patient Demographics
+        st.subheader("1. Patient Demographics")
         c1, c2, c3 = st.columns([1.5, 2, 2])
         with c1:
             entry_date = st.date_input("Date", ph_now.date())
@@ -1284,6 +1284,8 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
         with c_n5:
             sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
 
+        # 2. Hospitalization Plan
+        st.subheader("2. Hospitalization Plan")
         c_h1, c_h2, c_h3 = st.columns(3)
         with c_h1:
             hosp_mode = st.selectbox("Hospitalization Mode", ["Select Mode", "Inpatient", "Outpatient"], index=0)
@@ -1294,7 +1296,8 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
-        st.subheader("👨‍⚕️ Medical Care Team")
+        # 3. Medical Care Team
+        st.subheader("3. Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key=f"gnu_{form_key_slug}_att").strip().upper()
@@ -1302,7 +1305,6 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key=f"gnu_{form_key_slug}_spec")
 
         tag_as_cm = st.form_submit_button("Tag as Co-Management")
-
         cm_list_key = f"cm_list_{form_key_slug}"
         if tag_as_cm and attending_physician:
             doc_name_up = attending_physician.strip().upper()
@@ -1315,10 +1317,12 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
             for idx, cm in enumerate(st.session_state[cm_list_key]):
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
-        st.subheader("📋 Clinical & Diagnostic Details")
+        # 4. Clinical and Diagnostic Details
+        st.subheader("4. Clinical and Diagnostic Details")
         diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip().upper()
 
-        st.subheader("📋 Procedures & Diagnostics")
+        # 5. Diagnostics Procedures and Treatment Plans
+        st.subheader("5. Diagnostics Procedures and Treatment Plans")
         procedures_text = st.text_area("Procedures", value="", key=f"gnu_{form_key_slug}_procs").strip().upper()
         diagnostic_exams_text = st.text_area("Diagnostic Examinations", value="", key=f"gnu_{form_key_slug}_diags").strip().upper()
         medications_text = st.text_area("Medications", value="", key=f"gnu_{form_key_slug}_meds").strip().upper()
@@ -1375,8 +1379,8 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
     st.header("🚑 Emergency Care Complex Patient Registration")
     ph_now = get_ph_time()
     with st.form("ecc_form", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics")
-        
+        # 1. Patient Demographics
+        st.subheader("1. Patient Demographics")
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
             last_name = st.text_input("Last Name", value="").strip().upper()
@@ -1395,6 +1399,8 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         with c_d2:
             entry_time_str = civilian_time_input_field("Time", key_suffix="ecc_time")
 
+        # 2. Hospitalization Plan
+        st.subheader("2. Hospitalization Plan")
         c_h1, c_h2, c_h3, c_h4 = st.columns(4)
         with c_h1:
             hosp_mode = st.selectbox("Hospitalization Mode", ["Select Mode", "Inpatient", "Outpatient"], index=0)
@@ -1407,7 +1413,8 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
-        st.subheader("👨‍⚕️ Medical Care Team")
+        # 3. Medical Care Team
+        st.subheader("3. Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key="ecc_att_input").strip().upper()
@@ -1426,7 +1433,8 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
             for idx, cm in enumerate(st.session_state["cm_list_ecc"]):
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
-        st.subheader("📋 Clinical & Diagnostic Details")
+        # 4. Clinical and Diagnostic Details
+        st.subheader("4. Clinical and Diagnostic Details")
         diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip().upper()
 
         disease_options = sorted([
@@ -1437,6 +1445,10 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
             'FRACTURE', 'OTHER CASES'
         ])
         selected_diseases = st.multiselect("Disease Category", disease_options)
+
+        # 5. Diagnostics Procedures and Treatment Plans
+        st.subheader("5. Diagnostics Procedures and Treatment Plans")
+        kit_package = st.checkbox("Hospital Kit Package", value=False, key="ecc_kit")
 
         submitted = st.form_submit_button("Submit Record")
         if submitted:
@@ -1469,6 +1481,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
                 'CO-MANAGEMENT SPECIALIZATION': cm_specs_str,
                 'HOSPITALIZATION MODE': hosp_mode,
                 'CASE TYPE': case_type,
+                'HOSPITAL KIT PACKAGE': "YES" if kit_package else "NO",
                 'MODE OF PAYMENT': payment_selected,
                 'ADMITTED TO': admitted_to,
                 'CASE COUNT': 1,
@@ -1487,8 +1500,8 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
     ph_now = get_ph_time()
     
     with st.form("endo_form", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics")
-        
+        # 1. Patient Demographics
+        st.subheader("1. Patient Demographics")
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
             last_name = st.text_input("Last Name", value="").strip().upper()
@@ -1509,9 +1522,8 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         with c_d3:
             actual_time_str = civilian_time_input_field("Actual Time", key_suffix="endo_actual")
 
-        curr_date_str = entry_date.strftime("%m/%d/%Y")
-
-        st.subheader("🏥 Hospitalization & Payment Details")
+        # 2. Hospitalization Plan
+        st.subheader("2. Hospitalization Plan")
         ch1, ch2, ch3 = st.columns(3)
         with ch1:
             hosp_mode = st.selectbox("Hospitalization Mode", ["Select Mode", "INPATIENT", "OUTPATIENT"], index=0)
@@ -1520,7 +1532,10 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         with ch3:
             patient_status = st.selectbox("Patient Status", ["ACTIVE", "DISCHARGED", "MAY GO HOME"], index=0)
 
-        st.subheader("👨‍⚕️ Medical Care Team")
+        curr_date_str = entry_date.strftime("%m/%d/%Y")
+
+        # 3. Medical Care Team
+        st.subheader("3. Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key="endo_att_input").strip().upper()
@@ -1544,13 +1559,16 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         anesthesiologist = st.text_input("Anesthesiologist Name", value="").strip().upper()
         anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0)
 
-        st.subheader("📋 Clinical & Diagnostic Details")
+        # 4. Clinical and Diagnostic Details
+        st.subheader("4. Clinical and Diagnostic Details")
         cd1, cd2 = st.columns(2)
         with cd1:
             diagnosis_text = st.text_input("Clinical Diagnosis", value="").strip().upper()
         with cd2:
             procedure_text = st.text_input("Procedure Name", value="").strip().upper()
 
+        # 5. Diagnostics Procedures and Treatment Plans
+        st.subheader("5. Diagnostics Procedures and Treatment Plans")
         proc_cols = sorted(['GASTROSCOPY', 'COLONOSCOPY', 'NASAL PROCEDURE', 'PEG PROCEDURE', 'ERCP', 'PROCTOSIGMOIDOSCOPY', 'PARACENTESIS', 'BRONCHOSCOPY', 'OTHER PROCEDURES'])
         selected_procs = st.multiselect("Procedure Category", proc_cols)
         
@@ -1616,8 +1634,8 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
     st.markdown(f"<h2>{hdu_icon_html} Hemodialysis Unit Patient Registration</h2>", unsafe_allow_html=True)
 
     with st.form("hdu_form", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics")
-        
+        # 1. Patient Demographics
+        st.subheader("1. Patient Demographics")
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
             last_name = st.text_input("Last Name", value="").strip().upper()
@@ -1634,10 +1652,22 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         with c_d1:
             entry_date = st.date_input("Dialysis Date", datetime.today())
 
-        diagnosis = st.text_input("Diagnosis", value="").strip().upper()
         curr_date_str = entry_date.strftime("%B %d, %Y")
 
-        st.subheader("👨‍⚕️ Medical Care Team")
+        # 2. Hospitalization Plan
+        st.subheader("2. Hospitalization Plan")
+        c7, c8, c9, c10 = st.columns(4)
+        with c7:
+            shift_set = st.selectbox("Dialysis Shift Slot", ["Select Slot", "1ST SET", "2ND SET", "3RD SET", "ONCALL"], index=0)
+        with c8:
+            hosp_mode = st.selectbox("Hospitalization Mode", ["Select Mode", "Outpatient", "Inpatient"], index=0)
+        with c9:
+            payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY"], index=0)
+        with c10:
+            patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"], index=0)
+
+        # 3. Medical Care Team
+        st.subheader("3. Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
             attending_physician = st.text_input("Attending Physician", value="", key="hdu_att_input").strip().upper()
@@ -1656,15 +1686,13 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
             for cm in st.session_state["cm_list_hdu"]:
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
-        c7, c8, c9, c10 = st.columns(4)
-        with c7:
-            shift_set = st.selectbox("Dialysis Shift Slot", ["Select Slot", "1ST SET", "2ND SET", "3RD SET", "ONCALL"], index=0)
-        with c8:
-            hosp_mode = st.selectbox("Hospitalization Mode", ["Select Mode", "Outpatient", "Inpatient"], index=0)
-        with c9:
-            payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY"], index=0)
-        with c10:
-            patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"], index=0)
+        # 4. Clinical and Diagnostic Details
+        st.subheader("4. Clinical and Diagnostic Details")
+        diagnosis = st.text_input("Diagnosis", value="").strip().upper()
+
+        # 5. Diagnostics Procedures and Treatment Plans
+        st.subheader("5. Diagnostics Procedures and Treatment Plans")
+        kit_package_hdu = st.checkbox("Hospital Kit Package", value=False, key="hdu_kit")
 
         submitted = st.form_submit_button("Submit Record")
         if submitted:
@@ -1702,6 +1730,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
                 'CO-MANAGEMENT SPECIALIZATION': cm_specs_str,
                 'DIALYSIS SHIFT SLOT': shift_set,
                 'HOSPITALIZATION MODE': hosp_mode,
+                'HOSPITAL KIT PACKAGE': "YES" if kit_package_hdu else "NO",
                 'MODE OF PAYMENT': payment_selected,
                 'PATIENT STATUS': patient_status,
                 'CASE COUNT': 1,
@@ -1721,8 +1750,8 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
     ph_now = get_ph_time()
 
     with st.form("obgyne_form", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics")
-        
+        # 1. Patient Demographics
+        st.subheader("1. Patient Demographics")
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
             last_name = st.text_input("Last Name", value="").strip().upper()
@@ -1743,9 +1772,20 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         with c_d3:
             actual_time_str = civilian_time_input_field("Actual Time", key_suffix="ob_actual")
 
+        # 2. Hospitalization Plan
+        st.subheader("2. Hospitalization Plan")
+        ca_h, cb_h, cc_h = st.columns(3)
+        with ca_h:
+            hosp_mode = st.selectbox("Hospitalization Mode", ["Select Mode", "Outpatient", "Inpatient"], index=0)
+        with cb_h:
+            payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY"], index=0)
+        with cc_h:
+            patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"], index=0)
+
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
-        st.subheader("👨‍⚕️ Medical Care Team")
+        # 3. Medical Care Team
+        st.subheader("3. Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key="ob_att_input").strip().upper()
@@ -1769,8 +1809,8 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         anesthesiologist = st.text_input("Anesthesiologist Name", value="").strip().upper()
         anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0)
 
-        st.subheader("📋 Clinical & Diagnostic Details")
-        
+        # 4. Clinical and Diagnostic Details
+        st.subheader("4. Clinical and Diagnostic Details")
         cd1, cd2 = st.columns(2)
         with cd1:
             pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="").strip().upper()
@@ -1783,20 +1823,16 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         with cp2:
             surgical_procedure = st.text_area("Surgical Procedure", value="").strip().upper()
 
+        # 5. Diagnostics Procedures and Treatment Plans
+        st.subheader("5. Diagnostics Procedures and Treatment Plans")
         all_ob_procs = sorted(['CS PRIMARY', 'CS', 'NSD', 'D&C', 'HYSTERECTOMY', 'EXLAP', 'OTHER PROCEDURES', 'NST'])
-
-        ca, cb, cc, cd, ce = st.columns(5)
+        ca, cb, cc = st.columns(3)
         with ca:
             selected_ob_procs = st.multiselect("Procedure Category", all_ob_procs)
         with cb:
             complexity = st.selectbox("Complexity Tier", ["Select Complexity", "MAJOR", "MINOR", "DIAGNOSTIC"], index=0)
         with cc:
-            hosp_mode = st.selectbox("Hospitalization Mode", ["Select Mode", "Outpatient", "Inpatient"], index=0)
             kit_used = st.checkbox("Hospital Kit Package", value=False)
-        with cd:
-            payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY"], index=0)
-        with ce:
-            patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"], index=0)
 
         submitted = st.form_submit_button("Submit Record")
         if submitted:
@@ -1857,8 +1893,8 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
     ph_now = get_ph_time()
 
     with st.form("scc_form", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics")
-        
+        # 1. Patient Demographics
+        st.subheader("1. Patient Demographics")
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
             last_name = st.text_input("Last Name", value="").strip().upper()
@@ -1879,9 +1915,20 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         with c_d3:
             actual_time_str = civilian_time_input_field("Actual Time", key_suffix="scc_actual")
 
+        # 2. Hospitalization Plan
+        st.subheader("2. Hospitalization Plan")
+        ca_h, cb_h, cc_h = st.columns(3)
+        with ca_h:
+            hosp_mode = st.selectbox("Hospitalization Mode", ["Select Mode", "Outpatient", "Inpatient"], index=0)
+        with cb_h:
+            payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY"], index=0)
+        with cc_h:
+            patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"], index=0)
+
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
-        st.subheader("👨‍⚕️ Medical Care Team")
+        # 3. Medical Care Team
+        st.subheader("3. Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key="scc_att_input").strip().upper()
@@ -1905,8 +1952,8 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         anesthesiologist = st.text_input("Anesthesiologist Name", value="").strip().upper()
         anes_spec = st.selectbox("Anesthesiologist Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0)
 
-        st.subheader("📋 Clinical & Diagnostic Details")
-        
+        # 4. Clinical and Diagnostic Details
+        st.subheader("4. Clinical and Diagnostic Details")
         cd1, cd2 = st.columns(2)
         with cd1:
             pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="").strip().upper()
@@ -1915,6 +1962,8 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 
         procedure = st.text_area("Surgical Procedure", value="").strip().upper()
 
+        # 5. Diagnostics Procedures and Treatment Plans
+        st.subheader("5. Diagnostics Procedures and Treatment Plans")
         all_scc_procs = sorted([
             'EXCISION BIOPSY', 'INCISION AND DRAINAGE', 'WOUND SUTURING & CLOSING AND CHANGE OF DRESSING',
             'PLEURAL CATH INSERTION', 'COLOSTOMY', 'DEBRIDEMENT', 'ANAL BIOPSY', 'CORE NEEDLE BIOPSY',
@@ -1926,18 +1975,13 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             'CHOLEDOSCOPY', 'DENTAL PROCEDURES', 'OTHER PROCEDURES'
         ])
         
-        ca, cb, cc, cd, ce = st.columns(5)
+        ca, cb, cc = st.columns(3)
         with ca:
             selected_scc_procs = st.multiselect("Procedure Category", all_scc_procs)
         with cb:
             complexity = st.selectbox("Complexity Tier", ["Select Complexity", "MAJOR", "MEDIUM", "MINOR", "DIAGNOSTICS"], index=0)
         with cc:
-            hosp_mode = st.selectbox("Hospitalization Mode", ["Select Mode", "Outpatient", "Inpatient"], index=0)
             kit_package = st.checkbox("Hospital Kit Package", value=False)
-        with cd:
-            payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY"], index=0)
-        with ce:
-            patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"], index=0)
 
         submitted = st.form_submit_button("Submit Record")
         if submitted:
@@ -1997,8 +2041,8 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
     ph_now = get_ph_time()
 
     with st.form("scu_form", clear_on_submit=True):
-        st.subheader("👤 Patient Demographics")
-        
+        # 1. Patient Demographics (including age-specific values: hours, days, weeks, months, years)
+        st.subheader("1. Patient Demographics")
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
             last_name = st.text_input("Last Name", value="").strip().upper()
@@ -2023,7 +2067,24 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
-        st.subheader("👨‍⚕️ Medical Care Team")
+        # 2. Hospitalization Plan
+        st.subheader("2. Hospitalization Plan")
+        c10, c11, c12, c13, c14, c15 = st.columns(6)
+        with c10:
+            admitted_from = st.selectbox("Admitted From", HOSPITAL_UNIT_AREAS, index=0)
+        with c11:
+            admitted_to = st.selectbox("Admitted To", ["Select Area", "NICU", "PICU", "NSU", "PCN", "OUTBORN", "ROOM-IN"], index=0)
+        with c12:
+            transferred_to = st.selectbox("Transferred To", HOSPITAL_UNIT_AREAS, index=0)
+        with c13:
+            hosp_mode = st.selectbox("Hospitalization Mode", ["Select Mode", "Outpatient", "Inpatient"], index=0)
+        with c14:
+            payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY"], index=0)
+        with c15:
+            patient_status = st.selectbox("Patient Status", ["ACTIVE", "MGH", "DISCHARGED", "CAB"], index=0)
+
+        # 3. Medical Care Team
+        st.subheader("3. Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
             attending_physician = st.text_input("Attending Physician Name", value="", key="scu_att_input").strip().upper()
@@ -2042,25 +2103,13 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
             for cm in st.session_state["cm_list_scu"]:
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
-        c10, c11, c12, c13, c14 = st.columns(5)
-        with c10:
-            admitted_from = st.selectbox("Admitted From", HOSPITAL_UNIT_AREAS, index=0)
-        with c11:
-            admitted_to = st.selectbox("Admitted To", ["Select Area", "NICU", "PICU", "NSU", "PCN", "OUTBORN", "ROOM-IN"], index=0)
-        with c12:
-            transferred_to = st.selectbox("Transferred To", HOSPITAL_UNIT_AREAS, index=0)
-        with c13:
-            hosp_mode = st.selectbox("Hospitalization Mode", ["Select Mode", "Outpatient", "Inpatient"], index=0)
-        with c14:
-            patient_status = st.selectbox("Patient Status", ["ACTIVE", "MGH", "DISCHARGED", "CAB"], index=0)
-
-        payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY"], index=0)
-
-        st.subheader("📋 Clinical & Diagnostic Details")
+        # 4. Clinical and Diagnostic Details
+        st.subheader("4. Clinical and Diagnostic Details")
         diagnosis = st.text_area("Diagnosis Text", value="").strip().upper()
         diag_flags = st.multiselect("Diagnosis Category", ["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY"])
 
-        st.subheader("📋 Procedures & Diagnostics")
+        # 5. Diagnostics Procedures and Treatment Plans
+        st.subheader("5. Diagnostics Procedures and Treatment Plans")
         scu_procedures = st.text_area("Procedures", value="", key="scu_procs").strip().upper()
         scu_diagnostic_exams = st.text_area("Diagnostic Examinations", value="", key="scu_diags").strip().upper()
         scu_medications = st.text_area("Medications", value="", key="scu_meds").strip().upper()
