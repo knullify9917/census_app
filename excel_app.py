@@ -1026,6 +1026,24 @@ if selected_sheet == "Pareto Tally Sheet":
             else:
                 st.info("No specialization column found for this department.")
 
+        # Special ECC Cross-Tabulation Tally for Hospitalization Mode vs Case Type
+        if selected_tally_dept == "Emergency Care Complex (ECC)" and hosp_mode_col and case_type_col:
+            st.markdown("---")
+            st.markdown("### 🚑 ECC Specific Cross-Tally: Hospitalization Mode vs. Case Type")
+            st.markdown("Table displaying the count of Inpatient vs. Outpatient categorized by Private Case and House Case (Walk-in).")
+            
+            if hosp_mode_col in clean_dept_df.columns and case_type_col in clean_dept_df.columns:
+                ctable = pd.crosstab(
+                    clean_dept_df[hosp_mode_col].fillna('UNKNOWN'), 
+                    clean_dept_df[case_type_col].fillna('UNKNOWN'), 
+                    margins=True, 
+                    margins_name='Total Cases'
+                ).reset_index()
+                st.dataframe(ctable, use_container_width=True)
+            else:
+                st.info("Hospitalization Mode or Case Type columns not found in ECC data.")
+
+        # Additional Tally Parameters: Hospitalization Mode, Case Type, Mode of Payment, Shift Slot
         st.markdown("---")
         st.markdown(f"### 📊 Operational Tally Parameters (`{selected_tally_dept}`)")
         
