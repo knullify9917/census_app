@@ -745,38 +745,54 @@ if st.session_state["role"] == "Administrator":
                 date_str = ph_now_display.strftime("%m/%d/%Y")
                 target_dept = department_targets[i % len(department_targets)]
 
+                # Build dictionary strictly mapping to expected sheet headers to avoid KeyError
+                headers = SHEET_HEADERS.get(target_dept, [])
+                row_data = {h: "" for h in headers}
+                
+                row_data['MONTH'] = get_month_str(ph_now_display.date(), "full_month")
+                row_data['DATE'] = date_str
+                row_data['LAST NAME'] = ln
+                row_data['FIRST NAME'] = fn
+                row_data['MIDDLE NAME'] = mn
+                row_data['SEX'] = sex
+                row_data['AGE'] = age
+                row_data['ATTENDING PHYSICIAN'] = "DR. E. SANTOS"
+                row_data['ATTENDING SPECIALIZATION'] = "INTERNAL MEDICINE"
+                row_data['CO-MANAGEMENT PHYSICIAN'] = "N/A"
+                row_data['CO-MANAGEMENT SPECIALIZATION'] = "N/A"
+                row_data['HOSPITALIZATION MODE'] = "INPATIENT"
+                row_data['HOSPITAL KIT PACKAGE'] = "YES"
+                row_data['MODE OF PAYMENT'] = pay_mode
+                row_data['PATIENT STATUS'] = stat
+                row_data['PROCEDURES'] = "STANDARD CARE"
+                row_data['DIAGNOSTIC EXAMINATIONS'] = "CBC"
+                row_data['MEDICATIONS'] = "VITAMINS"
+                row_data['SPECIAL ENDORSEMENTS'] = "STABLE"
+                row_data['CASE COUNT'] = "1"
+                row_data['SEEDED_TRIAL'] = "YES"
+
                 if target_dept == "Emergency Care Complex (ECC)":
-                    row_data = {
-                        'MONTH': get_month_str(ph_now_display.date(), "full_month"), 'DATE': date_str, 'TIME': "10:00 AM",
-                        'LAST NAME': ln, 'FIRST NAME': fn, 'MIDDLE NAME': mn, 'SEX': sex, 'AGE': age,
-                        'DIAGNOSIS': "ACUTE ABDOMEN / TRAUMA", 'DISEASE CATEGORY': "ACUTE GASTROENTERITIS",
-                        'ATTENDING PHYSICIAN': "DR. E. SANTOS", 'ATTENDING SPECIALIZATION': "EMERGENCY MEDICINE",
-                        'CO-MANAGEMENT PHYSICIAN': "N/A", 'CO-MANAGEMENT SPECIALIZATION': "N/A",
-                        'HOSPITALIZATION MODE': "INPATIENT", 'CASE TYPE': "PRIVATE CASE", 'HOSPITAL KIT PACKAGE': "YES",
-                        'MODE OF PAYMENT': pay_mode, 'ADMITTED TO': "ECC", 
-                        'PROCEDURES': "IV HYDRATION", 'DIAGNOSTIC EXAMINATIONS': "CBC, X-RAY", 'MEDICATIONS': "PARACETAMOL", 'SPECIAL ENDORSEMENTS': "STABLE",
-                        'CASE COUNT': 1, 'SEEDED_TRIAL': 'YES'
-                    }
+                    row_data['TIME'] = "10:00 AM"
+                    row_data['DIAGNOSIS'] = "ACUTE ABDOMEN"
+                    row_data['DISEASE CATEGORY'] = "ACUTE GASTROENTERITIS"
+                    row_data['CASE TYPE'] = "PRIVATE CASE"
+                    row_data['ADMITTED TO'] = "ECC"
                 elif target_dept == "Hemodialysis Unit (HDU)":
-                    row_data = {
-                        'MONTH': get_month_str(ph_now_display.date(), "numeric_prefix"), 'DATE': date_str, 'TRUE DATE': "0",
-                        'LAST NAME': ln, 'FIRST NAME': fn, 'MIDDLE NAME': mn, 'SEX': sex, 'AGE': age,
-                        'DIAGNOSIS': "CHRONIC KIDNEY DISEASE STAGE 5 ON HD", 'ATTENDING PHYSICIAN': "DR. A. CRUZ", 'ATTENDING SPECIALIZATION': "NEPHROLOGY",
-                        'CO-MANAGEMENT PHYSICIAN': "N/A", 'CO-MANAGEMENT SPECIALIZATION': "N/A", 'DIALYSIS SHIFT SLOT': "1ST SET",
-                        'HOSPITALIZATION MODE': "OUTPATIENT", 'HOSPITAL KIT PACKAGE': "YES", 'MODE OF PAYMENT': pay_mode, 'PATIENT STATUS': stat,
-                        'PROCEDURES': "HEMODIALYSIS", 'DIAGNOSTIC EXAMINATIONS': "CREATININE", 'MEDICATIONS': "EPO", 'SPECIAL ENDORSEMENTS': "STABLE",
-                        'CASE COUNT': 1, 'SEEDED_TRIAL': 'YES'
-                    }
-                else:
-                    row_data = {
-                        'MONTH': get_month_str(ph_now_display.date(), "full_month"), 'DATE': date_str, 'TIME': "10:00 AM",
-                        'ROOM NO': "RM-101", 'LAST NAME': ln, 'FIRST NAME': fn, 'MIDDLE NAME': mn, 'SEX': sex, 'AGE': age,
-                        'DIAGNOSIS': "PNEUMONIA", 'ATTENDING PHYSICIAN': "DR. M. REYES", 'ATTENDING SPECIALIZATION': "INTERNAL MEDICINE",
-                        'CO-MANAGEMENT PHYSICIAN': "N/A", 'CO-MANAGEMENT SPECIALIZATION': "N/A",
-                        'HOSPITALIZATION MODE': "INPATIENT", 'HOSPITAL KIT PACKAGE': "YES", 'MODE OF PAYMENT': pay_mode,
-                        'PATIENT STATUS': stat, 'PROCEDURES': "OXYGEN THERAPY", 'DIAGNOSTIC EXAMINATIONS': "X-RAY",
-                        'MEDICATIONS': "ANTIBIOTICS", 'SPECIAL ENDORSEMENTS': "STABLE", 'CASE COUNT': 1, 'SEEDED_TRIAL': 'YES'
-                    }
+                    row_data['TRUE DATE'] = "0"
+                    row_data['DIAGNOSIS'] = "CKD STAGE 5"
+                    row_data['DIALYSIS SHIFT SLOT'] = "1ST SET"
+                elif target_dept.startswith("General Nursing Unit"):
+                    row_data['TIME'] = "10:00 AM"
+                    row_data['ROOM NO'] = "RM-101"
+                    row_data['DIAGNOSIS'] = "PNEUMONIA"
+                elif target_dept == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
+                    row_data['AOG'] = "38 WKS"
+                    row_data['DIAGNOSIS'] = "RESPIRATORY DISTRESS"
+                    row_data['DIAGNOSIS CATEGORY'] = "SEPSIS"
+                    row_data['ADMITTED FROM'] = "LRDR"
+                    row_data['ADMITTED TO'] = "NICU"
+                    row_data['TRANSFERRED TO'] = "NONE"
+
                 append_record_to_google_sheet(target_dept, row_data)
                 progress_bar.progress((i + 1) / batch_size)
                 py_time.sleep(0.05)
