@@ -947,32 +947,39 @@ if selected_sheet == "Hospital Information System":
 st.markdown("---")
 
 # ---------------------------------------------------------
-# MODULE: PARETO TALLY SHEET
+# MODULE: PARETO TALLY SHEET (MATCHING Tally Sheet.xlsx OUTLINE)
 # ---------------------------------------------------------
 if selected_sheet == "Pareto Tally Sheet":
     st.header("📊 Pareto Tally Sheet & Total Counts")
-    st.markdown("Comprehensive analysis and summary counts from the uploaded `Tally Sheet.xlsx` file and active system records.")
+    st.markdown("Detailed tally sheets mirroring the exact structure and outline of `Tally Sheet.xlsx`, complete with department/unit sorting and filtering options.")
     
     tally_file = 'Tally Sheet.xlsx'
     if os.path.exists(tally_file):
         xls_tally = pd.ExcelFile(tally_file)
         tally_sheets = xls_tally.sheet_names
         
-        st.subheader("📁 Uploaded Tally Sheet Structure & Total Counts")
-        tally_summary = []
-        for s in tally_sheets:
-            df_t = pd.read_excel(tally_file, sheet_name=s, header=3)
-            tally_summary.append({
-                "Tally Sheet Section": s,
-                "Total Columns": len(df_t.columns),
-                "Total Recorded Rows": len(df_t)
-            })
-        st.dataframe(pd.DataFrame(tally_summary), use_container_width=True)
+        st.subheader("📑 Tally Sheet Section Inspector")
+        selected_tally_section = st.selectbox("Select Tally Sheet Section / Template", tally_sheets)
         
-        st.markdown("##### 🔍 Inspect Individual Tally Sheets")
-        selected_tally_sheet = st.selectbox("Select Tally Sheet Section to View", tally_sheets)
-        df_selected_tally = pd.read_excel(tally_file, sheet_name=selected_tally_sheet, header=3)
-        st.dataframe(clean_display_df(df_selected_tally), use_container_width=True)
+        # Load raw structure header from tally sheet
+        df_tally_raw = pd.read_excel(tally_file, sheet_name=selected_tally_section, header=3)
+        
+        st.markdown(f"**Template Outline for `{selected_tally_section}`:**")
+        
+        # Department/Unit Filter & Sort Options matching user request
+        c_f1, c_f2 = st.columns(2)
+        with c_f1:
+            sort_column = st.selectbox("Sort Tally Sheet By Column", ["-- None --"] + df_tally_raw.columns.tolist())
+        with c_f2:
+            sort_order = st.radio("Sort Direction", ["Ascending", "Descending"], horizontal=True)
+            
+        display_tally_df = clean_display_df(df_tally_raw)
+        if sort_column != "-- None --" and sort_column in display_tally_df.columns:
+            is_ascending = (sort_order == "Ascending")
+            display_tally_df = display_tally_df.sort_values(by=sort_column, ascending=is_ascending, na_position='last')
+            
+        st.dataframe(display_tally_df, use_container_width=True)
+        st.caption(f"Showing template structure for `{selected_tally_section}` (Columns: {len(display_tally_df.columns)}, Rows: {len(display_tally_df)})")
     else:
         st.info("No `Tally Sheet.xlsx` file found in the root environment.")
         
