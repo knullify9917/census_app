@@ -699,7 +699,7 @@ st.sidebar.markdown("### 🧭 Department Navigation")
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
 
 # ---------------------------------------------------------
-# ADMIN SEEDER TOOL (MULTI-DISCIPLINARY CENSUS GENERATOR)
+# ADMIN SEEDER TOOL
 # ---------------------------------------------------------
 if st.session_state["role"] == "Administrator":
     st.sidebar.markdown("---")
@@ -963,7 +963,7 @@ if st.session_state["role"] == "Administrator":
             st.sidebar.success(f"Successfully generated {success_count} multi-disciplinary trial patient records across all hospital modules!")
             st.rerun()
 
-# Admin Wipe Data Tool (Clears trial-and-error seeder records with safe rate-limited batching, preserving manual user entries)
+# Admin Wipe Data Tool (Clears trial-and-error seeder records, preserves manual user entries)
 if st.session_state["role"] == "Administrator":
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🛠️ Admin Developer Tools")
@@ -976,26 +976,44 @@ if st.session_state["role"] == "Administrator":
                 try:
                     wiped_count = 0
                     for s_name in SHEET_HEADERS.keys():
-                        df = read_google_sheet(s_name, force_refresh=True)
-                        if not df.empty:
-                            if 'SEEDED_TRIAL' in df.columns:
-                                kept_df = df[df['SEEDED_TRIAL'].astype(str).str.strip().str.upper() != 'YES'].copy()
-                                removed_rows = len(df) - len(kept_df)
+                        df_local = read_sqlite_sheet(s_name)
+                        if not df_local.empty:
+                            if 'SEEDED_TRIAL' in df_local.columns:
+                                kept_df = df_local[df_local['SEEDED_TRIAL'].astype(str).str.strip().str.upper() != 'YES'].copy()
+                                removed_rows = len(df_local) - len(kept_df)
                                 wiped_count += removed_rows
                             else:
-                                kept_df = df.copy()
-                            
-                            # Rate-limited safe cloud update with backoff delay
-                            update_google_sheet_from_df(s_name, kept_df)
+                                kept_df = pd.DataFrame(columns=SHEET_HEADERS[s_name])
+                                wiped_count += len(df_local)
                             sync_df_to_sqlite(s_name, kept_df)
-                            time.sleep(1.5)  # Prevents Google Sheets API 429 quota rate limit
+
+                        try:
+                            ws = sh.worksheet(s_name)
+                            ws.clear()
+                            ws.update('A1', [[f"MTCMC CLINICAL CENSUS - {s_name} MASTERFILE"]])
+                            ws.update('A4', [SHEET_HEADERS[s_name]])
                             
-                    st.sidebar.success(f"Successfully wiped {wiped_count} trial seeder records! Manual user data preserved.")
+                            if not df_local.empty and 'SEEDED_TRIAL' in df_local.columns:
+                                kept_df = df_local[df_local['SEEDED_TRIAL'].astype(str).str.strip().str.upper() != 'YES'].copy()
+                                if not kept_df.empty:
+                                    rows_to_push = []
+                                    for _, row in kept_df.iterrows():
+                                        rows_to_push.append([str(row.get(h, "")) for h in SHEET_HEADERS[s_name]])
+                                    if rows_to_push:
+                                        ws.update('A5', rows_to_push)
+                        except Exception:
+                            pass
+                        
+                        time.sleep(1.2) # Rate-limiting delay to prevent Google Sheets 429 Quota limits
+
+                    st.cache_data.clear()
+                    st.session_state["df_cache"] = {}
+                    st.sidebar.success(f"Successfully wiped {wiped_count} trial/test records! Manual user data preserved.")
                     st.rerun()
                 except Exception as e:
                     st.sidebar.error(f"Wipe failed: {e}")
             else:
-                st.sidebar.warning("Please check 'Confirm Wipe Trial Records' to proceed.")
+                st.sidebar.warning("Please check 'Confirm Wipe Action' to proceed.")
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📥 Export Reports")
