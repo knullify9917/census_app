@@ -332,7 +332,7 @@ def get_month_str(date_obj, fmt_style="numeric_prefix"):
     return month_name
 
 # ---------------------------------------------------------
-# HYBRID SQLITE BACKEND SETUP (FRESH PURGE ON STARTUP)
+# HYBRID SQLITE BACKEND SETUP
 # ---------------------------------------------------------
 sqlite_lock = threading.Lock()
 
@@ -346,8 +346,7 @@ def init_local_sqlite():
     cursor = conn.cursor()
     for s_name, cols in SHEET_HEADERS.items():
         cols_def = ", ".join([f'"{col}" TEXT' for col in cols])
-        cursor.execute(f'DROP TABLE IF EXISTS "{s_name}"')
-        cursor.execute(f'CREATE TABLE "{s_name}" ({cols_def})')
+        cursor.execute(f'CREATE TABLE IF NOT EXISTS "{s_name}" ({cols_def})')
     conn.commit()
     conn.close()
 
@@ -671,6 +670,47 @@ st.sidebar.markdown(f"**Role:** `{st.session_state['role']}`")
 ph_now_display = get_ph_time()
 st.sidebar.markdown(f"**Date & Time:** `{ph_now_display.strftime('%B %d, %Y - %I:%M %p')}`")
 st.sidebar.markdown("---")
+
+# ---------------------------------------------------------
+# ADMIN FULL SYSTEM WIPE TOOL
+# ---------------------------------------------------------
+if st.session_state["role"] == "Administrator":
+    st.sidebar.markdown("### 🛠️ Admin Control Center")
+    with st.sidebar.expander("🚨 Full System Wipe (All Depts)"):
+        st.markdown("Permanently erase all records, patient data, metrics, and tallies from **every** department and local database.")
+        confirm_system_wipe = st.checkbox("I confirm wiping all data", value=False)
+        
+        if st.button("🧹 Execute Full Wipe", type="primary"):
+            if confirm_system_wipe:
+                try:
+                    # Wipe Google Sheets
+                    for s_name, cols in SHEET_HEADERS.items():
+                        try:
+                            ws = sh.worksheet(s_name)
+                            ws.clear()
+                            ws.update('A1', [[f"MTCMC CLINICAL CENSUS - {s_name} MASTERFILE"]])
+                            ws.update('A4', [cols])
+                        except Exception:
+                            pass
+                        time.sleep(0.5)
+
+                    # Wipe SQLite Local DB
+                    conn = get_sqlite_conn()
+                    cursor = conn.cursor()
+                    for s_name, cols in SHEET_HEADERS.items():
+                        cursor.execute(f'DELETE FROM "{s_name}"')
+                    conn.commit()
+                    conn.close()
+
+                    st.cache_data.clear()
+                    st.session_state["df_cache"] = {}
+                    st.sidebar.success("Successfully wiped all data across all departments!")
+                    st.rerun()
+                except Exception as e:
+                    st.sidebar.error(f"Wipe failed: {e}")
+            else:
+                st.sidebar.warning("Please check the confirmation box to proceed.")
+    st.sidebar.markdown("---")
 
 logged_user_key = st.session_state["username"]
 user_info = USER_DATABASE.get(logged_user_key, {})
