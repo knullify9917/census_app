@@ -9,6 +9,7 @@ import io
 import base64
 import random
 import time
+import concurrent.futures
 
 # ---------------------------------------------------------
 # 1. PAGE CONFIGURATION & LOGO-MATCHED BLUE/GREEN COLORWAY
@@ -424,7 +425,8 @@ def update_google_sheet_from_df(sheet_name, df):
         st.error(f"Error updating Google Sheets: {e}")
         return False
 
-@st.cache_data(ttl=60)
+# PERFORMANCE OPTIMIZATION: Extended Cache TTL (300s / 5 minutes)
+@st.cache_data(ttl=300)
 def read_google_sheet(sheet_name):
     ensure_google_sheets_exist()
     try:
@@ -438,6 +440,19 @@ def read_google_sheet(sheet_name):
     except Exception as e:
         st.warning(f"Note: Could not load sheet '{sheet_name}'.")
     return pd.DataFrame()
+
+# PERFORMANCE OPTIMIZATION: Concurrent Parallel Sheet Fetching
+def read_multiple_sheets_parallel(sheet_names):
+    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
+        future_to_sheet = {executor.submit(read_google_sheet, s): s for s in sheet_names}
+        results = {}
+        for future in concurrent.futures.as_completed(future_to_sheet):
+            s = future_to_sheet[future]
+            try:
+                results[s] = future.result()
+            except Exception:
+                results[s] = pd.DataFrame()
+    return results
 
 def check_existing_patient_ai(sheet_name, last_name, fn, curr_date_str):
     df = read_google_sheet(sheet_name)
@@ -906,8 +921,11 @@ if selected_sheet == "Hospital Information System":
 
     summary_data = []
 
+    # PERFORMANCE OPTIMIZATION: Fetch all department sheets in parallel
+    dept_data_map = read_multiple_sheets_parallel(department_sheets)
+
     for dept in department_sheets:
-        df = read_google_sheet(dept)
+        df = dept_data_map.get(dept, pd.DataFrame())
         record_count = len(df) if not df.empty else 0
         daily_count, monthly_count = 0, 0
         
@@ -938,7 +956,7 @@ if selected_sheet == "Hospital Information System":
             "Monthly Patient Census": monthly_count
         })
 
-    scu_df = read_google_sheet(scu_sheet)
+    scu_df = dept_data_map.get(scu_sheet, pd.DataFrame())
     nic_count, pic_count, nsu_count, pcn_count, out_count = 0, 0, 0, 0, 0
     if not scu_df.empty and 'ADMITTED TO' in scu_df.columns:
         scu_df['ADMITTED_TO_UP'] = scu_df['ADMITTED TO'].astype(str).str.strip().str.upper()
@@ -983,7 +1001,7 @@ if selected_sheet == "Hospital Information System":
 
     gnu_roster_frames = []
     for gnu in gnu_sheets:
-        gnu_df = read_google_sheet(gnu)
+        gnu_df = dept_data_map.get(gnu, pd.DataFrame())
         if not gnu_df.empty:
             df_c = gnu_df.copy()
             df_c.insert(0, "SOURCE DEPARTMENT", gnu)
@@ -1017,7 +1035,7 @@ if selected_sheet == "Hospital Information System":
             gnu_mapped['Status'] = gnu_filtered.get('PATIENT STATUS', '')
             roster_combined_frames.append(gnu_mapped)
 
-    scu_raw_df = read_google_sheet(scu_sheet)
+    scu_raw_df = dept_data_map.get(scu_sheet, pd.DataFrame())
     if not scu_raw_df.empty:
         scu_c = scu_raw_df.copy()
         if 'PATIENT STATUS' in scu_c.columns:
@@ -1071,7 +1089,7 @@ if selected_sheet == "Hospital Information System":
     st.subheader("📑 Department Summary")
     selected_dept_view = st.selectbox("Select Department to Inspect", department_sheets)
     
-    dept_df = read_google_sheet(selected_dept_view)
+    dept_df = dept_data_map.get(selected_dept_view, pd.DataFrame())
     if not dept_df.empty:
         cleaned_dept_df = clean_display_df(dept_df)
         
@@ -1794,7 +1812,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 # ---------------------------------------------------------
 elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
     baby_icon_html = get_custom_icon_html("baby_feet_icon.png", width=38)
-    st.markdown(f"<h2>{baby_icon_html} Special Care Unit Patient Registration</h2>", unsafe_allow_html=True)
+    st.markdown(f"<h2>{baby_icon_html} Special Care Complex Patient Registration</h2>", unsafe_allow_html=True)
     ph_now = get_ph_time()
 
     with st.form("scu_form", clear_on_submit=True):
@@ -1814,7 +1832,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
 
         c5_d, c6, c7, c8 = st.columns(4)
         with c5_d:
-            entry_date = st.date_input("Admission Date", ph_now.date())
+            entry_date = st.date_input("Date", ph_now.date())
         with c6:
             age_y = st.number_input("Age (Years)", min_value=0, max_value=18, value=0)
         with c7:
@@ -1848,9 +1866,9 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         with c13:
             hosp_mode = st.selectbox("Hospitalization Mode", ["Select Mode", "Outpatient", "Inpatient"], index=0)
         with c14:
-            patient_status = st.selectbox("Patient Status", ["Active", "May Go Home", "Discharged"], index=0)
+            patient_status = st.selectbox("Patient Status", ["ACTIVE", "MGH", "DISCHARGED", "CAB"], index=0)
 
-        payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY"], index=0)
+        payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY", "CHARITY"], index=0)
 
         st.subheader("📋 Clinical & Diagnostic Details")
         diagnosis = st.text_area("Diagnosis Text", value="").strip().upper()
@@ -1883,7 +1901,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
             cm_specs_str = "; ".join([item['spec'] for item in valid_cm]) if valid_cm else "N/A"
 
             row_data = {
-                'MONTH': get_month_str(entry_date, "numeric_prefix"),
+                'MONTH': get_month_str(entry_date, "full_month"),
                 'DATE': curr_date_str,
                 'LAST NAME': last_name,
                 'FIRST NAME': first_name,
