@@ -254,6 +254,15 @@ GNU_SHEET_HEADER = [
     'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CASE COUNT'
 ]
 
+SCU_SHEET_HEADER = [
+    'MONTH', 'DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AOG', 'AGE', 'DIAGNOSIS', 
+    'DIAGNOSIS CATEGORY', 'ADMITTED FROM', 'ADMITTED TO', 'TRANSFERRED TO', 
+    'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
+    'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
+    'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'PATIENT STATUS', 
+    'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CASE COUNT'
+]
+
 SHEET_HEADERS = {
     "Emergency Care Complex (ECC)": [
         'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
@@ -294,13 +303,7 @@ SHEET_HEADERS = {
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
         'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
     ],
-    "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)": [
-        'MONTH', 'DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AOG', 'AGE', 'DIAGNOSIS', 
-        'DIAGNOSIS CATEGORY', 'ADMITTED FROM', 'ADMITTED TO', 'TRANSFERRED TO', 
-        'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
-        'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-        'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
-    ],
+    "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)": SCU_SHEET_HEADER,
     "Surgical Care Complex (OR Main)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
         'PRE-OP DIAGNOSIS', 'POST-OP DIAGNOSIS', 'PROCEDURE', 'PROCEDURE CATEGORY', 
@@ -371,7 +374,7 @@ def ensure_google_sheets_exist():
         if s_name not in existing_worksheets:
             try:
                 ws = sh.add_worksheet(title=s_name, rows=1000, cols=len(cols))
-                ws.update('A1', [[f"MTCMC CLINICAL CENSUS - {s_name} MASTERFILE MASTERFILE"]])
+                ws.update('A1', [[f"MTCMC CLINICAL CENSUS - {s_name} MASTERFILE"]])
                 ws.update('A4', [cols])
             except Exception:
                 pass
@@ -711,6 +714,10 @@ if st.session_state["role"] == "Administrator":
                             'HOSPITALIZATION MODE': h_mode,
                             'MODE OF PAYMENT': pay_mode,
                             'PATIENT STATUS': stat,
+                            'PROCEDURES': "ROUTINE CARE",
+                            'DIAGNOSTIC EXAMINATIONS': "CBC",
+                            'MEDICATIONS': "VITAMINS",
+                            'SPECIAL ENDORSEMENTS': "NONE",
                             'CASE COUNT': 1
                         }
                         append_record_to_google_sheet("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", scu_data)
@@ -967,7 +974,7 @@ if selected_sheet == "Hospital Information System":
     st.markdown("---")
 
     # ---------------------------------------------------------
-    # ACTIVE PATIENT ROSTER (Directly Editable Active Patient Census Table)
+    # ACTIVE PATIENT ROSTER (Directly Editable Table)
     # ---------------------------------------------------------
     st.subheader("📋 Active Patient Census & Direct Editor")
     st.markdown("Aggregated live roster displaying active, MGH, and CAB patients from General Nursing Units, along with all active patients admitted in the Special Care Complex. **Directly edit patient information and statuses in the table below.** *(Admission dates and table headers are locked to prevent overlaps).*")
@@ -1096,7 +1103,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
     st.header(f"🛏️ {gnu_title} Patient Registration")
     ph_now = get_ph_time()
     form_key_slug = gnu_title.replace("General Nursing Unit (", "").replace(")", "").strip().lower()
-
+    
     with st.form(f"gnu_form_{form_key_slug}", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -1203,7 +1210,6 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
 elif selected_sheet == "Emergency Care Complex (ECC)":
     st.header("🚑 Emergency Care Complex Patient Registration")
     ph_now = get_ph_time()
-
     with st.form("ecc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -1309,7 +1315,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 elif selected_sheet == "Endoscopy Unit (ENDO)":
     st.header("🔬 Endoscopy Unit Patient Registration")
     ph_now = get_ph_time()
-
+    
     with st.form("endo_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -1789,6 +1795,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
     baby_icon_html = get_custom_icon_html("baby_feet_icon.png", width=38)
     st.markdown(f"<h2>{baby_icon_html} Special Care Unit Patient Registration</h2>", unsafe_allow_html=True)
+    ph_now = get_ph_time()
 
     with st.form("scu_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
@@ -1807,7 +1814,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
 
         c5_d, c6, c7, c8 = st.columns(4)
         with c5_d:
-            entry_date = st.date_input("Admission Date", datetime.today())
+            entry_date = st.date_input("Admission Date", ph_now.date())
         with c6:
             age_y = st.number_input("Age (Years)", min_value=0, max_value=18, value=0)
         with c7:
@@ -1848,6 +1855,12 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         st.subheader("📋 Clinical & Diagnostic Details")
         diagnosis = st.text_area("Diagnosis Text", value="").strip().upper()
         diag_flags = st.multiselect("Diagnosis Category", ["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY"])
+
+        st.subheader("📋 Procedures & Diagnostics")
+        scu_procedures = st.text_area("Procedures", value="", key="scu_procs").strip().upper()
+        scu_diagnostic_exams = st.text_area("Diagnostic Examinations", value="", key="scu_diags").strip().upper()
+        scu_medications = st.text_area("Medications", value="", key="scu_meds").strip().upper()
+        scu_special_endorsements = st.text_area("Special Endorsements", value="", key="scu_ends").strip().upper()
 
         submitted = st.form_submit_button("Submit Record")
         if submitted:
@@ -1890,6 +1903,10 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
                 'HOSPITALIZATION MODE': hosp_mode,
                 'MODE OF PAYMENT': payment_selected,
                 'PATIENT STATUS': patient_status,
+                'PROCEDURES': scu_procedures,
+                'DIAGNOSTIC EXAMINATIONS': scu_diagnostic_exams,
+                'MEDICATIONS': scu_medications,
+                'SPECIAL ENDORSEMENTS': scu_special_endorsements,
                 'CASE COUNT': 1
             }
 
