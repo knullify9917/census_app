@@ -233,6 +233,15 @@ HOSPITAL_UNIT_AREAS = sorted([
     "None", "ECC", "GNU 1C", "GNU 2A", "GNU 2B", "GNU 2C", "GNU 2D", "GNU 3A", "GNU 3B", "GNU 3C", "GNU 4A", "ICU", "NSU", "PCN", "PICU", "OUTBORN"
 ])
 
+sorted_departments = sorted([
+    "Emergency Care Complex (ECC)", "Endoscopy Unit (ENDO)", "Hemodialysis Unit (HDU)", 
+    "OBGYNE Care Complex (LRDR-OB Surgery)", "Surgical Care Complex (OR Main)", 
+    "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
+    "General Nursing Unit (GNU 1C)", "General Nursing Unit (GNU 2A)", "General Nursing Unit (GNU 2B)", 
+    "General Nursing Unit (GNU 2C)", "General Nursing Unit (GNU 2D)", "General Nursing Unit (GNU 3A)", 
+    "General Nursing Unit (GNU 3B)", "General Nursing Unit (GNU 3C)", "General Nursing Unit (GNU 4A)"
+])
+
 SPECIALTIES_BY_FIELD = {
     "Anaesthesiology": ["GENERAL ANAESTHESIOLOGY", "NEURO - ANAESTHESIOLOGY", "PEDIA - ANAESTHESIOLOGY"],
     "Emergency & Family Medicine": ["EMERGNCY MEDICINE", "FAMILY MEDICINE"],
@@ -772,15 +781,6 @@ if st.session_state["role"] == "Administrator":
 logged_user_key = st.session_state["username"]
 user_info = USER_DATABASE.get(logged_user_key, {})
 allowed_modules = user_info.get("modules", "All")
-
-sorted_departments = sorted([
-    "Emergency Care Complex (ECC)", "Endoscopy Unit (ENDO)", "Hemodialysis Unit (HDU)", 
-    "OBGYNE Care Complex (LRDR-OB Surgery)", "Surgical Care Complex (OR Main)", 
-    "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
-    "General Nursing Unit (GNU 1C)", "General Nursing Unit (GNU 2A)", "General Nursing Unit (GNU 2B)", 
-    "General Nursing Unit (GNU 2C)", "General Nursing Unit (GNU 2D)", "General Nursing Unit (GNU 3A)", 
-    "General Nursing Unit (GNU 3B)", "General Nursing Unit (GNU 3C)", "General Nursing Unit (GNU 4A)"
-])
 
 all_department_modules = ["Hospital Information System", "Pareto Tally Sheet"] + sorted_departments
 if allowed_modules == "All":
