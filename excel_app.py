@@ -7,6 +7,7 @@ import os
 import hashlib
 import io
 import base64
+import random
 import concurrent.futures
 import threading
 import sqlite3
@@ -255,7 +256,7 @@ GNU_SHEET_HEADER = [
     'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
     'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
     'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 
-    'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CASE COUNT'
+    'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CASE COUNT', 'SEEDED_TRIAL'
 ]
 
 SCU_SHEET_HEADER = [
@@ -264,7 +265,7 @@ SCU_SHEET_HEADER = [
     'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
     'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
     'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 
-    'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CASE COUNT'
+    'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CASE COUNT', 'SEEDED_TRIAL'
 ]
 
 SHEET_HEADERS = {
@@ -272,7 +273,7 @@ SHEET_HEADERS = {
         'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
         'DISEASE CATEGORY', 'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-        'HOSPITALIZATION MODE', 'CASE TYPE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'ADMITTED TO', 'CASE COUNT'
+        'HOSPITALIZATION MODE', 'CASE TYPE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'ADMITTED TO', 'CASE COUNT', 'SEEDED_TRIAL'
     ],
     "Endoscopy Unit (ENDO)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
@@ -281,7 +282,7 @@ SHEET_HEADERS = {
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'SURGEON / PROCEDURALIST', 'SURGEON SPECIALIZATION',
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
-        'PROCEDURE NATURE', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
+        'PROCEDURE NATURE', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT', 'SEEDED_TRIAL'
     ],
     "General Nursing Unit (GNU 1C)": GNU_SHEET_HEADER,
     "General Nursing Unit (GNU 2A)": GNU_SHEET_HEADER,
@@ -296,7 +297,7 @@ SHEET_HEADERS = {
         'MONTH', 'DATE', 'TRUE DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'DIAGNOSIS', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-        'DIALYSIS SHIFT SLOT', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
+        'DIALYSIS SHIFT SLOT', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT', 'SEEDED_TRIAL'
     ],
     "OBGYNE Care Complex (LRDR-OB Surgery)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
@@ -305,7 +306,7 @@ SHEET_HEADERS = {
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'SURGEON / OBGYNE', 'SURGEON SPECIALIZATION',
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
-        'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
+        'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT', 'SEEDED_TRIAL'
     ],
     "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)": SCU_SHEET_HEADER,
     "Surgical Care Complex (OR Main)": [
@@ -315,7 +316,7 @@ SHEET_HEADERS = {
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'PRIMARY SURGEON', 'SURGEON SPECIALIZATION',
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
-        'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
+        'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT', 'SEEDED_TRIAL'
     ]
 }
 
@@ -617,7 +618,7 @@ def get_editor_column_config(columns):
     config = {}
     for col in columns:
         col_upper = str(col).upper()
-        if col_upper in ['DATE', 'TRUE DATE', 'ADMISSION DATE', 'DEPARTMENT / UNIT']:
+        if col_upper in ['DATE', 'TRUE DATE', 'ADMISSION DATE', 'DEPARTMENT / UNIT', 'SEEDED_TRIAL']:
             config[col] = st.column_config.TextColumn(col, disabled=True)
         elif col_upper in ['PATIENT STATUS', 'STATUS']:
             config[col] = st.column_config.SelectboxColumn(col, options=["ACTIVE", "MGH", "DISCHARGED", "CAB"])
@@ -673,10 +674,67 @@ st.sidebar.markdown(f"**Date & Time:** `{ph_now_display.strftime('%B %d, %Y - %I
 st.sidebar.markdown("---")
 
 # ---------------------------------------------------------
-# ADMIN FULL SYSTEM WIPE TOOL
+# ADMIN CONTROL CENTER (INTELLIGENT SEEDER & FULL SYSTEM WIPE)
 # ---------------------------------------------------------
 if st.session_state["role"] == "Administrator":
     st.sidebar.markdown("### 🛠️ Admin Control Center")
+    
+    with st.sidebar.expander("🤖 Admin Intelligent Seeder"):
+        st.markdown("Generate multi-disciplinary trial patient records across departments to check updates and metrics.")
+        batch_size = st.selectbox("Batch Size", [5, 10, 20], index=0)
+        
+        if st.button("🚀 Generate Trial Batch", type="primary"):
+            first_names = ["JUAN", "MARIA", "JOSE", "ANA", "PEDRO", "LUIS", "CARMEN", "ROSA"]
+            middle_names = ["SANTOS", "REYES", "GARCIA", "TORRES", "FLORES", "RAMOS"]
+            last_names = ["CRUZ", "BAUTISTA", "OCAMPO", "MENDOZA", "GONZALES", "AQUINO"]
+            department_targets = [
+                "Emergency Care Complex (ECC)",
+                "Surgical Care Complex (OR Main)",
+                "OBGYNE Care Complex (LRDR-OB Surgery)",
+                "Endoscopy Unit (ENDO)",
+                "Hemodialysis Unit (HDU)",
+                "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
+            ] + sorted([d for d in sorted_departments if d.startswith("General Nursing Unit")])
+
+            progress_bar = st.sidebar.progress(0)
+            for i in range(batch_size):
+                fn = random.choice(first_names)
+                mn = random.choice(middle_names)
+                ln = random.choice(last_names)
+                sex = random.choice(["MALE", "FEMALE"])
+                age = str(random.randint(1, 80))
+                pay_mode = random.choice(["PHIC", "HMO", "SELF-PAY", "CHARITY"])
+                stat = random.choice(["ACTIVE", "MGH", "DISCHARGED", "CAB"])
+                date_str = ph_now_display.strftime("%m/%d/%Y")
+                target_dept = department_targets[i % len(department_targets)]
+
+                if target_dept == "Emergency Care Complex (ECC)":
+                    row_data = {
+                        'MONTH': get_month_str(ph_now_display.date(), "full_month"), 'DATE': date_str, 'TIME': "10:00 AM",
+                        'LAST NAME': ln, 'FIRST NAME': fn, 'MIDDLE NAME': mn, 'SEX': sex, 'AGE': age,
+                        'DIAGNOSIS': "ACUTE ABDOMEN / TRAUMA", 'DISEASE CATEGORY': "ACUTE GASTROENTERITIS",
+                        'ATTENDING PHYSICIAN': "DR. E. SANTOS", 'ATTENDING SPECIALIZATION': "EMERGENCY MEDICINE",
+                        'CO-MANAGEMENT PHYSICIAN': "N/A", 'CO-MANAGEMENT SPECIALIZATION': "N/A",
+                        'HOSPITALIZATION MODE': "INPATIENT", 'CASE TYPE': "PRIVATE CASE", 'HOSPITAL KIT PACKAGE': "YES",
+                        'MODE OF PAYMENT': pay_mode, 'ADMITTED TO': "ECC", 'CASE COUNT': 1, 'SEEDED_TRIAL': 'YES'
+                    }
+                else:
+                    row_data = {
+                        'MONTH': get_month_str(ph_now_display.date(), "full_month"), 'DATE': date_str, 'TIME': "10:00 AM",
+                        'ROOM NO': "RM-101", 'LAST NAME': ln, 'FIRST NAME': fn, 'MIDDLE NAME': mn, 'SEX': sex, 'AGE': age,
+                        'DIAGNOSIS': "PNEUMONIA", 'ATTENDING PHYSICIAN': "DR. M. REYES", 'ATTENDING SPECIALIZATION': "INTERNAL MEDICINE",
+                        'CO-MANAGEMENT PHYSICIAN': "N/A", 'CO-MANAGEMENT SPECIALIZATION': "N/A",
+                        'HOSPITALIZATION MODE': "INPATIENT", 'HOSPITAL KIT PACKAGE': "YES", 'MODE OF PAYMENT': pay_mode,
+                        'PATIENT STATUS': stat, 'PROCEDURES': "OXYGEN THERAPY", 'DIAGNOSTIC EXAMINATIONS': "X-RAY",
+                        'MEDICATIONS': "ANTIBIOTICS", 'SPECIAL ENDORSEMENTS': "STABLE", 'CASE COUNT': 1, 'SEEDED_TRIAL': 'YES'
+                    }
+                append_record_to_google_sheet(target_dept, row_data)
+                progress_bar.progress((i + 1) / batch_size)
+                py_time.sleep(0.05)
+
+            st.sidebar.success(f"Successfully generated {batch_size} trial patient records!")
+            st.rerun()
+
     with st.sidebar.expander("🚨 Full System Wipe (All Depts)"):
         st.markdown("Permanently erase all records, patient data, metrics, and tallies from **every** department and local database.")
         confirm_system_wipe = st.checkbox("I confirm wiping all data", value=False)
@@ -1273,7 +1331,8 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
                 'DIAGNOSTIC EXAMINATIONS': diagnostic_exams_text,
                 'MEDICATIONS': medications_text,
                 'SPECIAL ENDORSEMENTS': special_endorsements_text,
-                'CASE COUNT': 1
+                'CASE COUNT': 1,
+                'SEEDED_TRIAL': 'NO'
             }
 
             if append_record_to_google_sheet(gnu_title, row_data):
@@ -1381,7 +1440,8 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
                 'CASE TYPE': case_type,
                 'MODE OF PAYMENT': payment_selected,
                 'ADMITTED TO': admitted_to,
-                'CASE COUNT': 1
+                'CASE COUNT': 1,
+                'SEEDED_TRIAL': 'NO'
             }
 
             if append_record_to_google_sheet("Emergency Care Complex (ECC)", row_data):
@@ -1507,7 +1567,8 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
                 'HOSPITAL KIT PACKAGE': "Yes" if kit_package else "No",
                 'MODE OF PAYMENT': payment_selected,
                 'PATIENT STATUS': patient_status,
-                'CASE COUNT': 1
+                'CASE COUNT': 1,
+                'SEEDED_TRIAL': 'NO'
             }
 
             if append_record_to_google_sheet("Endoscopy Unit (ENDO)", row_data):
@@ -1604,7 +1665,8 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
                 'HOSPITALIZATION MODE': hosp_mode,
                 'MODE OF PAYMENT': payment_selected,
                 'PATIENT STATUS': patient_status,
-                'CASE COUNT': 1
+                'CASE COUNT': 1,
+                'SEEDED_TRIAL': 'NO'
             }
 
             if append_record_to_google_sheet("Hemodialysis Unit (HDU)", row_data):
@@ -1737,7 +1799,8 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
                 'HOSPITAL KIT PACKAGE': "Yes" if kit_used else "No",
                 'MODE OF PAYMENT': payment_selected,
                 'PATIENT STATUS': patient_status,
-                'CASE COUNT': 1
+                'CASE COUNT': 1,
+                'SEEDED_TRIAL': 'NO'
             }
 
             if append_record_to_google_sheet("OBGYNE Care Complex (LRDR-OB Surgery)", row_data):
@@ -1874,7 +1937,8 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
                 'HOSPITAL KIT PACKAGE': "Yes" if kit_package else "No",
                 'MODE OF PAYMENT': payment_selected,
                 'PATIENT STATUS': patient_status,
-                'CASE COUNT': 1
+                'CASE COUNT': 1,
+                'SEEDED_TRIAL': 'NO'
             }
 
             if append_record_to_google_sheet("Surgical Care Complex (OR Main)", row_data):
@@ -2002,7 +2066,8 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
                 'DIAGNOSTIC EXAMINATIONS': scu_diagnostic_exams,
                 'MEDICATIONS': scu_medications,
                 'SPECIAL ENDORSEMENTS': scu_special_endorsements,
-                'CASE COUNT': 1
+                'CASE COUNT': 1,
+                'SEEDED_TRIAL': 'NO'
             }
 
             if append_record_to_google_sheet("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", row_data):
