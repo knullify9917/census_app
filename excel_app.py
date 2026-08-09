@@ -615,7 +615,13 @@ sorted_departments = sorted([
 ])
 
 all_department_modules = ["Hospital Information System", "Pareto Tally Sheet"] + sorted_departments
-MODULES = all_department_modules if allowed_modules == "All" else ["Hospital Information System", "Pareto Tally Sheet"] + sorted([m for m in allowed_modules if m != "Hospital Information System" and m != "Pareto Tally Sheet"])
+if allowed_modules == "All":
+    MODULES = all_department_modules
+else:
+    allowed_list = list(allowed_modules) if isinstance(allowed_modules, list) else [allowed_modules]
+    fixed_front = [m for m in ["Hospital Information System", "Pareto Tally Sheet"] if m in allowed_list or allowed_modules == "All"]
+    other_allowed = sorted([m for m in allowed_list if m not in ["Hospital Information System", "Pareto Tally Sheet"]])
+    MODULES = fixed_front + other_allowed
 
 st.sidebar.markdown("### 🧭 Department Navigation")
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
@@ -826,13 +832,13 @@ if st.session_state["role"] == "Administrator":
                         'MIDDLE NAME': mn,
                         'SEX': sex,
                         'AGE': age,
-                        'DIAGNOSIS': diag_text,
+                        'DIAGNOSIS': diagnosis_text,
                         'ATTENDING PHYSICIAN': doc,
                         'ATTENDING SPECIALIZATION': "INTERNAL MEDICINE",
                         'CO-MANAGEMENT PHYSICIAN': "N/A",
                         'CO-MANAGEMENT SPECIALIZATION': "N/A",
                         'HOSPITALIZATION MODE': h_mode,
-                        'MODE OF PAYMENT': pay_mode,
+                        'MODE OF PAYMENT': payment_selected,
                         'PATIENT STATUS': stat,
                         'PROCEDURES': "ROUTINE CARE & MONITORING",
                         'DIAGNOSTIC EXAMINATIONS': "CBC, URINALYSIS",
@@ -996,7 +1002,7 @@ if selected_sheet == "Pareto Tally Sheet":
                 if not cat_col: cat_col = col
             if 'SPECIALIZATION' in c_upper:
                 if not spec_col: spec_col = col
-            if 'PHYSICIAN' in c_upper or 'SURGEON' in c_upper or 'ATTENDING' in c_upper:
+            if 'PHYSICIAN' in c_upper or 'SURgeon' in c_upper or 'ATTENDING' in c_upper:
                 if not doc_col: doc_col = col
             if 'HOSPITALIZATION MODE' in c_upper:
                 hosp_mode_col = col
@@ -1496,13 +1502,13 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         st.subheader("📋 Clinical & Diagnostic Details")
         diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip().upper()
 
-        disease_options = [
+        disease_options = sorted([
             'ACUTE GASTROENTERITIS', 'DENGUE FEVER', 'HYPERTENSION', 'GASTROESOPHAGEAL REFLUX DISEASE',
             'URINARY TRACT INFECTION', 'BRONCHIAL ASTHMA', 'DIABETES MELLITUS', 'RESPIRATORY TRACT INECTION',
             'ELECTROLYTE IMBALANCE', 'ACUTE TONSILLOPHARYNGITIS', 'ANIMAL BITE', 'VERTIGO',
             'HYPERSENSITIVITY REACTION', 'INFECTED WOUND', 'ACUTE CORONARY SYNDROME', 'SYSTEMIC VIRAL ILLNESS',
             'FRACTURE', 'OTHER CASES'
-        ]
+        ])
         selected_diseases = st.multiselect("Disease Category", disease_options)
 
         submitted = st.form_submit_button("Submit Record")
@@ -1603,7 +1609,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         with cd2:
             procedure_text = st.text_input("Procedure Name", value="").strip().upper()
 
-        proc_cols = ['GASTROSCOPY', 'COLONOSCOPY', 'NASAL PROCEDURE', 'PEG PROCEDURE', 'ERCP', 'PROCTOSIGMOIDOSCOPY', 'PARACENTESIS', 'BRONCHOSCOPY', 'OTHER PROCEDURES']
+        proc_cols = sorted(['GASTROSCOPY', 'COLONOSCOPY', 'NASAL PROCEDURE', 'PEG PROCEDURE', 'ERCP', 'PROCTOSIGMOIDOSCOPY', 'PARACENTESIS', 'BRONCHOSCOPY', 'OTHER PROCEDURES'])
         selected_procs = st.multiselect("Procedure Category", proc_cols)
         
         ca, cb, cc, cd, ce = st.columns(5)
@@ -1825,9 +1831,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         with cp2:
             surgical_procedure = st.text_area("Surgical Procedure", value="").strip().upper()
 
-        all_ob_procs = [
-            'CS PRIMARY', 'CS', 'NSD', 'D&C', 'HYSTERECTOMY', 'EXLAP', 'OTHER PROCEDURES', 'NST'
-        ]
+        all_ob_procs = sorted(['CS PRIMARY', 'CS', 'NSD', 'D&C', 'HYSTERECTOMY', 'EXLAP', 'OTHER PROCEDURES', 'NST'])
 
         ca, cb, cc, cd, ce = st.columns(5)
         with ca:
@@ -1953,7 +1957,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 
         procedure = st.text_area("Surgical Procedure", value="").strip().upper()
 
-        all_scc_procs = [
+        all_scc_procs = sorted([
             'EXCISION BIOPSY', 'INCISION AND DRAINAGE', 'WOUND SUTURING & CLOSING AND CHANGE OF DRESSING',
             'PLEURAL CATH INSERTION', 'COLOSTOMY', 'DEBRIDEMENT', 'ANAL BIOPSY', 'CORE NEEDLE BIOPSY',
             'THYROIDECTOMY', 'PAROTIDECTOMY', 'MASTECTOMY', 'CHOLECYSTECTOMY', 'APPENDECTOMY',
@@ -1962,7 +1966,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             'TYMPANOPLASTY', 'MAXILLECTOMY', 'ORTHO SURGERY', 'MICROLARYNGEAL SURGERY', 'HYSTEROSCOPY',
             'ULTRASOUND GUIDED', 'MIS', 'AVF', 'IJ CATH', 'PERM CATH/ FEMORAL CATH', 'PROCTOSCOPY',
             'CHOLEDOSCOPY', 'DENTAL PROCEDURES', 'OTHER PROCEDURES'
-        ]
+        ])
         
         ca, cb, cc, cd, ce = st.columns(5)
         with ca:
