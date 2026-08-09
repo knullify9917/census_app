@@ -430,6 +430,22 @@ def check_existing_patient_ai(sheet_name, last_name, fn, curr_date_str):
 
 ensure_google_sheets_exist()
 
+# Helper for dropping the first index/unnamed column and resetting dataframe view
+def clean_display_df(df):
+    if df is None or df.empty:
+        return df
+    d_clean = df.copy()
+    # Drop unnamed index or first unnamed column if present
+    cols_to_drop = [c for c in d_clean.columns if 'Unnamed' in str(c) or c == '']
+    if cols_to_drop:
+        d_clean = d_clean.drop(columns=cols_to_drop)
+    # Also drop the very first column if it acts as a row index or number
+    if d_clean.shape[1] > 1:
+        first_col = d_clean.columns[0]
+        if first_col.lower() in ['index', 'level_0', 'unnamed: 0']:
+            d_clean = d_clean.iloc[:, 1:]
+    return d_clean
+
 # ---------------------------------------------------------
 # UI HEADER & SIDEBAR NAVIGATION
 # ---------------------------------------------------------
@@ -778,7 +794,8 @@ def convert_df_to_pdf_html(df, title):
     <body><h2>MOTHER TERESA OF CALCUTTA MEDICAL CENTER</h2>
     <p><strong>Module:</strong> {title} | Generated: {datetime.now().strftime('%Y-%m-%d %I:%M %p')}</p><hr>
     """
-    html_content += df.head(100).to_html(index=False, border=0) if not df.empty else "<p>No records available.</p>"
+    cleaned_pdf_df = clean_display_df(df)
+    html_content += cleaned_pdf_df.head(100).to_html(index=False, border=0) if not cleaned_pdf_df.empty else "<p>No records available.</p>"
     return (html_content + "</body></html>").encode('utf-8')
 
 st.sidebar.download_button(
@@ -946,7 +963,7 @@ if selected_sheet == "Hospital Information System":
             roster_mapped['Diagnostic Procedure'] = gnu_filtered.get('DIAGNOSTIC EXAMINATIONS', '')
             roster_mapped['Status'] = gnu_filtered.get('PATIENT STATUS', '')
 
-            st.dataframe(roster_mapped, use_container_width=True)
+            st.dataframe(clean_display_df(roster_mapped), use_container_width=True)
             st.caption(f"Showing {len(roster_mapped)} active General Nursing Unit patient records.")
         else:
             st.info("No active patient records found in General Nursing Units.")
@@ -956,7 +973,7 @@ if selected_sheet == "Hospital Information System":
     st.markdown("---")
     st.subheader("📊 Department Performance")
     summary_df = pd.DataFrame(summary_data)
-    st.dataframe(summary_df, use_container_width=True)
+    st.dataframe(clean_display_df(summary_df), use_container_width=True)
 
     st.markdown("---")
     st.subheader("📑 Department Summary")
@@ -987,7 +1004,7 @@ if selected_sheet == "Hospital Information System":
             payment_counts.columns = ['Mode of Payment', 'Count']
             st.bar_chart(payment_counts.set_index('Mode of Payment'))
             
-        st.dataframe(dept_df[display_cols], use_container_width=True)
+        st.dataframe(clean_display_df(dept_df[display_cols]), use_container_width=True)
     else:
         st.info(f"No records found yet for {selected_dept_view}.")
 
@@ -1805,7 +1822,7 @@ if selected_sheet != "Hospital Information System":
 
     sheet_df = read_google_sheet(selected_sheet)
     if not sheet_df.empty:
-        st.dataframe(sheet_df.tail(10), use_container_width=True)
+        st.dataframe(clean_display_df(sheet_df.tail(10)), use_container_width=True)
         st.caption(f"Showing last 10 entries of `{selected_sheet}` (Total: {len(sheet_df)} records)")
     else:
         st.info(f"Google Sheets worksheet `{selected_sheet}` currently has no records.")
