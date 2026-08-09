@@ -110,7 +110,7 @@ def hash_password(password):
 
 USER_DATABASE = {
     "admin": {
-        "password": hash_password("admin123"),
+        "password": hash_password("894413"),
         "role": "Administrator",
         "name": "System Administrator",
         "modules": "All"
@@ -2499,69 +2499,3 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
                 st.session_state["df_cache"] = {}
                 st.success("Successfully saved to Google Sheets `Special Care Complex (NICU-PICU-NSU/PCN-Outborn)` tab!")
                 st.session_state["cm_list_scu"] = []
-
-if selected_sheet not in ["Hospital Information System", "Pareto Tally Sheet"]:
-    st.header(f"🛏️ {selected_sheet} Patient Registration & Admitted Patient Update")
-    tab_reg_gen, tab_update_gen = st.tabs(["📝 New Patient Registration", "🔄 Update Admitted Patient Orders"])
-    
-    with tab_reg_gen:
-        sheet_df = read_google_sheet(selected_sheet)
-        if not sheet_df.empty:
-            clean_s_df = clean_display_df(sheet_df)
-            st.dataframe(clean_s_df, use_container_width=True)
-            st.caption(f"Showing records for `{selected_sheet}` (Total: {len(sheet_df)} records)")
-        else:
-            st.info(f"Google Sheets worksheet `{selected_sheet}` currently has no records.")
-            
-    with tab_update_gen:
-        st.markdown(f"##### 🔄 Update Admitted Patient Orders (`{selected_sheet}`)")
-        gen_df_up = read_google_sheet(selected_sheet)
-        if not gen_df_up.empty and 'LAST NAME' in gen_df_up.columns:
-            gen_active = gen_df_up[~gen_df_up.get('PATIENT STATUS', pd.Series(['ACTIVE']*len(gen_df_up))).astype(str).str.upper().isin(['DISCHARGED'])]
-            if not gen_active.empty:
-                gen_active['DISPLAY_NAME'] = gen_active['LAST NAME'] + ", " + gen_active['FIRST NAME'] + " (Date: " + gen_active.get('DATE', 'N/A') + ")"
-                selected_gen_display = st.selectbox("Select Patient", gen_active['DISPLAY_NAME'].tolist(), key=f"sel_gen_{selected_sheet}")
-                
-                matched_gen_row = gen_active[gen_active['DISPLAY_NAME'] == selected_gen_display].iloc[0]
-                matched_gen_idx = gen_active[gen_active['DISPLAY_NAME'] == selected_gen_display].index[0]
-
-                with st.form(f"update_form_{selected_sheet}"):
-                    st.markdown(f"**Patient:** `{selected_gen_display}` | **Current Diagnosis:** `{matched_gen_row.get('DIAGNOSIS', '')}`")
-                    
-                    up_status_gen = st.selectbox("Update Patient Status", ["ACTIVE", "MGH", "DISCHARGED", "CAB"], index=0, key=f"st_gen_{selected_sheet}")
-                    up_procs_gen = st.text_area("New / Additional Procedures", value="", key=f"up_p_gen_{selected_sheet}").strip().upper()
-                    up_diags_gen = st.text_area("New / Additional Diagnostic Examinations", value="", key=f"up_d_gen_{selected_sheet}").strip().upper()
-                    up_meds_gen = st.text_area("New / Additional Medications", value="", key="up_m_gen_{selected_sheet}").strip().upper()
-                    up_ends_gen = st.text_area("Special Endorsements / Notes", value="", key="up_e_gen_{selected_sheet}").strip().upper()
-
-                    submit_update_gen = st.form_submit_button("💾 Save Patient Orders Update")
-                    if submit_update_gen:
-                        now_ts = get_ph_time().strftime("[%m/%d/%Y %I:%M %p]")
-                        if up_status_gen:
-                            gen_df_up.loc[matched_gen_idx, 'PATIENT STATUS'] = up_status_gen
-                        if up_procs_gen:
-                            ex_p = str(gen_df_up.loc[matched_gen_idx, 'PROCEDURES']) if 'PROCEDURES' in gen_df_up.columns else ""
-                            st_proc = f"{now_ts} {up_procs_gen}"
-                            gen_df_up.loc[matched_gen_idx, 'PROCEDURES'] = f"{ex_p}; {st_proc}".strip("; ")
-                        if up_diags_gen:
-                            ex_d = str(gen_df_up.loc[matched_gen_idx, 'DIAGNOSTIC EXAMINATIONS']) if 'DIAGNOSTIC EXAMINATIONS' in gen_df_up.columns else ""
-                            st_diag = f"{now_ts} {up_diags_gen}"
-                            gen_df_up.loc[matched_gen_idx, 'DIAGNOSTIC EXAMINATIONS'] = f"{ex_d}; {st_diag}".strip("; ")
-                        if up_meds_gen:
-                            ex_m = str(gen_df_up.loc[matched_gen_idx, 'MEDICATIONS']) if 'MEDICATIONS' in gen_df_up.columns else ""
-                            st_med = f"{now_ts} {up_meds_gen}"
-                            gen_df_up.loc[matched_gen_idx, 'MEDICATIONS'] = f"{ex_m}; {st_med}".strip("; ")
-                        if up_ends_gen:
-                            ex_e = str(gen_df_up.loc[matched_gen_idx, 'SPECIAL ENDORSEMENTS']) if 'SPECIAL ENDORSEMENTS' in gen_df_up.columns else ""
-                            st_end = f"{now_ts} {up_ends_gen}"
-                            gen_df_up.loc[matched_gen_idx, 'SPECIAL ENDORSEMENTS'] = f"{ex_e}; {st_end}".strip("; ")
-
-                        if update_google_sheet_from_df(selected_sheet, gen_df_up):
-                            st.cache_data.clear()
-                            st.session_state["df_cache"] = {}
-                            st.success("Successfully updated patient orders with timestamp!")
-                            st.rerun()
-            else:
-                st.info("No active patient records found in this department.")
-        else:
-            st.info("No records in this department yet.")
