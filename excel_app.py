@@ -256,7 +256,7 @@ GNU_SHEET_HEADER = [
     'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
     'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
     'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 
-    'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CASE COUNT'
+    'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CASE COUNT', 'SEEDED_TRIAL'
 ]
 
 SCU_SHEET_HEADER = [
@@ -265,7 +265,7 @@ SCU_SHEET_HEADER = [
     'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
     'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
     'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 
-    'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CASE COUNT'
+    'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CASE COUNT', 'SEEDED_TRIAL'
 ]
 
 SHEET_HEADERS = {
@@ -273,7 +273,7 @@ SHEET_HEADERS = {
         'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
         'DISEASE CATEGORY', 'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-        'HOSPITALIZATION MODE', 'CASE TYPE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'ADMITTED TO', 'CASE COUNT'
+        'HOSPITALIZATION MODE', 'CASE TYPE', 'MODE OF PAYMENT', 'ADMITTED TO', 'CASE COUNT', 'SEEDED_TRIAL'
     ],
     "Endoscopy Unit (ENDO)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
@@ -282,7 +282,7 @@ SHEET_HEADERS = {
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'SURGEON / PROCEDURALIST', 'SURGEON SPECIALIZATION',
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
-        'PROCEDURE NATURE', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
+        'PROCEDURE NATURE', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT', 'SEEDED_TRIAL'
     ],
     "General Nursing Unit (GNU 1C)": GNU_SHEET_HEADER,
     "General Nursing Unit (GNU 2A)": GNU_SHEET_HEADER,
@@ -297,7 +297,7 @@ SHEET_HEADERS = {
         'MONTH', 'DATE', 'TRUE DATE', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'DIAGNOSIS', 
         'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-        'DIALYSIS SHIFT SLOT', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
+        'DIALYSIS SHIFT SLOT', 'HOSPITALIZATION MODE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT', 'SEEDED_TRIAL'
     ],
     "OBGYNE Care Complex (LRDR-OB Surgery)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
@@ -306,7 +306,7 @@ SHEET_HEADERS = {
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'SURGEON / OBGYNE', 'SURGEON SPECIALIZATION',
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
-        'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
+        'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT', 'SEEDED_TRIAL'
     ],
     "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)": SCU_SHEET_HEADER,
     "Surgical Care Complex (OR Main)": [
@@ -316,7 +316,7 @@ SHEET_HEADERS = {
         'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
         'PRIMARY SURGEON', 'SURGEON SPECIALIZATION',
         'ANESTHESIOLOGIST', 'ANESTHESIOLOGIST SPECIALIZATION',
-        'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT'
+        'COMPLEXITY TIER', 'HOSPITALIZATION MODE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'PATIENT STATUS', 'CASE COUNT', 'SEEDED_TRIAL'
     ]
 }
 
@@ -606,7 +606,7 @@ def get_editor_column_config(columns):
     config = {}
     for col in columns:
         col_upper = str(col).upper()
-        if col_upper in ['DATE', 'TRUE DATE', 'ADMISSION DATE', 'DEPARTMENT / UNIT']:
+        if col_upper in ['DATE', 'TRUE DATE', 'ADMISSION DATE', 'DEPARTMENT / UNIT', 'SEEDED_TRIAL']:
             config[col] = st.column_config.TextColumn(col, disabled=True)
         elif col_upper in ['PATIENT STATUS', 'STATUS']:
             config[col] = st.column_config.SelectboxColumn(col, options=["ACTIVE", "MGH", "DISCHARGED", "CAB"])
@@ -750,7 +750,8 @@ if st.session_state["role"] == "Administrator":
                         'CASE TYPE': random.choice(["PRIVATE CASE", "HOUSE CASE (WALK-IN)"]),
                         'MODE OF PAYMENT': pay_mode,
                         'ADMITTED TO': random.choice(HOSPITAL_UNIT_AREAS),
-                        'CASE COUNT': 1
+                        'CASE COUNT': 1,
+                        'SEEDED_TRIAL': 'YES'
                     }
                     append_record_to_google_sheet("Emergency Care Complex (ECC)", ecc_data)
 
@@ -782,7 +783,8 @@ if st.session_state["role"] == "Administrator":
                         'HOSPITAL KIT PACKAGE': "YES",
                         'MODE OF PAYMENT': pay_mode,
                         'PATIENT STATUS': stat,
-                        'CASE COUNT': 1
+                        'CASE COUNT': 1,
+                        'SEEDED_TRIAL': 'YES'
                     }
                     append_record_to_google_sheet("Surgical Care Complex (OR Main)", scc_data)
 
@@ -815,7 +817,8 @@ if st.session_state["role"] == "Administrator":
                         'HOSPITAL KIT PACKAGE': "YES",
                         'MODE OF PAYMENT': pay_mode,
                         'PATIENT STATUS': stat,
-                        'CASE COUNT': 1
+                        'CASE COUNT': 1,
+                        'SEEDED_TRIAL': 'YES'
                     }
                     append_record_to_google_sheet("OBGYNE Care Complex (LRDR-OB Surgery)", ob_data)
 
@@ -846,7 +849,8 @@ if st.session_state["role"] == "Administrator":
                         'HOSPITAL KIT PACKAGE': "NO",
                         'MODE OF PAYMENT': pay_mode,
                         'PATIENT STATUS': stat,
-                        'CASE COUNT': 1
+                        'CASE COUNT': 1,
+                        'SEEDED_TRIAL': 'YES'
                     }
                     append_record_to_google_sheet("Endoscopy Unit (ENDO)", endo_data)
 
@@ -868,9 +872,11 @@ if st.session_state["role"] == "Administrator":
                         'CO-MANAGEMENT SPECIALIZATION': "N/A",
                         'DIALYSIS SHIFT SLOT': random.choice(["1ST SET", "2ND SET", "3RD SET"]),
                         'HOSPITALIZATION MODE': "OUTPATIENT",
+                        'HOSPITAL KIT PACKAGE': "YES",
                         'MODE OF PAYMENT': "PHIC",
                         'PATIENT STATUS': stat,
-                        'CASE COUNT': 1
+                        'CASE COUNT': 1,
+                        'SEEDED_TRIAL': 'YES'
                     }
                     append_record_to_google_sheet("Hemodialysis Unit (HDU)", hdu_data)
 
@@ -894,13 +900,15 @@ if st.session_state["role"] == "Administrator":
                         'CO-MANAGEMENT PHYSICIAN': "N/A",
                         'CO-MANAGEMENT SPECIALIZATION': "N/A",
                         'HOSPITALIZATION MODE': "INPATIENT",
+                        'HOSPITAL KIT PACKAGE': "YES",
                         'MODE OF PAYMENT': pay_mode,
                         'PATIENT STATUS': stat,
                         'PROCEDURES': "SURFACTANT ADMINISTRATION",
                         'DIAGNOSTIC EXAMINATIONS': "ABG, CBC, X-RAY",
                         'MEDICATIONS': "IV ANTIBIOTICS",
                         'SPECIAL ENDORSEMENTS': "STABLE ON O2",
-                        'CASE COUNT': 1
+                        'CASE COUNT': 1,
+                        'SEEDED_TRIAL': 'YES'
                     }
                     append_record_to_google_sheet("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", scu_data)
 
@@ -927,7 +935,8 @@ if st.session_state["role"] == "Administrator":
                         'DIAGNOSTIC EXAMINATIONS': "CBC, CHEST X-RAY",
                         'MEDICATIONS': "CETRIAXONE",
                         'SPECIAL ENDORSEMENTS': "FOR REPEAT CBC",
-                        'CASE COUNT': 1
+                        'CASE COUNT': 1,
+                        'SEEDED_TRIAL': 'YES'
                     }
                     append_record_to_google_sheet(target_dept, gnu_data)
 
@@ -939,37 +948,38 @@ if st.session_state["role"] == "Administrator":
                 else:
                     time.sleep(0.05)
 
-            st.sidebar.success(f"Successfully generated {success_count} multi-disciplinary patient records across all hospital modules!")
+            st.sidebar.success(f"Successfully generated {success_count} multi-disciplinary trial patient records across all hospital modules!")
             st.rerun()
 
-# Admin Wipe Data Tool
+# Admin Wipe Data Tool (Clears trial-and-error seeder records, preserves manual user entries)
 if st.session_state["role"] == "Administrator":
     st.sidebar.markdown("---")
     st.sidebar.markdown("### 🛠️ Admin Developer Tools")
     with st.sidebar.expander("🗑️ Wipe Data Tool"):
-        st.markdown("Clear all test records. Option to also wipe online Google Sheets worksheets.")
-        wipe_sheets_toggle = st.checkbox("Also delete from Google Sheets", value=False)
-        confirm_wipe = st.checkbox("Confirm Wipe Action", value=False)
+        st.markdown("Clear all trial-and-error patient records generated by the Intelligent Seeder. **Only data manually entered by users will remain saved.**")
+        confirm_wipe = st.checkbox("Confirm Wipe Trial Records", value=False)
         
         if st.button("Execute Data Wipe", type="primary"):
             if confirm_wipe:
                 try:
+                    wiped_count = 0
                     for s_name in SHEET_HEADERS.keys():
-                        if wipe_sheets_toggle:
-                            try:
-                                ws = sh.worksheet(s_name)
-                                ws.clear()
-                                ws.update('A1', [[f"MTCMC CLINICAL CENSUS - {s_name} MASTERFILE"]])
-                                ws.update('A4', [SHEET_HEADERS[s_name]])
-                            except Exception:
-                                pass
-                        sync_df_to_sqlite(s_name, pd.DataFrame())
-                    st.sidebar.success("Successfully wiped app data!")
+                        df = read_google_sheet(s_name, force_refresh=True)
+                        if not df.empty:
+                            if 'SEEDED_TRIAL' in df.columns:
+                                kept_df = df[df['SEEDED_TRIAL'].astype(str).str.strip().str.upper() != 'YES'].copy()
+                                removed_rows = len(df) - len(kept_df)
+                                wiped_count += removed_rows
+                            else:
+                                kept_df = df.copy()
+                            update_google_sheet_from_df(s_name, kept_df)
+                            sync_df_to_sqlite(s_name, kept_df)
+                    st.sidebar.success(f"Successfully wiped {wiped_count} trial seeder records! Manual user data preserved.")
                     st.rerun()
                 except Exception as e:
                     st.sidebar.error(f"Wipe failed: {e}")
             else:
-                st.sidebar.warning("Please check 'Confirm Wipe Action' to proceed.")
+                st.sidebar.warning("Please check 'Confirm Wipe Trial Records' to proceed.")
 
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📥 Export Reports")
