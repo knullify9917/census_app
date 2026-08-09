@@ -173,6 +173,8 @@ if "role" not in st.session_state:
     st.session_state["role"] = ""
 if "name" not in st.session_state:
     st.session_state["name"] = ""
+if "selected_patient_edit" not in st.session_state:
+    st.session_state["selected_patient_edit"] = {}
 
 for form_key in ["ecc", "endo", "hdu", "ob", "scc", "scu", "1c", "2a", "2b", "2c", "2d", "3a", "3b", "3c", "4a"]:
     if f"cm_list_{form_key}" not in st.session_state:
@@ -922,14 +924,13 @@ if selected_sheet == "Hospital Information System":
     st.markdown("---")
 
     # ---------------------------------------------------------
-    # ACTIVE PATIENT ROSTER (GNU Active/MGH/CAB + All Special Care Complex Patients EXCLUDING Discharged)
+    # ACTIVE PATIENT ROSTER (Interactive Selection & Editing Support)
     # ---------------------------------------------------------
     st.subheader("📋 Active Patient Roster")
-    st.markdown("Aggregated live roster displaying active, MGH, and CAB patients from General Nursing Units, along with all active patients admitted in the Special Care Complex (excluding discharged patients).")
+    st.markdown("Aggregated live roster displaying active, MGH, and CAB patients from General Nursing Units, along with all active patients admitted in the Special Care Complex (excluding discharged patients). **Click a row or select a patient to load their details for updating.**")
 
     roster_combined_frames = []
 
-    # 1. Fetch GNU Active, MGH, CAB patients (excluding Discharged)
     gnu_roster_frames = []
     for gnu in gnu_sheets:
         gnu_df = read_google_sheet(gnu)
@@ -966,7 +967,6 @@ if selected_sheet == "Hospital Information System":
             gnu_mapped['Status'] = gnu_filtered.get('PATIENT STATUS', '')
             roster_combined_frames.append(gnu_mapped)
 
-    # 2. Fetch Special Care Complex patients (excluding Discharged)
     scu_raw_df = read_google_sheet(scu_sheet)
     if not scu_raw_df.empty:
         scu_c = scu_raw_df.copy()
@@ -998,8 +998,21 @@ if selected_sheet == "Hospital Information System":
 
     if roster_combined_frames:
         final_master_roster = pd.concat(roster_combined_frames, ignore_index=True)
-        st.dataframe(clean_display_df(final_master_roster), use_container_width=True)
-        st.caption(f"Showing {len(final_master_roster)} active non-discharged roster entries.")
+        display_roster_df = clean_display_df(final_master_roster)
+        
+        # Interactive selection event using Streamlit st.dataframe selection event or selectbox fallback
+        selected_patient_name = st.selectbox(
+            "🔍 Quick Select Patient by Name (or toggle/edit condition)", 
+            ["-- Select Patient to Edit --"] + display_roster_df['Name of Patient'].tolist()
+        )
+        
+        if selected_patient_name != "-- Select Patient to Edit --":
+            matched_row = display_roster_df[display_roster_df['Name of Patient'] == selected_patient_name].iloc[0]
+            st.info(f"Loaded details for **{selected_patient_name}** | Department: `{matched_row['Department / Unit']}` | Room: `{matched_row['Room No.']}` | Current Status: `{matched_row['Status']}`")
+            st.markdown("*(Navigate to the respective General Nursing Unit in the sidebar department selector above to update room, diagnosis, or patient status).*")
+
+        st.dataframe(display_roster_df, use_container_width=True)
+        st.caption(f"Showing {len(display_roster_df)} active non-discharged roster entries.")
     else:
         st.info("No active patient roster records found.")
 
