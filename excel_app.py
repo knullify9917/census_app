@@ -950,77 +950,106 @@ st.markdown("---")
 # MODULE: PARETO TALLY SHEET
 # ---------------------------------------------------------
 if selected_sheet == "Pareto Tally Sheet":
-    st.header("📊 Pareto Tally Sheet & Total Counts")
-    st.markdown("Detailed tally sheets mirroring the exact structure and outline of `Tally Sheet.xlsx`, complete with department/unit sorting and filtering options.")
+    st.header("📊 Pareto Tally Sheet & Department Analytics")
+    st.markdown("Organized per department with dynamic patient census categorization, specialization breakdowns, and doctor census tables.")
     
-    tally_file = 'Tally Sheet.xlsx'
-    if not os.path.exists(tally_file):
-        try:
-            with pd.ExcelWriter(tally_file, engine='openpyxl') as writer:
-                for s_name, cols in SHEET_HEADERS.items():
-                    pd.DataFrame(columns=cols).to_excel(writer, sheet_name=s_name[:31], index=False)
-                pd.DataFrame(columns=['Month', 'Name of Physician', 'Specialization', 'Total Case']).to_excel(writer, sheet_name='OR Main Doctors', index=False)
-                pd.DataFrame(columns=['Month', 'Name of Physician', 'Specialization', 'Total Case']).to_excel(writer, sheet_name='HDU Doctors', index=False)
-                pd.DataFrame(columns=['Month', 'Name of Physician', 'Specialization', 'Total Case']).to_excel(writer, sheet_name='LRDR-OB Surgery Doctors', index=False)
-                pd.DataFrame(columns=['Month', 'Name of Physician', 'Specialization', 'Total Case']).to_excel(writer, sheet_name='ECC Doctors', index=False)
-        except Exception:
-            pass
+    # Department selection option
+    all_dept_options = [
+        "Emergency Care Complex (ECC)", 
+        "Surgical Care Complex (OR Main)", 
+        "OBGYNE Care Complex (LRDR-OB Surgery)", 
+        "Hemodialysis Unit (HDU)", 
+        "Endoscopy Unit (ENDO)", 
+        "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
+    ] + [d for d in sorted_departments if d.startswith("General Nursing Unit")]
+    
+    selected_tally_dept = st.selectbox("🏥 Choose Department / Unit for Pareto Tally & Census Analysis", all_dept_options)
+    
+    sheet_target_map = {
+        "Emergency Care Complex (ECC)": "Emergency Care Complex (ECC)",
+        "Surgical Care Complex (OR Main)": "Surgical Care Complex (OR Main)",
+        "OBGYNE Care Complex (LRDR-OB Surgery)": "OBGYNE Care Complex (LRDR-OB Surgery)",
+        "Hemodialysis Unit (HDU)": "Hemodialysis Unit (HDU)",
+        "Endoscopy Unit (ENDO)": "Endoscopy Unit (ENDO)",
+        "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)": "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
+    }
+    for gnu in [d for d in sorted_departments if d.startswith("General Nursing Unit")]:
+        sheet_target_map[gnu] = gnu
+        
+    target_sheet_name = sheet_target_map.get(selected_tally_dept, selected_tally_dept)
+    dept_df = read_google_sheet(target_sheet_name)
+    
+    if not dept_df.empty:
+        st.markdown(f"### 📋 Patient Census & Category Breakdown for `{selected_tally_dept}`")
+        clean_dept_df = clean_display_df(dept_df)
+        
+        cat_col = None
+        spec_col = None
+        doc_col = None
+        for col in clean_dept_df.columns:
+            c_upper = str(col).upper()
+            if 'CATEGORY' in c_upper or 'PROCEDURE' in c_upper or 'DISEASE' in c_upper:
+                if not cat_col: cat_col = col
+            if 'SPECIALIZATION' in c_upper:
+                spec_col = col
+            if 'PHYSICIAN' in c_upper or 'SURGEON' in c_upper:
+                doc_col = col
 
-    if os.path.exists(tally_file):
-        xls_tally = pd.ExcelFile(tally_file)
-        tally_sheets = xls_tally.sheet_names
+        col_p1, col_p2 = st.columns(2)
+        with col_p1:
+            st.markdown("##### 🏷️ Patient Census by Category / Procedure")
+            if cat_col and cat_col in clean_dept_df.columns:
+                cat_counts = clean_dept_df[cat_col].value_counts().reset_index()
+                cat_counts.columns = [cat_col, 'Total Cases']
+                st.dataframe(cat_counts, use_container_width=True)
+            else:
+                st.info("No categorical breakdown column found for this department.")
+                
+        with col_p2:
+            st.markdown("##### 🩺 Patient Census by Specialization")
+            if spec_col and spec_col in clean_dept_df.columns:
+                spec_counts = clean_dept_df[spec_col].value_counts().reset_index()
+                spec_counts.columns = [spec_col, 'Total Cases']
+                st.dataframe(spec_counts, use_container_width=True)
+            else:
+                st.info("No specialization column found for this department.")
+
+        st.markdown("---")
+        st.markdown(f"### 👨‍⚕️ Doctors Census per Specialization (`{selected_tally_dept}`)")
         
-        st.subheader("📑 Department & Unit Tally Sheet Selector")
-        selected_tally_section = st.selectbox("Choose Department / Unit Tally Sheet", tally_sheets)
-        
-        try:
-            df_tally_raw = pd.read_excel(tally_file, sheet_name=selected_tally_section, header=3)
-            if df_tally_raw.empty:
-                df_tally_raw = pd.read_excel(tally_file, sheet_name=selected_tally_section, header=0)
-        except Exception:
-            df_tally_raw = pd.read_excel(tally_file, sheet_name=selected_tally_section, header=0)
-            
-        st.markdown(f"**Tally Outline for `{selected_tally_section}`:**")
-        
-        c_f1, c_f2 = st.columns(2)
-        with c_f1:
-            sort_column = st.selectbox("Sort Tally Sheet By Column", ["-- None --"] + df_tally_raw.columns.tolist())
-        with c_f2:
-            sort_order = st.radio("Sort Direction", ["Ascending", "Descending"], horizontal=True)
-            
-        display_tally_df = clean_display_df(df_tally_raw)
-        if sort_column != "-- None --" and sort_column in display_tally_df.columns:
-            is_ascending = (sort_order == "Ascending")
-            display_tally_df = display_tally_df.sort_values(by=sort_column, ascending=is_ascending, na_position='last')
-            
-        st.dataframe(display_tally_df, use_container_width=True)
-        st.caption(f"Showing exact template layout for `{selected_tally_section}` (Columns: {len(display_tally_df.columns)}, Total Rows: {len(display_tally_df)})")
+        if spec_col and spec_col in clean_dept_df.columns and doc_col and doc_col in clean_dept_df.columns:
+            unique_specs = clean_dept_df[spec_col].dropna().unique()
+            if len(unique_specs) > 0:
+                spec_tabs = st.tabs([str(s) for s in unique_specs])
+                for idx, spec in enumerate(unique_specs):
+                    with spec_tabs[idx]:
+                        st.markdown(f"**Specialization:** `{spec}`")
+                        sub_df = clean_dept_df[clean_dept_df[spec_col] == spec]
+                        if not sub_df.empty and doc_col in sub_df.columns:
+                            doc_counts = sub_df[doc_col].value_counts().reset_index()
+                            doc_counts.columns = ['Name of Physician', 'Total Cases']
+                            st.dataframe(doc_counts, use_container_width=True)
+                        else:
+                            st.info(f"No physician records found for specialization {spec}.")
+            else:
+                st.info("No specializations recorded yet.")
+        else:
+            tally_file = 'Tally Sheet.xlsx'
+            matched_tally_sheet = None
+            if os.path.exists(tally_file):
+                xls_t = pd.ExcelFile(tally_file)
+                for ts in xls_t.sheet_names:
+                    if selected_tally_dept.lower()[:5] in ts.lower():
+                        matched_tally_sheet = ts
+                        break
+            if matched_tally_sheet:
+                st.markdown(f"*(Displaying template table from `{matched_tally_sheet}`)*")
+                df_t_doc = pd.read_excel(tally_file, sheet_name=matched_tally_sheet, header=3)
+                st.dataframe(clean_display_df(df_t_doc), use_container_width=True)
+            else:
+                st.info("No doctor specialization breakdown available for this department yet.")
     else:
-        st.info("No `Tally Sheet.xlsx` file found in the root environment.")
-        
-    st.markdown("---")
-    st.subheader("📈 Live System Database Total Counts")
-    department_sheets_all = sorted([
-        "Emergency Care Complex (ECC)", "Endoscopy Unit (ENDO)", "Hemodialysis Unit (HDU)", 
-        "OBGYNE Care Complex (LRDR-OB Surgery)", "Surgical Care Complex (OR Main)", 
-        "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
-        "General Nursing Unit (GNU 1C)", "General Nursing Unit (GNU 2A)", "General Nursing Unit (GNU 2B)", 
-        "General Nursing Unit (GNU 2C)", "General Nursing Unit (GNU 2D)", "General Nursing Unit (GNU 3A)", 
-        "General Nursing Unit (GNU 3B)", "General Nursing Unit (GNU 3C)", "General Nursing Unit (GNU 4A)"
-    ])
-    live_data_map = read_multiple_sheets_parallel(department_sheets_all)
-    live_summary = []
-    total_system_records = 0
-    for d in department_sheets_all:
-        d_df = live_data_map.get(d, pd.DataFrame())
-        rec_cnt = len(d_df) if not d_df.empty else 0
-        total_system_records += rec_cnt
-        live_summary.append({
-            "Department": d,
-            "Total Records": rec_cnt
-        })
-    st.metric(label="Total Active Hospital Database Records", value=total_system_records)
-    st.dataframe(pd.DataFrame(live_summary), use_container_width=True)
+        st.info(f"No records found in live database for `{selected_tally_dept}`.")
 
 # ---------------------------------------------------------
 # MODULE: HOSPITAL INFORMATION SYSTEM (LANDING PAGE) - ISOLATED VIA FRAGMENT
