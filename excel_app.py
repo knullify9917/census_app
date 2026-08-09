@@ -332,7 +332,7 @@ def get_month_str(date_obj, fmt_style="numeric_prefix"):
     return month_name
 
 # ---------------------------------------------------------
-# HYBRID SQLITE BACKEND SETUP
+# HYBRID SQLITE BACKEND SETUP (FRESH PURGE ON STARTUP)
 # ---------------------------------------------------------
 sqlite_lock = threading.Lock()
 
@@ -346,7 +346,8 @@ def init_local_sqlite():
     cursor = conn.cursor()
     for s_name, cols in SHEET_HEADERS.items():
         cols_def = ", ".join([f'"{col}" TEXT' for col in cols])
-        cursor.execute(f'CREATE TABLE IF NOT EXISTS "{s_name}" ({cols_def})')
+        cursor.execute(f'DROP TABLE IF EXISTS "{s_name}"')
+        cursor.execute(f'CREATE TABLE "{s_name}" ({cols_def})')
     conn.commit()
     conn.close()
 
