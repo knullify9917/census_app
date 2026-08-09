@@ -291,13 +291,16 @@ SCU_SHEET_HEADER = [
     'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CASE COUNT', 'SEEDED_TRIAL'
 ]
 
+ECC_SHEET_HEADER = [
+    'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
+    'DISEASE CATEGORY', 'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
+    'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
+    'HOSPITALIZATION MODE', 'CASE TYPE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'ADMITTED TO', 
+    'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CASE COUNT', 'SEEDED_TRIAL'
+]
+
 SHEET_HEADERS = {
-    "Emergency Care Complex (ECC)": [
-        'MONTH', 'DATE', 'TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 
-        'DISEASE CATEGORY', 'ATTENDING PHYSICIAN', 'ATTENDING SPECIALIZATION', 
-        'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION',
-        'HOSPITALIZATION MODE', 'CASE TYPE', 'HOSPITAL KIT PACKAGE', 'MODE OF PAYMENT', 'ADMITTED TO', 'CASE COUNT', 'SEEDED_TRIAL'
-    ],
+    "Emergency Care Complex (ECC)": ECC_SHEET_HEADER,
     "Endoscopy Unit (ENDO)": [
         'MONTH', 'DATE', 'SCHEDULED TIME', 'ACTUAL TIME', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 
         'DIAGNOSIS', 'PROCEDURE', 'PROCEDURE CATEGORY', 
@@ -744,7 +747,9 @@ if st.session_state["role"] == "Administrator":
                         'ATTENDING PHYSICIAN': "DR. E. SANTOS", 'ATTENDING SPECIALIZATION': "EMERGENCY MEDICINE",
                         'CO-MANAGEMENT PHYSICIAN': "N/A", 'CO-MANAGEMENT SPECIALIZATION': "N/A",
                         'HOSPITALIZATION MODE': "INPATIENT", 'CASE TYPE': "PRIVATE CASE", 'HOSPITAL KIT PACKAGE': "YES",
-                        'MODE OF PAYMENT': pay_mode, 'ADMITTED TO': "ECC", 'CASE COUNT': 1, 'SEEDED_TRIAL': 'YES'
+                        'MODE OF PAYMENT': pay_mode, 'ADMITTED TO': "ECC", 
+                        'PROCEDURES': "IV HYDRATION", 'DIAGNOSTIC EXAMINATIONS': "CBC, X-RAY", 'MEDICATIONS': "PARACETAMOL", 'SPECIAL ENDORSEMENTS': "STABLE",
+                        'CASE COUNT': 1, 'SEEDED_TRIAL': 'YES'
                     }
                 else:
                     row_data = {
@@ -1449,6 +1454,10 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         # 5. Diagnostics Procedures and Treatment Plans
         st.subheader("5. Diagnostics Procedures and Treatment Plans")
         kit_package = st.checkbox("Hospital Kit Package", value=False, key="ecc_kit")
+        ecc_procedures = st.text_area("Procedures", value="", key="ecc_procs").strip().upper()
+        ecc_diagnostic_exams = st.text_area("Diagnostic Examinations", value="", key="ecc_diags").strip().upper()
+        ecc_medications = st.text_area("Medications", value="", key="ecc_meds").strip().upper()
+        ecc_special_endorsements = st.text_area("Special Endorsements", value="", key="ecc_ends").strip().upper()
 
         submitted = st.form_submit_button("Submit Record")
         if submitted:
@@ -1484,6 +1493,10 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
                 'HOSPITAL KIT PACKAGE': "YES" if kit_package else "NO",
                 'MODE OF PAYMENT': payment_selected,
                 'ADMITTED TO': admitted_to,
+                'PROCEDURES': sanitize_medical_text(ecc_procedures),
+                'DIAGNOSTIC EXAMINATIONS': sanitize_medical_text(ecc_diagnostic_exams),
+                'MEDICATIONS': sanitize_medical_text(ecc_medications),
+                'SPECIAL ENDORSEMENTS': sanitize_medical_text(ecc_special_endorsements),
                 'CASE COUNT': 1,
                 'SEEDED_TRIAL': 'NO'
             }
@@ -2041,7 +2054,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
     ph_now = get_ph_time()
 
     with st.form("scu_form", clear_on_submit=True):
-        # 1. Patient Demographics (including age-specific values: hours, days, weeks, months, years)
+        # 1. Patient Demographics (Age-specific values: hours, days, weeks, months, years preserved)
         st.subheader("1. Patient Demographics")
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
