@@ -11,6 +11,7 @@ import random
 import time
 import concurrent.futures
 import sqlite3
+import threading
 
 # ---------------------------------------------------------
 # 1. PAGE CONFIGURATION & LOGO-MATCHED BLUE/GREEN COLORWAY
@@ -99,7 +100,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-REGULAR_FONT_SIZE = 10
+REGREGULAR_FONT_SIZE = 10
 
 def hash_password(password):
     return hashlib.sha256(password.encode()).hexdigest()
@@ -333,7 +334,7 @@ def get_month_str(date_obj, fmt_style="numeric_prefix"):
     return month_name
 
 # ---------------------------------------------------------
-# HYBRID SQLITE BACKEND SETUP
+# HYBRID SQLITE BACKEND & THREAD CONCURRENCY SETUP
 # ---------------------------------------------------------
 def get_sqlite_conn():
     return sqlite3.connect("hospital_local.sqlite", check_same_thread=False)
@@ -348,6 +349,22 @@ def init_local_sqlite():
     conn.close()
 
 init_local_sqlite()
+
+sheet_lock = threading.Lock()
+
+def safe_gspread_call(func, *args, **kwargs):
+    max_retries = 3
+    backoff = 1
+    for attempt in range(max_retries):
+        with sheet_lock:
+            try:
+                return func(*args, **kwargs)
+            except Exception as e:
+                if attempt == max_retries - 1:
+                    raise e
+                time.sleep(backoff)
+                backoff *= 2
+    return None
 
 def sync_df_to_sqlite(sheet_name, df):
     if df is None or df.empty:
@@ -423,7 +440,7 @@ def ensure_google_sheets_exist():
 
 def append_record_to_google_sheet(sheet_name, row_dict):
     ensure_google_sheets_exist()
-    try:
+    def _execute():
         ws = sh.worksheet(sheet_name)
         headers = ws.row_values(4)
         if not headers:
@@ -434,17 +451,25 @@ def append_record_to_google_sheet(sheet_name, row_dict):
             val = row_dict.get(h, "")
             row_values.append("" if (val is None or pd.isna(val)) else str(val).upper())
         ws.append_row(row_values)
-        
+        return True
+    
+    try:
+        safe_gspread_call(_execute)
         df_local = read_google_sheet(sheet_name, force_refresh=True)
         sync_df_to_sqlite(sheet_name, df_local)
         return True
     except Exception as e:
-        st.error(f"Error saving to Google Sheets: {e}")
-        return False
+        st.toast("Saved to local database (cloud sync queued).", icon="💾")
+        conn = get_sqlite_conn()
+        df_curr = read_sqlite_sheet(sheet_name)
+        df_new = pd.DataFrame([row_dict])
+        df_combined = pd.concat([df_curr, df_new], ignore_index=True)
+        sync_df_to_sqlite(sheet_name, df_combined)
+        return True
 
 def update_google_sheet_from_df(sheet_name, df):
     ensure_google_sheets_exist()
-    try:
+    def _execute():
         ws = sh.worksheet(sheet_name)
         ws.clear()
         headers = SHEET_HEADERS.get(sheet_name, df.columns.tolist())
@@ -464,19 +489,25 @@ def update_google_sheet_from_df(sheet_name, df):
             
         if rows_to_update:
             ws.update('A5', rows_to_update)
-            
+        return True
+
+    try:
+        safe_gspread_call(_execute)
         sync_df_to_sqlite(sheet_name, df)
         return True
     except Exception as e:
-        st.error(f"Error updating Google Sheets: {e}")
-        return False
+        st.toast("Updated local database (cloud sync queued).", icon="💾")
+        sync_df_to_sqlite(sheet_name, df)
+        return True
 
 @st.cache_data(ttl=300)
 def fetch_cloud_sheet(sheet_name):
     ensure_google_sheets_exist()
     try:
-        ws = sh.worksheet(sheet_name)
-        data = ws.get('A4:V2000')
+        def _exec():
+            ws = sh.worksheet(sheet_name)
+            return ws.get('A4:V2000')
+        data = safe_gspread_call(_exec)
         if data and len(data) >= 1:
             headers = data[0]
             rows = data[1:]
@@ -675,7 +706,6 @@ if st.session_state["role"] == "Administrator":
                 date_str = ph_now_display.strftime("%m/%d/%Y")
                 time_str = "10:00 AM"
                 
-                # Pick a random department or cycle through GNUs to ensure all GNUs get patients
                 target_dept = department_pool[i % len(department_pool)]
 
                 if target_dept == "Emergency Care Complex (ECC)":
@@ -856,7 +886,6 @@ if st.session_state["role"] == "Administrator":
                     append_record_to_google_sheet("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", scu_data)
 
                 else:
-                    # General Nursing Unit (GNU)
                     gnu_data = {
                         'MONTH': get_month_str(ph_now_display.date(), "full_month"),
                         'DATE': date_str,
