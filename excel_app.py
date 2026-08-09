@@ -430,16 +430,13 @@ def check_existing_patient_ai(sheet_name, last_name, fn, curr_date_str):
 
 ensure_google_sheets_exist()
 
-# Helper for dropping the first index/unnamed column and resetting dataframe view
 def clean_display_df(df):
     if df is None or df.empty:
         return df
     d_clean = df.copy()
-    # Drop unnamed index or first unnamed column if present
     cols_to_drop = [c for c in d_clean.columns if 'Unnamed' in str(c) or c == '']
     if cols_to_drop:
         d_clean = d_clean.drop(columns=cols_to_drop)
-    # Also drop the very first column if it acts as a row index or number
     if d_clean.shape[1] > 1:
         first_col = d_clean.columns[0]
         if first_col.lower() in ['index', 'level_0', 'unnamed: 0']:
@@ -507,7 +504,7 @@ st.sidebar.markdown("### 🧭 Department Navigation")
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
 
 # ---------------------------------------------------------
-# ADMIN SEEDER TOOL (5 PATIENTS, MIDDLE NAME, AUTO-REGISTER)
+# ADMIN SEEDER TOOL
 # ---------------------------------------------------------
 if st.session_state["role"] == "Administrator":
     st.sidebar.markdown("---")
@@ -924,15 +921,21 @@ if selected_sheet == "Hospital Information System":
 
     st.markdown("---")
 
+    # ---------------------------------------------------------
+    # ACTIVE PATIENT ROSTER (GNU Active/MGH + All Special Care Complex Patients)
+    # ---------------------------------------------------------
     st.subheader("📋 Active Patient Roster")
-    st.markdown("Aggregated live roster displaying active & MGH patient records from General Nursing Units.")
+    st.markdown("Aggregated live roster displaying active, MGH, and CAB patients from General Nursing Units, along with all patients admitted in the Special Care Complex.")
 
+    roster_combined_frames = []
+
+    # 1. Fetch GNU Active & MGH patients
     gnu_roster_frames = []
     for gnu in gnu_sheets:
         gnu_df = read_google_sheet(gnu)
         if not gnu_df.empty:
             df_c = gnu_df.copy()
-            df_c.insert(0, "DEPARTMENT UNIT", gnu)
+            df_c.insert(0, "SOURCE DEPARTMENT", gnu)
             gnu_roster_frames.append(df_c)
 
     if gnu_roster_frames:
@@ -940,7 +943,7 @@ if selected_sheet == "Hospital Information System":
         if 'PATIENT STATUS' in master_gnu_df.columns:
             master_gnu_df['PATIENT STATUS'] = master_gnu_df['PATIENT STATUS'].fillna("ACTIVE")
             gnu_filtered = master_gnu_df[
-                master_gnu_df['PATIENT STATUS'].astype(str).str.strip().str.upper().isin(['ACTIVE', 'MGH'])
+                master_gnu_df['PATIENT STATUS'].astype(str).str.strip().str.upper().isin(['ACTIVE', 'MGH', 'CAB'])
             ]
         else:
             gnu_filtered = master_gnu_df
@@ -952,23 +955,44 @@ if selected_sheet == "Hospital Information System":
                 gnu_filtered.get('MIDDLE NAME', '').astype(str).str.strip()
             ).str.strip(", ")
 
-            roster_mapped = pd.DataFrame()
-            roster_mapped['Admission Date'] = gnu_filtered.get('DATE', '')
-            roster_mapped['Room No.'] = gnu_filtered.get('ROOM NO', '')
-            roster_mapped['Name of Patient'] = gnu_filtered['NAME OF PATIENT']
-            roster_mapped['Age'] = gnu_filtered.get('AGE', '')
-            roster_mapped['Admitting Diagnosis'] = gnu_filtered.get('DIAGNOSIS', '')
-            roster_mapped['Admitting Physician'] = gnu_filtered.get('ATTENDING PHYSICIAN', '')
-            roster_mapped['Surgical Procedure'] = gnu_filtered.get('PROCEDURES', '')
-            roster_mapped['Diagnostic Procedure'] = gnu_filtered.get('DIAGNOSTIC EXAMINATIONS', '')
-            roster_mapped['Status'] = gnu_filtered.get('PATIENT STATUS', '')
+            gnu_mapped = pd.DataFrame()
+            gnu_mapped['Admission Date'] = gnu_filtered.get('DATE', '')
+            gnu_mapped['Department / Unit'] = gnu_filtered.get('SOURCE DEPARTMENT', '')
+            gnu_mapped['Room No.'] = gnu_filtered.get('ROOM NO', 'N/A')
+            gnu_mapped['Name of Patient'] = gnu_filtered['NAME OF PATIENT']
+            gnu_mapped['Age'] = gnu_filtered.get('AGE', '')
+            gnu_mapped['Diagnosis'] = gnu_filtered.get('DIAGNOSIS', '')
+            gnu_mapped['Attending Physician'] = gnu_filtered.get('ATTENDING PHYSICIAN', '')
+            gnu_mapped['Status'] = gnu_filtered.get('PATIENT STATUS', '')
+            roster_combined_frames.append(gnu_mapped)
 
-            st.dataframe(clean_display_df(roster_mapped), use_container_width=True)
-            st.caption(f"Showing {len(roster_mapped)} active General Nursing Unit patient records.")
-        else:
-            st.info("No active patient records found in General Nursing Units.")
+    # 2. Fetch ALL Special Care Complex patients
+    scu_raw_df = read_google_sheet(scu_sheet)
+    if not scu_raw_df.empty:
+        scu_c = scu_raw_df.copy()
+        scu_c['NAME OF PATIENT'] = (
+            scu_c.get('LAST NAME', '').astype(str).str.strip() + ", " +
+            scu_c.get('FIRST NAME', '').astype(str).str.strip() + " " +
+            scu_c.get('MIDDLE NAME', '').astype(str).str.strip()
+        ).str.strip(", ")
+
+        scu_mapped = pd.DataFrame()
+        scu_mapped['Admission Date'] = scu_c.get('DATE', '')
+        scu_mapped['Department / Unit'] = "SPECIAL CARE COMPLEX (" + scu_c.get('ADMITTED TO', 'NICU') + ")"
+        scu_mapped['Room No.'] = "N/A"
+        scu_mapped['Name of Patient'] = scu_c['NAME OF PATIENT']
+        scu_mapped['Age'] = scu_c.get('AGE', '')
+        scu_mapped['Diagnosis'] = scu_c.get('DIAGNOSIS', '')
+        scu_mapped['Attending Physician'] = scu_c.get('ATTENDING PHYSICIAN', '')
+        scu_mapped['Status'] = scu_c.get('PATIENT STATUS', 'ACTIVE')
+        roster_combined_frames.append(scu_mapped)
+
+    if roster_combined_frames:
+        final_master_roster = pd.concat(roster_combined_frames, ignore_index=True)
+        st.dataframe(clean_display_df(final_master_roster), use_container_width=True)
+        st.caption(f"Showing {len(final_master_roster)} total roster entries (GNU Active/MGH/CAB + All Special Care Complex admissions).")
     else:
-        st.info("No General Nursing Unit records found.")
+        st.info("No active patient roster records found.")
 
     st.markdown("---")
     st.subheader("📊 Department Performance")
@@ -993,7 +1017,7 @@ if selected_sheet == "Hospital Information System":
                 dept_df = dept_df[dept_df['ADMITTED TO'] == selected_area]
                 st.write(f"Filtered to **{selected_area}** ({len(dept_df)} records)")
 
-        preferred_cols = ['DATE', 'PATIENT & STATUS', 'ROOM NO', 'LAST NAME', 'FIRST NAME', 'DIAGNOSIS', 'PATIENT STATUS', 'HOSPITALIZATION MODE', 'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION', 'ATTENDING PHYSICIAN', 'MODE OF PAYMENT']
+        preferred_cols = ['DATE', 'PATIENT & STATUS', 'ROOM NO', 'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'DIAGNOSIS', 'PATIENT STATUS', 'HOSPITALIZATION MODE', 'PROCEDURES', 'DIAGNOSTIC EXAMINATIONS', 'MEDICATIONS', 'SPECIAL ENDORSEMENTS', 'CO-MANAGEMENT PHYSICIAN', 'CO-MANAGEMENT SPECIALIZATION', 'ATTENDING PHYSICIAN', 'MODE OF PAYMENT']
         display_cols = [c for c in preferred_cols if c in dept_df.columns]
         if not display_cols:
             display_cols = dept_df.columns.tolist()
