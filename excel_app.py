@@ -371,7 +371,7 @@ def ensure_google_sheets_exist():
         if s_name not in existing_worksheets:
             try:
                 ws = sh.add_worksheet(title=s_name, rows=1000, cols=len(cols))
-                ws.update('A1', [[f"MTCMC CLINICAL CENSUS - {s_name} MASTERFILE"]])
+                ws.update('A1', [[f"MTCMC CLINICAL CENSUS - {s_name} MASTERFILE MASTERFILE"]])
                 ws.update('A4', [cols])
             except Exception:
                 pass
@@ -967,7 +967,7 @@ if selected_sheet == "Hospital Information System":
     st.markdown("---")
 
     # ---------------------------------------------------------
-    # ACTIVE PATIENT ROSTER (Directly Editable Table)
+    # ACTIVE PATIENT ROSTER (Directly Editable Active Patient Census Table)
     # ---------------------------------------------------------
     st.subheader("📋 Active Patient Census & Direct Editor")
     st.markdown("Aggregated live roster displaying active, MGH, and CAB patients from General Nursing Units, along with all active patients admitted in the Special Care Complex. **Directly edit patient information and statuses in the table below.** *(Admission dates and table headers are locked to prevent overlaps).*")
@@ -1096,7 +1096,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
     st.header(f"🛏️ {gnu_title} Patient Registration")
     ph_now = get_ph_time()
     form_key_slug = gnu_title.replace("General Nursing Unit (", "").replace(")", "").strip().lower()
-    
+
     with st.form(f"gnu_form_{form_key_slug}", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -1203,6 +1203,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
 elif selected_sheet == "Emergency Care Complex (ECC)":
     st.header("🚑 Emergency Care Complex Patient Registration")
     ph_now = get_ph_time()
+
     with st.form("ecc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -1308,7 +1309,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 elif selected_sheet == "Endoscopy Unit (ENDO)":
     st.header("🔬 Endoscopy Unit Patient Registration")
     ph_now = get_ph_time()
-    
+
     with st.form("endo_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -1523,7 +1524,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
     ob_icon_html = get_custom_icon_html("pregnant_icon.png", width=38)
     st.markdown(f"<h2>{ob_icon_html} OBGYNE Care Complex Patient Registration</h2>", unsafe_allow_html=True)
     ph_now = get_ph_time()
-    
+
     with st.form("obgyne_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
@@ -1655,7 +1656,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
     surgery_icon_html = get_custom_icon_html("surgery_icon.png", width=38)
     st.markdown(f"<h2>{surgery_icon_html} Surgical Care Complex Patient Registration</h2>", unsafe_allow_html=True)
     ph_now = get_ph_time()
-    
+
     with st.form("scc_form", clear_on_submit=True):
         st.subheader("👤 Patient Demographics")
         
