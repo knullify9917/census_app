@@ -173,8 +173,16 @@ if "role" not in st.session_state:
     st.session_state["role"] = ""
 if "name" not in st.session_state:
     st.session_state["name"] = ""
-if "selected_patient_edit" not in st.session_state:
-    st.session_state["selected_patient_edit"] = {}
+
+# Session state keys for pre-filling patient registration form values
+if "form_prefill_room" not in st.session_state: st.session_state["form_prefill_room"] = ""
+if "form_prefill_ln" not in st.session_state: st.session_state["form_prefill_ln"] = ""
+if "form_prefill_fn" not in st.session_state: st.session_state["form_prefill_fn"] = ""
+if "form_prefill_mn" not in st.session_state: st.session_state["form_prefill_mn"] = ""
+if "form_prefill_age" not in st.session_state: st.session_state["form_prefill_age"] = 0
+if "form_prefill_diag" not in st.session_state: st.session_state["form_prefill_diag"] = ""
+if "form_prefill_doc" not in st.session_state: st.session_state["form_prefill_doc"] = ""
+if "form_prefill_status" not in st.session_state: st.session_state["form_prefill_status"] = "ACTIVE"
 
 for form_key in ["ecc", "endo", "hdu", "ob", "scc", "scu", "1c", "2a", "2b", "2c", "2d", "3a", "3b", "3c", "4a"]:
     if f"cm_list_{form_key}" not in st.session_state:
@@ -924,10 +932,10 @@ if selected_sheet == "Hospital Information System":
     st.markdown("---")
 
     # ---------------------------------------------------------
-    # ACTIVE PATIENT ROSTER (Interactive Selection & Editing Support)
+    # ACTIVE PATIENT ROSTER WITH CLICK-TO-AUTO-FILL PRE-POPULATION
     # ---------------------------------------------------------
     st.subheader("📋 Active Patient Roster")
-    st.markdown("Aggregated live roster displaying active, MGH, and CAB patients from General Nursing Units, along with all active patients admitted in the Special Care Complex (excluding discharged patients). **Click a row or select a patient to load their details for updating.**")
+    st.markdown("Aggregated live roster displaying active, MGH, and CAB patients. **Select a patient from the dropdown below to automatically load their information into the General Nursing Unit data entry fields for quick updating.**")
 
     roster_combined_frames = []
 
@@ -961,6 +969,9 @@ if selected_sheet == "Hospital Information System":
             gnu_mapped['Department / Unit'] = gnu_filtered.get('SOURCE DEPARTMENT', '')
             gnu_mapped['Room No.'] = gnu_filtered.get('ROOM NO', 'N/A')
             gnu_mapped['Name of Patient'] = gnu_filtered['NAME OF PATIENT']
+            gnu_mapped['Last Name'] = gnu_filtered.get('LAST NAME', '')
+            gnu_mapped['First Name'] = gnu_filtered.get('FIRST NAME', '')
+            gnu_mapped['Middle Name'] = gnu_filtered.get('MIDDLE NAME', '')
             gnu_mapped['Age'] = gnu_filtered.get('AGE', '')
             gnu_mapped['Diagnosis'] = gnu_filtered.get('DIAGNOSIS', '')
             gnu_mapped['Attending Physician'] = gnu_filtered.get('ATTENDING PHYSICIAN', '')
@@ -990,6 +1001,9 @@ if selected_sheet == "Hospital Information System":
             scu_mapped['Department / Unit'] = "SPECIAL CARE COMPLEX (" + scu_filtered.get('ADMITTED TO', 'NICU') + ")"
             scu_mapped['Room No.'] = "N/A"
             scu_mapped['Name of Patient'] = scu_filtered['NAME OF PATIENT']
+            scu_mapped['Last Name'] = scu_filtered.get('LAST NAME', '')
+            scu_mapped['First Name'] = scu_filtered.get('FIRST NAME', '')
+            scu_mapped['Middle Name'] = scu_filtered.get('MIDDLE NAME', '')
             scu_mapped['Age'] = scu_filtered.get('AGE', '')
             scu_mapped['Diagnosis'] = scu_filtered.get('DIAGNOSIS', '')
             scu_mapped['Attending Physician'] = scu_filtered.get('ATTENDING PHYSICIAN', '')
@@ -998,19 +1012,29 @@ if selected_sheet == "Hospital Information System":
 
     if roster_combined_frames:
         final_master_roster = pd.concat(roster_combined_frames, ignore_index=True)
-        display_roster_df = clean_display_df(final_master_roster)
         
-        # Interactive selection event using Streamlit st.dataframe selection event or selectbox fallback
-        selected_patient_name = st.selectbox(
-            "🔍 Quick Select Patient by Name (or toggle/edit condition)", 
-            ["-- Select Patient to Edit --"] + display_roster_df['Name of Patient'].tolist()
-        )
+        # Interactive selection dropdown that automatically triggers pre-fill session state variables
+        patient_options = ["-- Click to Select & Populate Patient --"] + final_master_roster['Name of Patient'].tolist()
+        selected_roster_patient = st.selectbox("👆 Select Patient from Roster to Auto-Fill Data Entry", patient_options)
         
-        if selected_patient_name != "-- Select Patient to Edit --":
-            matched_row = display_roster_df[display_roster_df['Name of Patient'] == selected_patient_name].iloc[0]
-            st.info(f"Loaded details for **{selected_patient_name}** | Department: `{matched_row['Department / Unit']}` | Room: `{matched_row['Room No.']}` | Current Status: `{matched_row['Status']}`")
-            st.markdown("*(Navigate to the respective General Nursing Unit in the sidebar department selector above to update room, diagnosis, or patient status).*")
+        if selected_roster_patient != "-- Click to Select & Populate Patient --":
+            p_data = final_master_roster[final_master_roster['Name of Patient'] == selected_roster_patient].iloc[0]
+            st.session_state["form_prefill_room"] = str(p_data.get('Room No.', ''))
+            st.session_state["form_prefill_ln"] = str(p_data.get('Last Name', ''))
+            st.session_state["form_prefill_fn"] = str(p_data.get('First Name', ''))
+            st.session_state["form_prefill_mn"] = str(p_data.get('Middle Name', ''))
+            try:
+                st.session_state["form_prefill_age"] = int(float(str(p_data.get('Age', 0)).replace(" YRS", "").strip()))
+            except Exception:
+                st.session_state["form_prefill_age"] = 0
+            st.session_state["form_prefill_diag"] = str(p_data.get('Diagnosis', ''))
+            st.session_state["form_prefill_doc"] = str(p_data.get('Attending Physician', ''))
+            st.session_state["form_prefill_status"] = str(p_data.get('Status', 'ACTIVE'))
+            
+            source_dept = p_data.get('Department / Unit', '')
+            st.success(f"Successfully loaded **{selected_roster_patient}**! Navigate to `{source_dept}` in the sidebar to view and update their pre-filled registration form.")
 
+        display_roster_df = clean_display_df(final_master_roster[['Admission Date', 'Department / Unit', 'Room No.', 'Name of Patient', 'Age', 'Diagnosis', 'Attending Physician', 'Status']])
         st.dataframe(display_roster_df, use_container_width=True)
         st.caption(f"Showing {len(display_roster_df)} active non-discharged roster entries.")
     else:
@@ -1072,17 +1096,17 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
         with c2:
             entry_time_str = civilian_time_input_field("Time", key_suffix=f"gnu_{form_key_slug}_time")
         with c3:
-            room_no = st.text_input("Room No.", value="").strip().upper()
+            room_no = st.text_input("Room No.", value=st.session_state.get("form_prefill_room", "")).strip().upper()
 
         c_n1, c_n2, c_n3, c_n4, c_n5 = st.columns([2, 2, 2, 1, 1.5])
         with c_n1:
-            last_name = st.text_input("Last Name", value="").strip().upper()
+            last_name = st.text_input("Last Name", value=st.session_state.get("form_prefill_ln", "")).strip().upper()
         with c_n2:
-            first_name = st.text_input("First Name", value="").strip().upper()
+            first_name = st.text_input("First Name", value=st.session_state.get("form_prefill_fn", "")).strip().upper()
         with c_n3:
-            middle_name = st.text_input("Middle Name", value="").strip().upper()
+            middle_name = st.text_input("Middle Name", value=st.session_state.get("form_prefill_mn", "")).strip().upper()
         with c_n4:
-            age = st.number_input("Age", min_value=0, max_value=120, value=0)
+            age = st.number_input("Age", min_value=0, max_value=120, value=int(st.session_state.get("form_prefill_age", 0)))
         with c_n5:
             sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
 
@@ -1092,14 +1116,17 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
         with c_h2:
             payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY", "CHARITY"], index=0)
         with c_h3:
-            patient_status = st.selectbox("Patient Status", ["ACTIVE", "MGH", "DISCHARGED", "CAB"], index=0)
+            default_status_val = st.session_state.get("form_prefill_status", "ACTIVE").upper()
+            status_options = ["ACTIVE", "MGH", "DISCHARGED", "CAB"]
+            status_idx = status_options.index(default_status_val) if default_status_val in status_options else 0
+            patient_status = st.selectbox("Patient Status", status_options, index=status_idx)
 
         curr_date_str = entry_date.strftime("%m/%d/%Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name", value="", key=f"gnu_{form_key_slug}_att").strip().upper()
+            attending_physician = st.text_input("Attending Physician Name", value=st.session_state.get("form_prefill_doc", ""), key=f"gnu_{form_key_slug}_att").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key=f"gnu_{form_key_slug}_spec")
 
@@ -1112,7 +1139,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
         st.subheader("📋 Clinical & Diagnostic Details")
-        diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip().upper()
+        diagnosis_text = st.text_area("Clinical Diagnosis", value=st.session_state.get("form_prefill_diag", "")).strip().upper()
 
         st.subheader("📋 Procedures & Diagnostics")
         procedures_text = st.text_area("Procedures", value="", key=f"gnu_{form_key_slug}_procs").strip().upper()
@@ -1162,6 +1189,15 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
             if append_record_to_google_sheet(gnu_title, row_data):
                 st.success(f"Successfully saved to Google Sheets `{gnu_title}` tab!")
                 st.session_state[cm_list_key] = []
+                # Clear prefill state after successful save
+                st.session_state["form_prefill_room"] = ""
+                st.session_state["form_prefill_ln"] = ""
+                st.session_state["form_prefill_fn"] = ""
+                st.session_state["form_prefill_mn"] = ""
+                st.session_state["form_prefill_age"] = 0
+                st.session_state["form_prefill_diag"] = ""
+                st.session_state["form_prefill_doc"] = ""
+                st.session_state["form_prefill_status"] = "ACTIVE"
 
 # ---------------------------------------------------------
 # FORM 1: Emergency Care Complex (ECC)
@@ -1174,13 +1210,13 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value="").strip().upper()
+            last_name = st.text_input("Last Name", value=st.session_state.get("form_prefill_ln", "")).strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value="").strip().upper()
+            first_name = st.text_input("First Name", value=st.session_state.get("form_prefill_fn", "")).strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value="").strip().upper()
+            middle_name = st.text_input("Middle Name", value=st.session_state.get("form_prefill_mn", "")).strip().upper()
         with c4:
-            age = st.number_input("Age", min_value=0, max_value=120, value=0)
+            age = st.number_input("Age", min_value=0, max_value=120, value=int(st.session_state.get("form_prefill_age", 0)))
         with c5:
             sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
 
@@ -1205,7 +1241,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name", value="", key="ecc_att_input").strip().upper()
+            attending_physician = st.text_input("Attending Physician Name", value=st.session_state.get("form_prefill_doc", ""), key="ecc_att_input").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="ecc_spec_input")
 
@@ -1217,7 +1253,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
                 st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
         st.subheader("📋 Clinical & Diagnostic Details")
-        diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip().upper()
+        diagnosis_text = st.text_area("Clinical Diagnosis", value=st.session_state.get("form_prefill_diag", "")).strip().upper()
 
         disease_options = [
             'ACUTE GASTROENTERITIS', 'DENGUE FEVER', 'HYPERTENSION', 'GASTROESOPHAGEAL REFLUX DISEASE',
@@ -1280,13 +1316,13 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value="").strip().upper()
+            last_name = st.text_input("Last Name", value=st.session_state.get("form_prefill_ln", "")).strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value="").strip().upper()
+            first_name = st.text_input("First Name", value=st.session_state.get("form_prefill_fn", "")).strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value="").strip().upper()
+            middle_name = st.text_input("Middle Name", value=st.session_state.get("form_prefill_mn", "")).strip().upper()
         with c4:
-            age = st.number_input("Age", min_value=0, max_value=120, value=0)
+            age = st.number_input("Age", min_value=0, max_value=120, value=int(st.session_state.get("form_prefill_age", 0)))
         with c5:
             sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
 
@@ -1303,7 +1339,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name", value="", key="endo_att_input").strip().upper()
+            attending_physician = st.text_input("Attending Physician Name", value=st.session_state.get("form_prefill_doc", ""), key="endo_att_input").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="endo_spec_input")
 
@@ -1322,7 +1358,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         st.subheader("📋 Clinical & Diagnostic Details")
         cd1, cd2 = st.columns(2)
         with cd1:
-            diagnosis_text = st.text_input("Clinical Diagnosis", value="").strip().upper()
+            diagnosis_text = st.text_input("Clinical Diagnosis", value=st.session_state.get("form_prefill_diag", "")).strip().upper()
         with cd2:
             procedure_text = st.text_input("Procedure Name", value="").strip().upper()
 
@@ -1400,13 +1436,13 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value="").strip().upper()
+            last_name = st.text_input("Last Name", value=st.session_state.get("form_prefill_ln", "")).strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value="").strip().upper()
+            first_name = st.text_input("First Name", value=st.session_state.get("form_prefill_fn", "")).strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value="").strip().upper()
+            middle_name = st.text_input("Middle Name", value=st.session_state.get("form_prefill_mn", "")).strip().upper()
         with c4:
-            age = st.number_input("Age", min_value=0, max_value=120, value=0)
+            age = st.number_input("Age", min_value=0, max_value=120, value=int(st.session_state.get("form_prefill_age", 0)))
         with c5:
             sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
 
@@ -1414,13 +1450,13 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         with c_d1:
             entry_date = st.date_input("Dialysis Date", datetime.today())
 
-        diagnosis = st.text_input("Diagnosis", value="").strip().upper()
+        diagnosis = st.text_input("Diagnosis", value=st.session_state.get("form_prefill_diag", "")).strip().upper()
         curr_date_str = entry_date.strftime("%B %d, %Y")
 
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician", value="", key="hdu_att_input").strip().upper()
+            attending_physician = st.text_input("Attending Physician", value=st.session_state.get("form_prefill_doc", ""), key="hdu_att_input").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="hdu_spec_input")
 
@@ -1495,13 +1531,13 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value="").strip().upper()
+            last_name = st.text_input("Last Name", value=st.session_state.get("form_prefill_ln", "")).strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value="").strip().upper()
+            first_name = st.text_input("First Name", value=st.session_state.get("form_prefill_fn", "")).strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value="").strip().upper()
+            middle_name = st.text_input("Middle Name", value=st.session_state.get("form_prefill_mn", "")).strip().upper()
         with c4:
-            age = st.number_input("Age", min_value=10, max_value=100, value=10)
+            age = st.number_input("Age", min_value=10, max_value=100, value=int(st.session_state.get("form_prefill_age", 10)))
         with c5:
             sex = st.selectbox("Sex", ["Select Sex", "Female", "Male", "Others"], index=0)
 
@@ -1518,7 +1554,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name", value="", key="ob_att_input").strip().upper()
+            attending_physician = st.text_input("Attending Physician Name", value=st.session_state.get("form_prefill_doc", ""), key="ob_att_input").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Attending Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="ob_spec_input")
 
@@ -1538,7 +1574,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         
         cd1, cd2 = st.columns(2)
         with cd1:
-            pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="").strip().upper()
+            pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value=st.session_state.get("form_prefill_diag", "")).strip().upper()
         with cd2:
             post_op_diagnosis = st.text_area("Post-Op Diagnosis", value="").strip().upper()
 
@@ -1627,13 +1663,13 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value="").strip().upper()
+            last_name = st.text_input("Last Name", value=st.session_state.get("form_prefill_ln", "")).strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value="").strip().upper()
+            first_name = st.text_input("First Name", value=st.session_state.get("form_prefill_fn", "")).strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value="").strip().upper()
+            middle_name = st.text_input("Middle Name", value=st.session_state.get("form_prefill_mn", "")).strip().upper()
         with c4:
-            age = st.number_input("Age", min_value=0, max_value=120, value=0)
+            age = st.number_input("Age", min_value=0, max_value=120, value=int(st.session_state.get("form_prefill_age", 0)))
         with c5:
             sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
 
@@ -1650,7 +1686,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name", value="", key="scc_att_input").strip().upper()
+            attending_physician = st.text_input("Attending Physician Name", value=st.session_state.get("form_prefill_doc", ""), key="scc_att_input").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scc_spec_input")
 
@@ -1670,7 +1706,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         
         cd1, cd2 = st.columns(2)
         with cd1:
-            pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="").strip().upper()
+            pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value=st.session_state.get("form_prefill_diag", "")).strip().upper()
         with cd2:
             post_op_diagnosis = st.text_area("Post-Op Diagnosis", value="").strip().upper()
 
@@ -1760,11 +1796,11 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         
         c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
         with c1:
-            last_name = st.text_input("Last Name", value="").strip().upper()
+            last_name = st.text_input("Last Name", value=st.session_state.get("form_prefill_ln", "")).strip().upper()
         with c2:
-            first_name = st.text_input("First Name", value="").strip().upper()
+            first_name = st.text_input("First Name", value=st.session_state.get("form_prefill_fn", "")).strip().upper()
         with c3:
-            middle_name = st.text_input("Middle Name", value="").strip().upper()
+            middle_name = st.text_input("Middle Name", value=st.session_state.get("form_prefill_mn", "")).strip().upper()
         with c4:
             sex = st.selectbox("Sex", ["Select Sex", "Male", "Female", "Others"], index=0)
         with c5:
@@ -1785,7 +1821,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         st.subheader("👨‍⚕️ Medical Care Team")
         c_doc1, c_doc2 = st.columns([2, 2])
         with c_doc1:
-            attending_physician = st.text_input("Attending Physician Name", value="", key="scu_att_input").strip().upper()
+            attending_physician = st.text_input("Attending Physician Name", value=st.session_state.get("form_prefill_doc", ""), key="scu_att_input").strip().upper()
         with c_doc2:
             attending_spec = st.selectbox("Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0, key="scu_spec_input")
 
@@ -1811,7 +1847,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         payment_selected = st.selectbox("Mode of Payment", ["Select Payment", "PHIC", "HMO", "SELF-PAY"], index=0)
 
         st.subheader("📋 Clinical & Diagnostic Details")
-        diagnosis = st.text_area("Diagnosis Text", value="").strip().upper()
+        diagnosis = st.text_area("Diagnosis Text", value=st.session_state.get("form_prefill_diag", "")).strip().upper()
         diag_flags = st.multiselect("Diagnosis Category", ["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY"])
 
         submitted = st.form_submit_button("Submit Record")
