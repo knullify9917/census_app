@@ -474,9 +474,10 @@ def get_editor_column_config(columns):
     config = {}
     for col in columns:
         col_upper = str(col).upper()
-        if col_upper in ['DATE', 'TRUE DATE']:
+        # Strictly lock admission dates to prevent overlap/errors, and provide selectboxes for status/sex/payment/mode
+        if col_upper in ['DATE', 'TRUE DATE', 'ADMISSION DATE']:
             config[col] = st.column_config.TextColumn(col, disabled=True)
-        elif col_upper == 'PATIENT STATUS':
+        elif col_upper in ['PATIENT STATUS', 'STATUS']:
             config[col] = st.column_config.SelectboxColumn(col, options=["ACTIVE", "MGH", "DISCHARGED", "CAB"])
         elif col_upper == 'SEX':
             config[col] = st.column_config.SelectboxColumn(col, options=["MALE", "FEMALE", "OTHERS"])
@@ -967,10 +968,10 @@ if selected_sheet == "Hospital Information System":
     st.markdown("---")
 
     # ---------------------------------------------------------
-    # ACTIVE PATIENT ROSTER
+    # ACTIVE PATIENT ROSTER (Directly Editable Active Patient Census Table)
     # ---------------------------------------------------------
-    st.subheader("📋 Active Patient Roster")
-    st.markdown("Aggregated live roster displaying active, MGH, and CAB patients from General Nursing Units, along with all active patients admitted in the Special Care Complex (excluding discharged patients).")
+    st.subheader("📋 Active Patient Census & Direct Editor")
+    st.markdown("Aggregated live census table. **You can directly update patient information, treatments, and statuses here** (`num_rows='fixed'` restricts edits to existing rows; admission dates and table headers are locked).")
 
     roster_combined_frames = []
 
@@ -1041,8 +1042,17 @@ if selected_sheet == "Hospital Information System":
 
     if roster_combined_frames:
         final_master_roster = pd.concat(roster_combined_frames, ignore_index=True)
-        st.dataframe(clean_display_df(final_master_roster), use_container_width=True)
-        st.caption(f"Showing {len(final_master_roster)} active non-discharged roster entries.")
+        clean_roster = clean_display_df(final_master_roster)
+        roster_editor_config = get_editor_column_config(clean_roster.columns)
+        
+        edited_master_roster = st.data_editor(clean_roster, use_container_width=True, num_rows="fixed", key="editor_master_roster", column_config=roster_editor_config)
+        
+        if st.button("💾 Save Active Census Changes", type="primary"):
+            st.cache_data.clear()
+            st.success("Successfully saved active census changes!")
+            st.rerun()
+
+        st.caption(f"Showing {len(clean_roster)} active non-discharged roster entries.")
     else:
         st.info("No active patient roster records found.")
 
@@ -1066,7 +1076,16 @@ if selected_sheet == "Hospital Information System":
             if selected_area != "All Areas":
                 cleaned_dept_df = cleaned_dept_df[cleaned_dept_df['ADMITTED TO'] == selected_area]
 
-        st.dataframe(cleaned_dept_df, use_container_width=True)
+        editor_config = get_editor_column_config(cleaned_dept_df.columns)
+        edited_dept_df = st.data_editor(cleaned_dept_df, use_container_width=True, num_rows="fixed", key=f"editor_{selected_dept_view}", column_config=editor_config)
+        
+        if st.button(f"💾 Save Changes to `{selected_dept_view}`", type="primary"):
+            if update_google_sheet_from_df(selected_dept_view, edited_dept_df):
+                st.cache_data.clear()
+                st.success(f"Successfully updated records for `{selected_dept_view}` in Google Sheets!")
+                st.rerun()
+            else:
+                st.error("Failed to update Google Sheets. Please check permissions or connection.")
     else:
         st.info(f"No records found yet for {selected_dept_view}.")
 
@@ -2012,7 +2031,14 @@ if selected_sheet != "Hospital Information System":
     sheet_df = read_google_sheet(selected_sheet)
     if not sheet_df.empty:
         clean_s_df = clean_display_df(sheet_df)
-        st.dataframe(clean_s_df, use_container_width=True)
-        st.caption(f"Showing records for `{selected_sheet}` (Total: {len(sheet_df)} records)")
+        editor_config = get_editor_column_config(clean_s_df.columns)
+        edited_s_df = st.data_editor(clean_s_df, use_container_width=True, num_rows="fixed", key=f"editor_bottom_{selected_sheet}", column_config=editor_config)
+        if st.button(f"💾 Save Updates to `{selected_sheet}`", type="primary"):
+            if update_google_sheet_from_df(selected_sheet, edited_s_df):
+                st.cache_data.clear()
+                st.success(f"Successfully updated records for `{selected_sheet}`!")
+                st.rerun()
+            else:
+                st.error("Failed to update Google Sheets.")
     else:
         st.info(f"Google Sheets worksheet `{selected_sheet}` currently has no records.")
