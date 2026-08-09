@@ -115,55 +115,55 @@ USER_DATABASE = {
         "password": hash_password("ecc2026"),
         "role": "ECC Staff",
         "name": "Emergency Care Staff",
-        "modules": ["Hospital Information System", "Emergency Care Complex (ECC)"]
+        "modules": ["Hospital Information System", "Pareto Tally Sheet", "Emergency Care Complex (ECC)"]
     },
     "scc_staff": {
         "password": hash_password("scc2026"),
         "role": "SCC Staff",
         "name": "Surgical Care Staff",
-        "modules": ["Hospital Information System", "Surgical Care Complex (OR Main)"]
+        "modules": ["Hospital Information System", "Pareto Tally Sheet", "Surgical Care Complex (OR Main)"]
     },
     "endo_staff": {
         "password": hash_password("endo2026"),
         "role": "ENDO Staff",
         "name": "Endoscopy Unit Staff",
-        "modules": ["Hospital Information System", "Endoscopy Unit (ENDO)"]
+        "modules": ["Hospital Information System", "Pareto Tally Sheet", "Endoscopy Unit (ENDO)"]
     },
     "hdu_staff": {
         "password": hash_password("hdu2026"),
         "role": "HDU Staff",
         "name": "Hemodialysis Unit Staff",
-        "modules": ["Hospital Information System", "Hemodialysis Unit (HDU)"]
+        "modules": ["Hospital Information System", "Pareto Tally Sheet", "Hemodialysis Unit (HDU)"]
     },
     "nsu_staff": {
         "password": hash_password("nsu2026"),
         "role": "Special Care Staff",
         "name": "Special Care Unit Staff",
-        "modules": ["Hospital Information System", "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"]
+        "modules": ["Hospital Information System", "Pareto Tally Sheet", "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"]
     },
     "obgyne_staff": {
         "password": hash_password("obgyne2026"),
         "role": "OBGYNE Staff",
         "name": "OBGYNE Care Staff",
-        "modules": ["Hospital Information System", "OBGYNE Care Complex (LRDR-OB Surgery)"]
+        "modules": ["Hospital Information System", "Pareto Tally Sheet", "OBGYNE Care Complex (LRDR-OB Surgery)"]
     },
     "nsgcon_staff": {
         "password": hash_password("nsgcon2026"),
         "role": "Nursing Administration",
         "name": "Nursing Control Staff",
-        "modules": ["Hospital Information System"]
+        "modules": ["Hospital Information System", "Pareto Tally Sheet"]
     },
     "ha_staff": {
         "password": hash_password("hastaff2026"),
         "role": "Hospital Administration",
         "name": "Hospital Administration Staff",
-        "modules": ["Hospital Information System"]
+        "modules": ["Hospital Information System", "Pareto Tally Sheet"]
     },
     "ha_staff1": {
         "password": hash_password("hastaff12026"),
         "role": "Hospital Administration",
         "name": "Hospital Administration Staff 1",
-        "modules": ["Hospital Information System"]
+        "modules": ["Hospital Information System", "Pareto Tally Sheet"]
     }
 }
 
@@ -435,7 +435,6 @@ def append_record_to_google_sheet(sheet_name, row_dict):
             row_values.append("" if (val is None or pd.isna(val)) else str(val).upper())
         ws.append_row(row_values)
         
-        # Update local SQLite cache
         df_local = read_google_sheet(sheet_name, force_refresh=True)
         sync_df_to_sqlite(sheet_name, df_local)
         return True
@@ -472,13 +471,12 @@ def update_google_sheet_from_df(sheet_name, df):
         st.error(f"Error updating Google Sheets: {e}")
         return False
 
-# PERFORMANCE OPTIMIZATION: Extended Cache TTL (300s) + Range Fetching ('A4:V2000') + Session State
 @st.cache_data(ttl=300)
 def fetch_cloud_sheet(sheet_name):
     ensure_google_sheets_exist()
     try:
         ws = sh.worksheet(sheet_name)
-        data = ws.get('A4:V2000') # Restrict fetch range for speed
+        data = ws.get('A4:V2000')
         if data and len(data) >= 1:
             headers = data[0]
             rows = data[1:]
@@ -492,10 +490,8 @@ def read_google_sheet(sheet_name, force_refresh=False):
     if not force_refresh and sheet_name in st.session_state["df_cache"]:
         return st.session_state["df_cache"][sheet_name]
     
-    # Try fetching from cloud first
     df = fetch_cloud_sheet(sheet_name)
     if df.empty:
-        # Fallback to local SQLite
         df = read_sqlite_sheet(sheet_name)
     else:
         sync_df_to_sqlite(sheet_name, df)
@@ -503,7 +499,6 @@ def read_google_sheet(sheet_name, force_refresh=False):
     st.session_state["df_cache"][sheet_name] = df
     return df
 
-# PERFORMANCE OPTIMIZATION: Concurrent Parallel Sheet Fetching
 def read_multiple_sheets_parallel(sheet_names):
     uncached = [s for s in sheet_names if s not in st.session_state["df_cache"]]
     if uncached:
@@ -619,8 +614,8 @@ sorted_departments = sorted([
     "General Nursing Unit (GNU 3B)", "General Nursing Unit (GNU 3C)", "General Nursing Unit (GNU 4A)"
 ])
 
-all_department_modules = ["Hospital Information System"] + sorted_departments
-MODULES = all_department_modules if allowed_modules == "All" else ["Hospital Information System"] + sorted([m for m in allowed_modules if m != "Hospital Information System"])
+all_department_modules = ["Hospital Information System", "Pareto Tally Sheet"] + sorted_departments
+MODULES = all_department_modules if allowed_modules == "All" else ["Hospital Information System", "Pareto Tally Sheet"] + sorted([m for m in allowed_modules if m != "Hospital Information System" and m != "Pareto Tally Sheet"])
 
 st.sidebar.markdown("### 🧭 Department Navigation")
 selected_sheet = st.sidebar.selectbox("Select Target Google Sheet Module", MODULES, index=0)
@@ -890,7 +885,7 @@ if st.session_state["role"] == "Administrator":
 st.sidebar.markdown("---")
 st.sidebar.markdown("### 📥 Export Reports")
 
-active_export_df = read_google_sheet(selected_sheet) if selected_sheet != "Hospital Information System" else read_google_sheet("Emergency Care Complex (ECC)")
+active_export_df = read_google_sheet(selected_sheet) if selected_sheet not in ["Hospital Information System", "Pareto Tally Sheet"] else read_google_sheet("Emergency Care Complex (ECC)")
 
 excel_buffer = io.BytesIO()
 with pd.ExcelWriter(excel_buffer, engine='openpyxl') as writer:
@@ -952,14 +947,38 @@ if selected_sheet == "Hospital Information System":
 st.markdown("---")
 
 # ---------------------------------------------------------
-# MODULE: HOSPITAL INFORMATION SYSTEM (LANDING PAGE) - ISOLATED VIA FRAGMENT
+# MODULE: PARETO TALLY SHEET
 # ---------------------------------------------------------
-@st.fragment
-def render_hospital_summary_fragment():
-    st.header("🏥 Hospital Summary")
-    st.markdown("This is the current active census summary today.")
-
-    department_sheets = sorted([
+if selected_sheet == "Pareto Tally Sheet":
+    st.header("📊 Pareto Tally Sheet & Total Counts")
+    st.markdown("Comprehensive analysis and summary counts from the uploaded `Tally Sheet.xlsx` file and active system records.")
+    
+    tally_file = 'Tally Sheet.xlsx'
+    if os.path.exists(tally_file):
+        xls_tally = pd.ExcelFile(tally_file)
+        tally_sheets = xls_tally.sheet_names
+        
+        st.subheader("📁 Uploaded Tally Sheet Structure & Total Counts")
+        tally_summary = []
+        for s in tally_sheets:
+            df_t = pd.read_excel(tally_file, sheet_name=s, header=3)
+            tally_summary.append({
+                "Tally Sheet Section": s,
+                "Total Columns": len(df_t.columns),
+                "Total Recorded Rows": len(df_t)
+            })
+        st.dataframe(pd.DataFrame(tally_summary), use_container_width=True)
+        
+        st.markdown("##### 🔍 Inspect Individual Tally Sheets")
+        selected_tally_sheet = st.selectbox("Select Tally Sheet Section to View", tally_sheets)
+        df_selected_tally = pd.read_excel(tally_file, sheet_name=selected_tally_sheet, header=3)
+        st.dataframe(clean_display_df(df_selected_tally), use_container_width=True)
+    else:
+        st.info("No `Tally Sheet.xlsx` file found in the root environment.")
+        
+    st.markdown("---")
+    st.subheader("📈 Live System Database Total Counts")
+    department_sheets_all = sorted([
         "Emergency Care Complex (ECC)", "Endoscopy Unit (ENDO)", "Hemodialysis Unit (HDU)", 
         "OBGYNE Care Complex (LRDR-OB Surgery)", "Surgical Care Complex (OR Main)", 
         "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
@@ -967,213 +986,242 @@ def render_hospital_summary_fragment():
         "General Nursing Unit (GNU 2C)", "General Nursing Unit (GNU 2D)", "General Nursing Unit (GNU 3A)", 
         "General Nursing Unit (GNU 3B)", "General Nursing Unit (GNU 3C)", "General Nursing Unit (GNU 4A)"
     ])
-    
-    gnu_sheets = [d for d in department_sheets if d.startswith("General Nursing Unit (GNU")]
-    scu_sheet = "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
-    
-    count_active_gnu = 0
-    count_mgh_gnu = 0
-    count_cab_gnu = 0
-
-    ph_now_summary = get_ph_time()
-    today_str = ph_now_summary.strftime("%m/%d/%Y")
-    current_month_num = str(ph_now_summary.month)
-    current_month_name = ph_now_summary.strftime("%B").upper()
-
-    summary_data = []
-
-    # Parallel batch fetch
-    dept_data_map = read_multiple_sheets_parallel(department_sheets)
-
-    for dept in department_sheets:
-        df = dept_data_map.get(dept, pd.DataFrame())
-        record_count = len(df) if not df.empty else 0
-        daily_count, monthly_count = 0, 0
-        
-        if not df.empty and 'DATE' in df.columns:
-            daily_count = len(df[df['DATE'].astype(str).str.strip() == today_str])
-            if 'MONTH' in df.columns:
-                monthly_subset = df[
-                    df['MONTH'].astype(str).str.contains(current_month_name, case=False, na=False) |
-                    df['MONTH'].astype(str).str.startswith(f"{current_month_num}.", na=False)
-                ]
-                monthly_count = len(monthly_subset)
-
-        if dept in gnu_sheets and not df.empty and 'PATIENT STATUS' in df.columns:
-            df['PATIENT STATUS'] = df['PATIENT STATUS'].fillna("ACTIVE")
-            for st_val in df['PATIENT STATUS']:
-                cleaned_st = str(st_val).strip().upper()
-                if cleaned_st == "ACTIVE":
-                    count_active_gnu += 1
-                elif cleaned_st == "MGH":
-                    count_mgh_gnu += 1
-                elif cleaned_st == "CAB":
-                    count_cab_gnu += 1
-
-        summary_data.append({
-            "Department Module": dept,
-            "Total Census Records": record_count,
-            "Daily Patient Census": daily_count,
-            "Monthly Patient Census": monthly_count
+    live_data_map = read_multiple_sheets_parallel(department_sheets_all)
+    live_summary = []
+    total_system_records = 0
+    for d in department_sheets_all:
+        d_df = live_data_map.get(d, pd.DataFrame())
+        rec_cnt = len(d_df) if not d_df.empty else 0
+        total_system_records += rec_cnt
+        live_summary.append({
+            "Department": d,
+            "Total Records": rec_cnt
         })
+    st.metric(label="Total Active Hospital Database Records", value=total_system_records)
+    st.dataframe(pd.DataFrame(live_summary), use_container_width=True)
 
-    scu_df = dept_data_map.get(scu_sheet, pd.DataFrame())
-    nic_count, pic_count, nsu_count, pcn_count, out_count = 0, 0, 0, 0, 0
-    if not scu_df.empty and 'ADMITTED TO' in scu_df.columns:
-        scu_df['ADMITTED_TO_UP'] = scu_df['ADMITTED TO'].astype(str).str.strip().str.upper()
-        nic_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'NICU'])
-        pic_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'PICU'])
-        nsu_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'NSU'])
-        pcn_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'PCN'])
-        out_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'OUTBORN'])
+# ---------------------------------------------------------
+# MODULE: HOSPITAL INFORMATION SYSTEM (LANDING PAGE) - ISOLATED VIA FRAGMENT
+# ---------------------------------------------------------
+elif selected_sheet == "Hospital Information System":
+    @st.fragment
+    def render_hospital_summary_fragment():
+        st.header("🏥 Hospital Summary")
+        st.markdown("This is the current active census summary today.")
 
-    w1, w2, w3 = st.columns(3)
-    with w1:
-        st.metric(label="Active Patients (GNU)", value=count_active_gnu)
-    with w2:
-        st.metric(label="MGH Patients (GNU)", value=count_mgh_gnu)
-    with w3:
-        st.metric(label="CAB Patients (GNU)", value=count_cab_gnu)
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    st.markdown("##### ⭐ Special Care Complex Census Breakdown")
-    s1, s2, s3, s4, s5 = st.columns(5)
-    with s1:
-        st.metric(label="NICU", value=nic_count)
-    with s2:
-        st.metric(label="PICU", value=pic_count)
-    with s3:
-        st.metric(label="NSU", value=nsu_count)
-    with s4:
-        st.metric(label="PCN", value=pcn_count)
-    with s5:
-        st.metric(label="Outborn", value=out_count)
-
-    st.markdown("---")
-
-    st.subheader("📋 Active Patient Census & Direct Editor")
-    st.markdown("Aggregated live roster displaying active, MGH, and CAB patients from General Nursing Units, along with all active patients admitted in the Special Care Complex. **Directly edit patient information and statuses in the table below.** *(Admission dates and table headers are locked to prevent overlaps).*")
-
-    roster_combined_frames = []
-
-    gnu_roster_frames = []
-    for gnu in gnu_sheets:
-        gnu_df = dept_data_map.get(gnu, pd.DataFrame())
-        if not gnu_df.empty:
-            df_c = gnu_df.copy()
-            df_c.insert(0, "SOURCE DEPARTMENT", gnu)
-            gnu_roster_frames.append(df_c)
-
-    if gnu_roster_frames:
-        master_gnu_df = pd.concat(gnu_roster_frames, ignore_index=True)
-        if 'PATIENT STATUS' in master_gnu_df.columns:
-            master_gnu_df['PATIENT STATUS'] = master_gnu_df['PATIENT STATUS'].fillna("ACTIVE")
-            gnu_filtered = master_gnu_df[
-                ~master_gnu_df['PATIENT STATUS'].astype(str).str.strip().str.upper().isin(['DISCHARGED'])
-            ]
-        else:
-            gnu_filtered = master_gnu_df
-
-        if not gnu_filtered.empty:
-            gnu_filtered['NAME OF PATIENT'] = (
-                gnu_filtered.get('LAST NAME', '').astype(str).str.strip() + ", " +
-                gnu_filtered.get('FIRST NAME', '').astype(str).str.strip() + " " +
-                gnu_filtered.get('MIDDLE NAME', '').astype(str).str.strip()
-            ).str.strip(", ")
-
-            gnu_mapped = pd.DataFrame()
-            gnu_mapped['Admission Date'] = gnu_filtered.get('DATE', '')
-            gnu_mapped['Department / Unit'] = gnu_filtered.get('SOURCE DEPARTMENT', '')
-            gnu_mapped['Room No.'] = gnu_filtered.get('ROOM NO', 'N/A')
-            gnu_mapped['Name of Patient'] = gnu_mapped['Name of Patient'] if 'Name of Patient' in gnu_mapped else gnu_filtered['NAME OF PATIENT']
-            gnu_mapped['Age'] = gnu_filtered.get('AGE', '')
-            gnu_mapped['Diagnosis'] = gnu_filtered.get('DIAGNOSIS', '')
-            gnu_mapped['Attending Physician'] = gnu_filtered.get('ATTENDING PHYSICIAN', '')
-            gnu_mapped['Status'] = gnu_filtered.get('PATIENT STATUS', '')
-            roster_combined_frames.append(gnu_mapped)
-
-    scu_raw_df = dept_data_map.get(scu_sheet, pd.DataFrame())
-    if not scu_raw_df.empty:
-        scu_c = scu_raw_df.copy()
-        if 'PATIENT STATUS' in scu_c.columns:
-            scu_c['PATIENT STATUS'] = scu_c['PATIENT STATUS'].fillna("ACTIVE")
-            scu_filtered = scu_c[
-                ~scu_c['PATIENT STATUS'].astype(str).str.strip().str.upper().isin(['DISCHARGED'])
-            ]
-        else:
-            scu_filtered = scu_c
-
-        if not scu_filtered.empty:
-            scu_filtered['NAME OF PATIENT'] = (
-                scu_filtered.get('LAST NAME', '').astype(str).str.strip() + ", " +
-                scu_filtered.get('FIRST NAME', '').astype(str).str.strip() + " " +
-                scu_filtered.get('MIDDLE NAME', '').astype(str).str.strip()
-            ).str.strip(", ")
-
-            scu_mapped = pd.DataFrame()
-            scu_mapped['Admission Date'] = scu_filtered.get('DATE', '')
-            scu_mapped['Department / Unit'] = "SPECIAL CARE COMPLEX (" + scu_filtered.get('ADMITTED TO', 'NICU') + ")"
-            scu_mapped['Room No.'] = "N/A"
-            scu_mapped['Name of Patient'] = scu_filtered['NAME OF PATIENT']
-            scu_mapped['Age'] = scu_filtered.get('AGE', '')
-            scu_mapped['Diagnosis'] = scu_filtered.get('DIAGNOSIS', '')
-            scu_mapped['Attending Physician'] = scu_filtered.get('ATTENDING PHYSICIAN', '')
-            scu_mapped['Status'] = scu_filtered.get('PATIENT STATUS', 'ACTIVE')
-            roster_combined_frames.append(scu_mapped)
-
-    if roster_combined_frames:
-        final_master_roster = pd.concat(roster_combined_frames, ignore_index=True)
-        clean_roster = clean_display_df(final_master_roster)
-        roster_editor_config = get_editor_column_config(clean_roster.columns)
+        department_sheets = sorted([
+            "Emergency Care Complex (ECC)", "Endoscopy Unit (ENDO)", "Hemodialysis Unit (HDU)", 
+            "OBGYNE Care Complex (LRDR-OB Surgery)", "Surgical Care Complex (OR Main)", 
+            "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
+            "General Nursing Unit (GNU 1C)", "General Nursing Unit (GNU 2A)", "General Nursing Unit (GNU 2B)", 
+            "General Nursing Unit (GNU 2C)", "General Nursing Unit (GNU 2D)", "General Nursing Unit (GNU 3A)", 
+            "General Nursing Unit (GNU 3B)", "General Nursing Unit (GNU 3C)", "General Nursing Unit (GNU 4A)"
+        ])
         
-        edited_master_roster = st.data_editor(clean_roster, use_container_width=True, num_rows="fixed", key="editor_master_roster", column_config=roster_editor_config)
+        gnu_sheets = [d for d in department_sheets if d.startswith("General Nursing Unit (GNU")]
+        scu_sheet = "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
         
-        if st.button("💾 Save Active Census Changes", type="primary"):
-            st.cache_data.clear()
-            st.session_state["df_cache"] = {}
-            st.success("Successfully saved active census changes!")
-            st.rerun()
+        count_active_gnu = 0
+        count_mgh_gnu = 0
+        count_cab_gnu = 0
 
-        st.caption(f"Showing {len(clean_roster)} active non-discharged roster entries.")
-    else:
-        st.info("No active patient roster records found.")
+        ph_now_summary = get_ph_time()
+        today_str = ph_now_summary.strftime("%m/%d/%Y")
+        current_month_num = str(ph_now_summary.month)
+        current_month_name = ph_now_summary.strftime("%B").upper()
 
-    st.markdown("---")
-    st.subheader("📊 Department Performance")
-    summary_df = pd.DataFrame(summary_data)
-    st.dataframe(clean_display_df(summary_df), use_container_width=True)
+        summary_data = []
 
-    st.markdown("---")
-    st.subheader("📑 Department Summary")
-    selected_dept_view = st.selectbox("Select Department to Inspect", department_sheets)
-    
-    dept_df = dept_data_map.get(selected_dept_view, pd.DataFrame())
-    if not dept_df.empty:
-        cleaned_dept_df = clean_display_df(dept_df)
-        
-        if selected_dept_view == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)" and 'ADMITTED TO' in cleaned_dept_df.columns:
-            st.markdown("##### 📍 Sort & Filter by Admitted Area")
-            admit_areas = sorted(cleaned_dept_df['ADMITTED TO'].dropna().unique().tolist())
-            selected_area = st.selectbox("Select Admitted To Area", ["All Areas"] + admit_areas)
-            if selected_area != "All Areas":
-                cleaned_dept_df = cleaned_dept_df[cleaned_dept_df['ADMITTED TO'] == selected_area]
+        dept_data_map = read_multiple_sheets_parallel(department_sheets)
 
-        editor_config = get_editor_column_config(cleaned_dept_df.columns)
-        edited_dept_df = st.data_editor(cleaned_dept_df, use_container_width=True, num_rows="fixed", key=f"editor_{selected_dept_view}", column_config=editor_config)
-        
-        if st.button(f"💾 Save Changes to `{selected_dept_view}`", type="primary"):
-            if update_google_sheet_from_df(selected_dept_view, edited_dept_df):
+        for dept in department_sheets:
+            df = dept_data_map.get(dept, pd.DataFrame())
+            record_count = len(df) if not df.empty else 0
+            daily_count, monthly_count = 0, 0
+            
+            if not df.empty and 'DATE' in df.columns:
+                daily_count = len(df[df['DATE'].astype(str).str.strip() == today_str])
+                if 'MONTH' in df.columns:
+                    monthly_subset = df[
+                        df['MONTH'].astype(str).str.contains(current_month_name, case=False, na=False) |
+                        df['MONTH'].astype(str).str.startswith(f"{current_month_num}.", na=False)
+                    ]
+                    monthly_count = len(monthly_subset)
+
+            if dept in gnu_sheets and not df.empty and 'PATIENT STATUS' in df.columns:
+                df['PATIENT STATUS'] = df['PATIENT STATUS'].fillna("ACTIVE")
+                for st_val in df['PATIENT STATUS']:
+                    cleaned_st = str(st_val).strip().upper()
+                    if cleaned_st == "ACTIVE":
+                        count_active_gnu += 1
+                    elif cleaned_st == "MGH":
+                        count_mgh_gnu += 1
+                    elif cleaned_st == "CAB":
+                        count_cab_gnu += 1
+
+            summary_data.append({
+                "Department Module": dept,
+                "Total Census Records": record_count,
+                "Daily Patient Census": daily_count,
+                "Monthly Patient Census": monthly_count
+            })
+
+        scu_df = dept_data_map.get(scu_sheet, pd.DataFrame())
+        nic_count, pic_count, nsu_count, pcn_count, out_count = 0, 0, 0, 0, 0
+        if not scu_df.empty and 'ADMITTED TO' in scu_df.columns:
+            scu_df['ADMITTED_TO_UP'] = scu_df['ADMITTED TO'].astype(str).str.strip().str.upper()
+            nic_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'NICU'])
+            pic_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'PICU'])
+            nsu_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'NSU'])
+            pcn_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'PCN'])
+            out_count = len(scu_df[scu_df['ADMITTED_TO_UP'] == 'OUTBORN'])
+
+        w1, w2, w3 = st.columns(3)
+        with w1:
+            st.metric(label="Active Patients (GNU)", value=count_active_gnu)
+        with w2:
+            st.metric(label="MGH Patients (GNU)", value=count_mgh_gnu)
+        with w3:
+            st.metric(label="CAB Patients (GNU)", value=count_cab_gnu)
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        st.markdown("##### ⭐ Special Care Complex Census Breakdown")
+        s1, s2, s3, s4, s5 = st.columns(5)
+        with s1:
+            st.metric(label="NICU", value=nic_count)
+        with s2:
+            st.metric(label="PICU", value=pic_count)
+        with s3:
+            st.metric(label="NSU", value=nsu_count)
+        with s4:
+            st.metric(label="PCN", value=pcn_count)
+        with s5:
+            st.metric(label="Outborn", value=out_count)
+
+        st.markdown("---")
+
+        st.subheader("📋 Active Patient Census & Direct Editor")
+        st.markdown("Aggregated live roster displaying active, MGH, and CAB patients from General Nursing Units, along with all active patients admitted in the Special Care Complex. **Directly edit patient information and statuses in the table below.** *(Admission dates and table headers are locked to prevent overlaps).*")
+
+        roster_combined_frames = []
+
+        gnu_roster_frames = []
+        for gnu in gnu_sheets:
+            gnu_df = dept_data_map.get(gnu, pd.DataFrame())
+            if not gnu_df.empty:
+                df_c = gnu_df.copy()
+                df_c.insert(0, "SOURCE DEPARTMENT", gnu)
+                gnu_roster_frames.append(df_c)
+
+        if gnu_roster_frames:
+            master_gnu_df = pd.concat(gnu_roster_frames, ignore_index=True)
+            if 'PATIENT STATUS' in master_gnu_df.columns:
+                master_gnu_df['PATIENT STATUS'] = master_gnu_df['PATIENT STATUS'].fillna("ACTIVE")
+                gnu_filtered = master_gnu_df[
+                    ~master_gnu_df['PATIENT STATUS'].astype(str).str.strip().str.upper().isin(['DISCHARGED'])
+                ]
+            else:
+                gnu_filtered = master_gnu_df
+
+            if not gnu_filtered.empty:
+                gnu_filtered['NAME OF PATIENT'] = (
+                    gnu_filtered.get('LAST NAME', '').astype(str).str.strip() + ", " +
+                    gnu_filtered.get('FIRST NAME', '').astype(str).str.strip() + " " +
+                    gnu_filtered.get('MIDDLE NAME', '').astype(str).str.strip()
+                ).str.strip(", ")
+
+                gnu_mapped = pd.DataFrame()
+                gnu_mapped['Admission Date'] = gnu_filtered.get('DATE', '')
+                gnu_mapped['Department / Unit'] = gnu_filtered.get('SOURCE DEPARTMENT', '')
+                gnu_mapped['Room No.'] = gnu_filtered.get('ROOM NO', 'N/A')
+                gnu_mapped['Name of Patient'] = gnu_filtered['NAME OF PATIENT']
+                gnu_mapped['Age'] = gnu_filtered.get('AGE', '')
+                gnu_mapped['Diagnosis'] = gnu_filtered.get('DIAGNOSIS', '')
+                gnu_mapped['Attending Physician'] = gnu_filtered.get('ATTENDING PHYSICIAN', '')
+                gnu_mapped['Status'] = gnu_filtered.get('PATIENT STATUS', '')
+                roster_combined_frames.append(gnu_mapped)
+
+        scu_raw_df = dept_data_map.get(scu_sheet, pd.DataFrame())
+        if not scu_raw_df.empty:
+            scu_c = scu_raw_df.copy()
+            if 'PATIENT STATUS' in scu_c.columns:
+                scu_c['PATIENT STATUS'] = scu_c['PATIENT STATUS'].fillna("ACTIVE")
+                scu_filtered = scu_c[
+                    ~scu_c['PATIENT STATUS'].astype(str).str.strip().str.upper().isin(['DISCHARGED'])
+                ]
+            else:
+                scu_filtered = scu_c
+
+            if not scu_filtered.empty:
+                scu_filtered['NAME OF PATIENT'] = (
+                    scu_filtered.get('LAST NAME', '').astype(str).str.strip() + ", " +
+                    scu_filtered.get('FIRST NAME', '').astype(str).str.strip() + " " +
+                    scu_filtered.get('MIDDLE NAME', '').astype(str).str.strip()
+                ).str.strip(", ")
+
+                scu_mapped = pd.DataFrame()
+                scu_mapped['Admission Date'] = scu_filtered.get('DATE', '')
+                scu_mapped['Department / Unit'] = "SPECIAL CARE COMPLEX (" + scu_filtered.get('ADMITTED TO', 'NICU') + ")"
+                scu_mapped['Room No.'] = "N/A"
+                scu_mapped['Name of Patient'] = scu_filtered['NAME OF PATIENT']
+                scu_mapped['Age'] = scu_filtered.get('AGE', '')
+                scu_mapped['Diagnosis'] = scu_filtered.get('DIAGNOSIS', '')
+                scu_mapped['Attending Physician'] = scu_filtered.get('ATTENDING PHYSICIAN', '')
+                scu_mapped['Status'] = scu_filtered.get('PATIENT STATUS', 'ACTIVE')
+                roster_combined_frames.append(scu_mapped)
+
+        if roster_combined_frames:
+            final_master_roster = pd.concat(roster_combined_frames, ignore_index=True)
+            clean_roster = clean_display_df(final_master_roster)
+            roster_editor_config = get_editor_column_config(clean_roster.columns)
+            
+            edited_master_roster = st.data_editor(clean_roster, use_container_width=True, num_rows="fixed", key="editor_master_roster", column_config=roster_editor_config)
+            
+            if st.button("💾 Save Active Census Changes", type="primary"):
                 st.cache_data.clear()
                 st.session_state["df_cache"] = {}
-                st.success(f"Successfully updated records for `{selected_dept_view}` in Google Sheets!")
+                st.success("Successfully saved active census changes!")
                 st.rerun()
-            else:
-                st.error("Failed to update Google Sheets. Please check permissions or connection.")
-    else:
-        st.info(f"No records found yet for {selected_dept_view}.")
 
-if selected_sheet == "Hospital Information System":
+            st.caption(f"Showing {len(clean_roster)} active non-discharged roster entries.")
+        else:
+            st.info("No active patient roster records found.")
+
+        st.markdown("---")
+        st.subheader("📊 Department Performance")
+        summary_df = pd.DataFrame(summary_data)
+        st.dataframe(clean_display_df(summary_df), use_container_width=True)
+
+        st.markdown("---")
+        st.subheader("📑 Department Summary")
+        selected_dept_view = st.selectbox("Select Department to Inspect", department_sheets)
+        
+        dept_df = dept_data_map.get(selected_dept_view, pd.DataFrame())
+        if not dept_df.empty:
+            cleaned_dept_df = clean_display_df(dept_df)
+            
+            if selected_dept_view == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)" and 'ADMITTED TO' in cleaned_dept_df.columns:
+                st.markdown("##### 📍 Sort & Filter by Admitted Area")
+                admit_areas = sorted(cleaned_dept_df['ADMITTED TO'].dropna().unique().tolist())
+                selected_area = st.selectbox("Select Admitted To Area", ["All Areas"] + admit_areas)
+                if selected_area != "All Areas":
+                    cleaned_dept_df = cleaned_dept_df[cleaned_dept_df['ADMITTED TO'] == selected_area]
+
+            editor_config = get_editor_column_config(cleaned_dept_df.columns)
+            edited_dept_df = st.data_editor(cleaned_dept_df, use_container_width=True, num_rows="fixed", key=f"editor_{selected_dept_view}", column_config=editor_config)
+            
+            if st.button(f"💾 Save Changes to `{selected_dept_view}`", type="primary"):
+                if update_google_sheet_from_df(selected_dept_view, edited_dept_df):
+                    st.cache_data.clear()
+                    st.session_state["df_cache"] = {}
+                    st.success(f"Successfully updated records for `{selected_dept_view}` in Google Sheets!")
+                    st.rerun()
+                else:
+                    st.error("Failed to update Google Sheets. Please check permissions or connection.")
+        else:
+            st.info(f"No records found yet for {selected_dept_view}.")
+
     render_hospital_summary_fragment()
 
 # ---------------------------------------------------------
@@ -1995,22 +2043,14 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
                 st.success("Successfully saved to Google Sheets `Special Care Complex (NICU-PICU-NSU/PCN-Outborn)` tab!")
                 st.session_state["cm_list_scu"] = []
 
-if selected_sheet != "Hospital Information System":
+if selected_sheet not in ["Hospital Information System", "Pareto Tally Sheet"]:
     st.markdown("---")
     st.subheader(f"📋 Active Patient Census: {selected_sheet}")
 
     sheet_df = read_google_sheet(selected_sheet)
     if not sheet_df.empty:
         clean_s_df = clean_display_df(sheet_df)
-        editor_config = get_editor_column_config(clean_s_df.columns)
-        edited_s_df = st.data_editor(clean_s_df, use_container_width=True, num_rows="fixed", key=f"editor_bottom_{selected_sheet}", column_config=editor_config)
-        if st.button(f"💾 Save Updates to `{selected_sheet}`", type="primary"):
-            if update_google_sheet_from_df(selected_sheet, edited_s_df):
-                st.cache_data.clear()
-                st.session_state["df_cache"] = {}
-                st.success(f"Successfully updated records for `{selected_sheet}`!")
-                st.rerun()
-            else:
-                st.error("Failed to update Google Sheets.")
+        st.dataframe(clean_s_df, use_container_width=True)
+        st.caption(f"Showing records for `{selected_sheet}` (Total: {len(sheet_df)} records)")
     else:
         st.info(f"Google Sheets worksheet `{selected_sheet}` currently has no records.")
