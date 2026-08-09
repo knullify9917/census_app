@@ -621,38 +621,14 @@ def clean_display_df(df):
             d_clean = d_clean.iloc[:, 1:]
     return d_clean
 
-def display_paginated_dataframe(df, key_prefix="pag"):
-    if df is None or df.empty:
-        st.info("No records to display.")
-        return df
-    
-    clean_df = clean_display_df(df)
-    total_rows = len(clean_df)
-    if total_rows <= 100:
-        editor_config = get_editor_column_config(clean_df.columns)
-        return st.data_editor(clean_df, use_container_width=True, num_rows="fixed", key=f"{key_prefix}_editor", column_config=editor_config)
-    
-    st.markdown(f"**Total Records:** `{total_rows}` (Showing 100 records per page for optimal performance)")
-    page_size = 100
-    total_pages = (total_rows - 1) // page_size + 1
-    page_num = st.selectbox("Select Page", range(1, total_pages + 1), key=f"{key_prefix}_page_sel")
-    
-    start_idx = (page_num - 1) * page_size
-    end_idx = min(start_idx + page_size, total_rows)
-    page_df = clean_df.iloc[start_idx:end_idx].copy()
-    
-    editor_config = get_editor_column_config(page_df.columns)
-    edited_page = st.data_editor(page_df, use_container_width=True, num_rows="fixed", key=f"{key_prefix}_editor_p{page_num}", column_config=editor_config)
-    
-    full_df = clean_df.copy()
-    full_df.iloc[start_idx:end_idx] = edited_page
-    return full_df
-
-def get_editor_column_config(columns):
+def get_editor_column_config(columns, is_historical=True):
     config = {}
     for col in columns:
         col_upper = str(col).upper()
-        if col_upper in ['DATE', 'TRUE DATE', 'ADMISSION DATE', 'DEPARTMENT / UNIT', 'SEEDED_TRIAL']:
+        if is_historical and col_upper in [
+            'DATE', 'TRUE DATE', 'ADMISSION DATE', 'DEPARTMENT / UNIT', 
+            'LAST NAME', 'FIRST NAME', 'MIDDLE NAME', 'SEX', 'AGE', 'DIAGNOSIS', 'ATTENDING PHYSICIAN'
+        ]:
             config[col] = st.column_config.TextColumn(col, disabled=True, width="small")
         elif col_upper in ['PATIENT STATUS', 'STATUS']:
             config[col] = st.column_config.SelectboxColumn(col, options=["ACTIVE", "MGH", "DISCHARGED", "CAB"], width="medium")
@@ -665,6 +641,33 @@ def get_editor_column_config(columns):
         else:
             config[col] = st.column_config.TextColumn(col, width="medium")
     return config
+
+def display_paginated_dataframe(df, key_prefix="pag", is_historical=True):
+    if df is None or df.empty:
+        st.info("No records to display.")
+        return df
+    
+    clean_df = clean_display_df(df)
+    total_rows = len(clean_df)
+    editor_config = get_editor_column_config(clean_df.columns, is_historical=is_historical)
+    
+    if total_rows <= 100:
+        return st.data_editor(clean_df, use_container_width=True, num_rows="fixed", key=f"{key_prefix}_editor", column_config=editor_config)
+    
+    st.markdown(f"**Total Records:** `{total_rows}` (Showing 100 records per page for optimal performance)")
+    page_size = 100
+    total_pages = (total_rows - 1) // page_size + 1
+    page_num = st.selectbox("Select Page", range(1, total_pages + 1), key=f"{key_prefix}_page_sel")
+    
+    start_idx = (page_num - 1) * page_size
+    end_idx = min(start_idx + page_size, total_rows)
+    page_df = clean_df.iloc[start_idx:end_idx].copy()
+    
+    edited_page = st.data_editor(page_df, use_container_width=True, num_rows="fixed", key=f"{key_prefix}_editor_p{page_num}", column_config=editor_config)
+    
+    full_df = clean_df.copy()
+    full_df.iloc[start_idx:end_idx] = edited_page
+    return full_df
 
 # ---------------------------------------------------------
 # UI HEADER & SIDEBAR NAVIGATION
@@ -1223,7 +1226,7 @@ elif selected_sheet == "Hospital Information System":
             final_master_roster = pd.concat(roster_combined_frames, ignore_index=True)
             clean_roster = clean_display_df(final_master_roster)
             
-            edited_master_roster = display_paginated_dataframe(clean_roster, key_prefix="master_roster")
+            edited_master_roster = display_paginated_dataframe(clean_roster, key_prefix="master_roster", is_historical=True)
             
             if st.button("💾 Save Active Census Changes", type="primary"):
                 st.cache_data.clear()
@@ -1255,7 +1258,7 @@ elif selected_sheet == "Hospital Information System":
                 if selected_area != "All Areas":
                     cleaned_dept_df = cleaned_dept_df[cleaned_dept_df['ADMITTED TO'] == selected_area]
 
-            edited_dept_df = display_paginated_dataframe(cleaned_dept_df, key_prefix=f"dept_{selected_dept_view}")
+            edited_dept_df = display_paginated_dataframe(cleaned_dept_df, key_prefix=f"dept_{selected_dept_view}", is_historical=True)
             
             if st.button(f"💾 Save Changes to `{selected_dept_view}`", type="primary"):
                 if update_google_sheet_from_df(selected_dept_view, edited_dept_df):
