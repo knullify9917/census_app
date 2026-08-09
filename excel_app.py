@@ -1344,59 +1344,83 @@ elif selected_sheet == "Hospital Information System":
 
         if gnu_roster_frames:
             master_gnu_df = pd.concat(gnu_roster_frames, ignore_index=True)
-            if 'PATIENT STATUS' in master_gnu_df.columns:
-                master_gnu_df['PATIENT STATUS'] = master_gnu_df['PATIENT STATUS'].fillna("ACTIVE")
+            master_gnu_df.columns = [str(c).strip().upper() for c in master_gnu_df.columns]
+            
+            status_col = next((c for c in ['PATIENT STATUS', 'STATUS'] if c in master_gnu_df.columns), None)
+            if status_col:
+                master_gnu_df[status_col] = master_gnu_df[status_col].fillna("ACTIVE")
                 gnu_filtered = master_gnu_df[
-                    ~master_gnu_df['PATIENT STATUS'].astype(str).str.strip().str.upper().isin(['DISCHARGED'])
+                    ~master_gnu_df[status_col].astype(str).str.strip().str.upper().isin(['DISCHARGED'])
                 ]
             else:
                 gnu_filtered = master_gnu_df
 
             if not gnu_filtered.empty:
-                gnu_filtered['NAME OF PATIENT'] = (
-                    gnu_filtered.get('LAST NAME', '').astype(str).str.strip() + ", " +
-                    gnu_filtered.get('FIRST NAME', '').astype(str).str.strip() + " " +
-                    gnu_filtered.get('MIDDLE NAME', '').astype(str).str.strip()
-                ).str.strip(", ")
+                ln_col = next((c for c in ['LAST NAME', 'LAST_NAME', 'SURNAME'] if c in gnu_filtered.columns), None)
+                fn_col = next((c for c in ['FIRST NAME', 'FIRST_NAME', 'GIVEN NAME'] if c in gnu_filtered.columns), None)
+                mn_col = next((c for c in ['MIDDLE NAME', 'MIDDLE_NAME'] if c in gnu_filtered.columns), None)
+
+                ln_vals = gnu_filtered[ln_col].astype(str).str.strip() if ln_col else ""
+                fn_vals = gnu_filtered[fn_col].astype(str).str.strip() if fn_col else ""
+                mn_vals = gnu_filtered[mn_col].astype(str).str.strip() if mn_col else ""
+
+                gnu_filtered['NAME OF PATIENT'] = (ln_vals + ", " + fn_vals + " " + mn_vals).str.strip(", ")
 
                 gnu_mapped = pd.DataFrame()
-                gnu_mapped['Admission Date'] = gnu_filtered.get('DATE', '')
+                date_col = next((c for c in ['DATE', 'PROCEDURE DATE', 'ADMISSION DATE'] if c in gnu_filtered.columns), None)
+                gnu_mapped['Admission Date'] = gnu_filtered[date_col] if date_col else ""
                 gnu_mapped['Department / Unit'] = gnu_filtered.get('SOURCE DEPARTMENT', '')
-                gnu_mapped['Room No.'] = gnu_filtered.get('ROOM NO', 'N/A')
-                gnu_mapped['Name of Patient'] = gnu_mapped['NAME OF PATIENT']
-                gnu_mapped['Age'] = gnu_filtered.get('AGE', '')
-                gnu_mapped['Diagnosis'] = gnu_filtered.get('DIAGNOSIS', '')
-                gnu_mapped['Attending Physician'] = gnu_filtered.get('ATTENDING PHYSICIAN', '')
-                gnu_mapped['Status'] = gnu_filtered.get('PATIENT STATUS', '')
+                room_col = next((c for c in ['ROOM NO', 'ROOM NUMBER', 'ROOM'] if c in gnu_filtered.columns), None)
+                gnu_mapped['Room No.'] = gnu_filtered[room_col] if room_col else "N/A"
+                gnu_mapped['Name of Patient'] = gnu_filtered['NAME OF PATIENT']
+                age_col = next((c for c in ['AGE'] if c in gnu_filtered.columns), None)
+                gnu_mapped['Age'] = gnu_filtered[age_col] if age_col else ""
+                diag_col = next((c for c in ['DIAGNOSIS', 'PRE-OP DIAGNOSIS'] if c in gnu_filtered.columns), None)
+                gnu_mapped['Diagnosis'] = gnu_filtered[diag_col] if diag_col else ""
+                doc_col = next((c for c in ['ATTENDING PHYSICIAN', 'PRIMARY SURGEON', 'SURGEON / OBGYNE'] if c in gnu_filtered.columns), None)
+                gnu_mapped['Attending Physician'] = gnu_filtered[doc_col] if doc_col else ""
+                gnu_mapped['Status'] = gnu_filtered[status_col] if status_col else "ACTIVE"
                 roster_combined_frames.append(gnu_mapped)
 
         scu_raw_df = dept_data_map.get(scu_sheet, pd.DataFrame())
         if not scu_raw_df.empty:
             scu_c = scu_raw_df.copy()
-            if 'PATIENT STATUS' in scu_c.columns:
-                scu_c['PATIENT STATUS'] = scu_c['PATIENT STATUS'].fillna("ACTIVE")
+            scu_c.columns = [str(c).strip().upper() for c in scu_c.columns]
+            status_col_scu = next((c for c in ['PATIENT STATUS', 'STATUS'] if c in scu_c.columns), None)
+            if status_col_scu:
+                scu_c[status_col_scu] = scu_c[status_col_scu].fillna("ACTIVE")
                 scu_filtered = scu_c[
-                    ~scu_c['PATIENT STATUS'].astype(str).str.strip().str.upper().isin(['DISCHARGED'])
+                    ~scu_c[status_col_scu].astype(str).str.strip().str.upper().isin(['DISCHARGED'])
                 ]
             else:
                 scu_filtered = scu_c
 
             if not scu_filtered.empty:
-                scu_filtered['NAME OF PATIENT'] = (
-                    scu_filtered.get('LAST NAME', '').astype(str).str.strip() + ", " +
-                    scu_filtered.get('FIRST NAME', '').astype(str).str.strip() + " " +
-                    scu_filtered.get('MIDDLE NAME', '').astype(str).str.strip()
-                ).str.strip(", ")
+                ln_col = next((c for c in ['LAST NAME', 'LAST_NAME', 'SURNAME'] if c in scu_filtered.columns), None)
+                fn_col = next((c for c in ['FIRST NAME', 'FIRST_NAME', 'GIVEN NAME'] if c in scu_filtered.columns), None)
+                mn_col = next((c for c in ['MIDDLE NAME', 'MIDDLE_NAME'] if c in scu_filtered.columns), None)
+
+                ln_vals = scu_filtered[ln_col].astype(str).str.strip() if ln_col else ""
+                fn_vals = scu_filtered[fn_col].astype(str).str.strip() if fn_col else ""
+                mn_vals = scu_filtered[mn_col].astype(str).str.strip() if mn_col else ""
+
+                scu_filtered['NAME OF PATIENT'] = (ln_vals + ", " + fn_vals + " " + mn_vals).str.strip(", ")
 
                 scu_mapped = pd.DataFrame()
-                scu_mapped['Admission Date'] = scu_filtered.get('DATE', '')
-                scu_mapped['Department / Unit'] = "SPECIAL CARE COMPLEX (" + scu_filtered.get('ADMITTED TO', 'NICU') + ")"
+                date_col = next((c for c in ['DATE', 'PROCEDURE DATE', 'ADMISSION DATE'] if c in scu_filtered.columns), None)
+                scu_mapped['Admission Date'] = scu_filtered[date_col] if date_col else ""
+                admit_to_col = next((c for c in ['ADMITTED TO'] if c in scu_filtered.columns), None)
+                area_val = scu_filtered[admit_to_col] if admit_to_col else "NICU"
+                scu_mapped['Department / Unit'] = "SPECIAL CARE COMPLEX (" + area_val.astype(str) + ")"
                 scu_mapped['Room No.'] = "N/A"
                 scu_mapped['Name of Patient'] = scu_filtered['NAME OF PATIENT']
-                scu_mapped['Age'] = scu_filtered.get('AGE', '')
-                scu_mapped['Diagnosis'] = scu_filtered.get('DIAGNOSIS', '')
-                scu_mapped['Attending Physician'] = scu_filtered.get('ATTENDING PHYSICIAN', '')
-                scu_mapped['Status'] = scu_filtered.get('PATIENT STATUS', 'ACTIVE')
+                age_col = next((c for c in ['AGE'] if c in scu_filtered.columns), None)
+                scu_mapped['Age'] = scu_filtered[age_col] if age_col else ""
+                diag_col = next((c for c in ['DIAGNOSIS'] if c in scu_filtered.columns), None)
+                scu_mapped['Diagnosis'] = scu_filtered[diag_col] if diag_col else ""
+                doc_col = next((c for c in ['ATTENDING PHYSICIAN'] if c in scu_filtered.columns), None)
+                scu_mapped['Attending Physician'] = scu_filtered[doc_col] if doc_col else ""
+                scu_mapped['Status'] = scu_filtered[status_col_scu] if status_col_scu else "ACTIVE"
                 roster_combined_frames.append(scu_mapped)
 
         if roster_combined_frames:
