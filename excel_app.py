@@ -704,6 +704,12 @@ def init_local_sqlite():
             retries INTEGER DEFAULT 0
         )
     """)
+  # Safe migration check for existing sqlite databases missing retries column
+  try:
+    cursor.execute('ALTER TABLE "Sync_Queue" ADD COLUMN retries INTEGER DEFAULT 0')
+  except Exception:
+    pass
+
   conn.commit()
   conn.close()
 
