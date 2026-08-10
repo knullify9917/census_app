@@ -213,6 +213,14 @@ if "sync_health_status" not in st.session_state:
 if "status_checksum" not in st.session_state:
   st.session_state["status_checksum"] = ""
 
+# Fast-Entry memory defaults
+if "fast_attending" not in st.session_state:
+  st.session_state["fast_attending"] = ""
+if "fast_spec" not in st.session_state:
+  st.session_state["fast_spec"] = 0
+if "fast_payment" not in st.session_state:
+  st.session_state["fast_payment"] = 0
+
 for form_key in [
     "ecc",
     "endo",
@@ -1146,7 +1154,7 @@ def append_record_to_google_sheet(sheet_name, row_dict):
       sheet_name,
       f"Added record for {row_dict.get('LAST NAME', '')}",
   )
-  st.toast(f"Record saved instantly to `{sheet_name}` (Local-First).", icon="💾")
+  st.toast(f"⚡ Saved instantly to `{sheet_name}` (Local-First).", icon="💾")
   return True
 
 
@@ -1166,7 +1174,7 @@ def update_google_sheet_from_df(sheet_name, df):
   log_audit_event(
       "UPDATE", sheet_name, f"Updated sheet rows count: {len(df)}"
   )
-  st.toast("Changes saved instantly (Local-First). Background sync queued.", icon="💾")
+  st.toast("⚡ Changes saved instantly. Background sync queued.", icon="💾")
   return True
 
 
@@ -2788,7 +2796,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
         payment_selected = st.selectbox(
             "Mode of Payment",
             payment_options,
-            index=0,
+            index=st.session_state["fast_payment"] if st.session_state["fast_payment"] < len(payment_options) else 0,
         )
       with c_h3:
         patient_status = st.selectbox(
@@ -2802,14 +2810,14 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
       with c_doc1:
         attending_physician = st.text_input(
             "Attending Physician Name",
-            value="",
+            value=st.session_state["fast_attending"],
             key=f"gnu_{form_key_slug}_att",
         ).strip().upper()
       with c_doc2:
         attending_spec = st.selectbox(
             "Specialization",
             SPECIALTY_DROPDOWN_OPTIONS,
-            index=0,
+            index=st.session_state["fast_spec"] if st.session_state["fast_spec"] < len(SPECIALTY_DROPDOWN_OPTIONS) else 0,
             key=f"gnu_{form_key_slug}_spec",
         )
 
@@ -2843,7 +2851,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
           "Special Endorsements", value="", key=f"gnu_{form_key_slug}_ends"
       ).strip().upper()
 
-      submitted = st.form_submit_button("Submit Record")
+      submitted = st.form_submit_button("Submit Record (Fast-Entry)")
       if submitted:
         if (
             not last_name
@@ -2855,6 +2863,12 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
               "⚠️ Validation Error: Last Name and First Name are required fields."
           )
           st.stop()
+
+        # Cache fast-entry fields for next registration speed
+        st.session_state["fast_attending"] = attending_physician
+        st.session_state["fast_spec"] = max(0, SPECIALTY_DROPDOWN_OPTIONS.index(attending_spec)) if attending_spec in SPECIALTY_DROPDOWN_OPTIONS else 0
+        st.session_state["fast_payment"] = max(0, payment_options.index(payment_selected)) if payment_selected in payment_options else 0
+
         existing_record = check_existing_patient_ai(
             gnu_title, last_name, first_name, curr_date_str
         )
@@ -2981,7 +2995,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
         payment_selected = st.selectbox(
             "Mode of Payment",
             payment_options,
-            index=0,
+            index=st.session_state["fast_payment"] if st.session_state["fast_payment"] < len(payment_options) else 0,
         )
       with c_h4:
         admitted_to = st.selectbox("Admitted To", HOSPITAL_UNIT_AREAS, index=0)
@@ -2992,13 +3006,15 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
       c_doc1, c_doc2 = st.columns([2, 2])
       with c_doc1:
         attending_physician = st.text_input(
-            "Attending Physician Name", value="", key="ecc_att_input"
+            "Attending Physician Name",
+            value=st.session_state["fast_attending"],
+            key="ecc_att_input"
         ).strip().upper()
       with c_doc2:
         attending_spec = st.selectbox(
             "Specialization",
             SPECIALTY_DROPDOWN_OPTIONS,
-            index=0,
+            index=st.session_state["fast_spec"] if st.session_state["fast_spec"] < len(SPECIALTY_DROPDOWN_OPTIONS) else 0,
             key="ecc_spec_input",
         )
 
@@ -3053,7 +3069,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
           "Special Endorsements", value="", key="ecc_ends"
       ).strip().upper()
 
-      submitted = st.form_submit_button("Submit Record")
+      submitted = st.form_submit_button("Submit Record (Fast-Entry)")
       if submitted:
         if (
             not last_name
@@ -3065,6 +3081,11 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
               "⚠️ Validation Error: Last Name and First Name are required fields."
           )
           st.stop()
+
+        # Cache fast-entry fields
+        st.session_state["fast_attending"] = attending_physician
+        st.session_state["fast_spec"] = max(0, SPECIALTY_DROPDOWN_OPTIONS.index(attending_spec)) if attending_spec in SPECIALTY_DROPDOWN_OPTIONS else 0
+        st.session_state["fast_payment"] = max(0, payment_options.index(payment_selected)) if payment_selected in payment_options else 0
 
         final_attending = (
             attending_physician if attending_physician else "N/A"
@@ -3184,9 +3205,9 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
               }
             
             append_record_to_google_sheet(target_sheet_to_sync, target_row_data)
-            st.success(f"Successfully saved to ECC register and automatically cross-registered into `{target_sheet_to_sync}`!")
+            st.success(f"Saved instantly! Cross-registered into `{target_sheet_to_sync}`.")
           else:
-            st.success("Successfully saved to ECC register!")
+            st.success("Saved instantly to ECC register!")
 
           st.cache_data.clear()
           st.session_state["df_cache"] = {}
