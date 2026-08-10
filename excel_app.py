@@ -433,62 +433,75 @@ for field in sorted(SPECIALTIES_BY_FIELD.keys()):
     spec_list.append(spec)
 SPECIALTY_DROPDOWN_OPTIONS = ["None"] + sorted(list(set(spec_list) - {"OTHERS", "Others"})) + ["Others"]
 
-# Simplified ANNEX B Procedures Case Rates List for Surgical Care, Endoscopy, and OBGYNE
-ANNEX_B_PROCEDURES = [
-    "INCISION AND DRAINAGE OF ABSCESS (CARBUNCLE/ABSCESS/CYST)",
-    "INCISION AND DRAINAGE OF PILONIDAL CYST",
-    "DEBRIDEMENT INCLUDING REMOVAL OF FOREIGN MATERIAL (FRACTURE/WOUND)",
-    "EXCISION, BENIGN LESION / SKIN TAG",
-    "EXCISION, MALIGNANT LESION",
-    "DEBRIDEMENT OF NAIL(S) / AVULSION",
-    "SIMPLE REPAIR OF SUPERFICIAL WOUNDS",
-    "LAYER CLOSURE OF WOUNDS",
-    "ADJACENT TISSUE TRANSFER OR REARRANGEMENT / FLAPS",
-    "SPLIT GRAFT / FULL THICKNESS GRAFT",
-    "BLEPHAROPLASTY (LOWER/UPPER EYELID)",
-    "EXCISION OF PRESSURE ULCER (SACRAL/ISCHIAL/TROCHANTERIC)",
-    "DESTRUCTION OF BENIGN OR MALIGNANT LESIONS",
-    "MASTECTOMY (PARTIAL/SIMPLE/RADICAL/MODIFIED RADICAL)",
-    "BREAST RECONSTRUCTION / PROSTHESIS INSERTION",
-    "MUSCLE / BONE BIOPSY",
-    "ARTHROCENTESIS / JOINT ASPIRATION & INJECTION",
-    "REMOVAL OF SUPERFICIAL OR DEEP IMPLANT / HARDWARE",
-    "REPLANTATION (ARM/FOREARM/HAND/DIGIT)",
-    "BONE GRAFT (MINOR/MAJOR/SPINE)",
-    "TREATMENT OF TMJ DISORDERS & MANDIBULAR/MAXILLARY FRACTURES",
-    "OPEN/CLOSED TREATMENT OF NASAL & FACIAL FRACTURES",
-    "SPINAL FUSION / ARTHRODESIS & INSTRUMENTATION",
-    "ARTHROTOMY & SYNOVECTOMY (SHOULDER/ELBOW/KNEE/ANKLE)",
-    "ROTATOR CUFF REPAIR / SHOULDER STABILIZATION",
-    "TOTAL OR PARTIAL JOINT REPLACEMENT (HIP/KNEE/ELBOW/ANKLE)",
-    "OSTEOTOMY & FIXATION (HUMERUS/RADIUS/ULNA/FEMUR/TIBIA)",
-    "AMPUTATION (ARM/FOREARM/THIGH/LEG/TOE/FINGER)",
-    "CARPAL TUNNEL RELEASE / TARSAL TUNNEL RELEASE",
-    "FLEXOR & EXTENSOR TENDON REPAIR / TENOLYSIS",
-    "ARTHROSCOPY (DIAGNOSTIC & SURGICAL - SHOULDER/KNEE/ANKLE)",
-    "RHINOPLASTY / SEPTOPLASTY / TURBINATE SURGERY",
-    "SINUSOTOMY / ENDOSCOPIC SINUS SURGERY (FESS)",
-    "LARYNGECTOMY / LARYNGOPLASTY / BRONCHOSCOPY",
-    "THORACOTOMY / THORACOSTOMY / LUNG RESECTION (LOBECTOMY)",
-    "CARDIAC SURGERY / CABG / VALVE REPLACEMENT",
-    "PACEMAKER / DEFIBRILLATOR INSERTION & REPLACEMENT",
-    "VASCULAR SURGERY / EMBOLECTOMY / BYPASS GRAFTING",
-    "SPLENECTOMY / LIVER RESECTION / HEPATECTOMY",
-    "CHOLECYSTECTOMY / CHOLEDOCHOTOMY / ERCP",
-    "PANCREATIC RESECTION (WHIPPLE PROCEDURE)",
-    "EXPLORATORY LAPAROTOMY / HERNIA REPAIR (INGUINAL/INCISIONAL/UMBILICAL)",
-    "COLECTOMY / PARTIAL OR TOTAL COLECTOMY / COLOSTOMY",
-    "APPENDECTOMY (OPEN OR LAPAROSCOPIC)",
-    "PROCTECTOMY / HEMORRHOIDECTOMY / FISTULECTOMY",
-    "NEPHRECTOMY / NEPHROLITHOTOMY / PYELOPLASTY",
-    "RENAL ALLOTRANSPLANTATION / KIDNEY TRANSPLANT",
-    "CYSTECTOMY / TURP / PROSTATECTOMY",
-    "HYSTERECTOMY (ABDOMINAL OR VAGINAL) / MYOMECTOMY",
-    "DILATION AND CURETTAGE (D&C) / HYSTEROSCOPY",
-    "TUBAL LIGATION / SALPINGECTOMY / OOPHORECTOMY",
-    "OTHERS"
-]
-ANNEX_B_PROCEDURES = sorted([x for x in ANNEX_B_PROCEDURES if x != "OTHERS"]) + ["OTHERS"]
+# Hierarchical Annex B Categorized Procedure Case Rates for Navigational Dropdowns
+ANNEX_B_CATEGORIZED_PROCEDURES = {
+    "SKIN & SUBCUTANEOUS TISSUE": [
+        "10060 - INCISION AND DRAINAGE OF ABSCESS (CARBUNCLE/CYST) [₱7,098.00]",
+        "10080 - INCISION AND DRAINAGE OF PILONIDAL CYST [₱7,098.00]",
+        "10120 - INCISION AND REMOVAL OF FOREIGN BODY, SUBCUTANEOUS [₱7,098.00]",
+        "11000 - DEBRIDEMENT OF EXTENSIVE ECZEMATOUS OR INFECTED SKIN [₱20,553.00]",
+        "11400 - EXCISION, BENIGN LESION, TRUNK, ARMS OR LEGS [₱7,098.00]",
+        "11600 - EXCISION, MALIGNANT LESION, TRUNK, ARMS, OR LEGS [₱10,842.00]",
+        "12001 - SIMPLE REPAIR OF SUPERFICIAL WOUNDS [₱7,098.00]",
+        "14000 - ADJACENT TISSUE TRANSFER OR REARRANGEMENT / FLAPS [₱23,634.00]",
+        "15100 - SPLIT GRAFT / FULL THICKNESS GRAFT [₱16,107.00]",
+    ],
+    "MUSCULOSKELETAL SYSTEM": [
+        "20220 - BIOPSY BONE, TROCAR, OR NEEDLE SUPERFICIAL [₱21,216.00]",
+        "20610 - ARTHROCENTESIS, ASPIRATION AND/OR INJECTION, MAJOR JOINT [₱18,135.00]",
+        "20680 - REMOVAL OF IMPLANT DEEP (PIN, SCREW, PLATE) [₱23,361.00]",
+        "21315 - CLOSED / OPEN TREATMENT OF NASAL BONE FRACTURE [₱20,553.00]",
+        "22554 - ARTHRODESIS, ANTERIOR INTERBODY TECHNIQUE, CERVICAL [₱104,130.00]",
+        "23410 - REPAIR OF RUPTURED ROTATOR CUFF [₱40,911.00]",
+        "27130 - TOTAL HIP REPLACEMENT [₱104,130.00]",
+        "27447 - TOTAL KNEE REPLACEMENT [₱78,624.00]",
+        "29881 - ARTHROSCOPY, KNEE, SURGICAL W/MENISCECTOMY [₱59,943.00]",
+    ],
+    "RESPIRATORY SYSTEM": [
+        "30110 - EXCISION, NASAL POLYP(S) [₱15,639.00]",
+        "30520 - SEPTOPLASTY OR SUBMUCOUS RESECTION [₱25,155.00]",
+        "31231 - NASAL ENDOSCOPY, DIAGNOSTIC [₱20,553.00]",
+        "31622 - BRONCHOSCOPY DIAGNOSTIC [₱21,372.00]",
+        "32440 - REMOVAL OF LUNG, TOTAL PNEUMONECTOMY [₱90,675.00]",
+        "32480 - LOBECTOMY / SEGMENTECTOMY [₱80,262.00]",
+    ],
+    "CARDIOVASCULAR SYSTEM": [
+        "33208 - INSERTION OF PERMANENT PACEMAKER (ATRIAL & VENTRICULAR) [₱41,730.00]",
+        "33405 - REPLACEMENT AORTIC VALVE [₱104,130.00]",
+        "33430 - REPLACEMENT, MITRAL VALVE [₱90,675.00]",
+        "33510 - CORONARY ARTERY BYPASS GRAFT (CABG), VEIN ONLY [₱104,130.00]",
+        "34201 - EMBOLECTOMY OR THROMBECTOMY, EXTREMITY ARTERY [₱45,435.00]",
+        "36821 - ARTERIOVENOUS ANASTOMOSIS (AV FISTULA) [₱18,915.00]",
+    ],
+    "DIGESTIVE SYSTEM": [
+        "43235 - UPPER GASTROINTESTINAL ENDOSCOPY (DIAGNOSTIC / EGD) [₱20,553.00]",
+        "43239 - EGD W/ BIOPSY [₱20,553.00]",
+        "43260 - ERCP DIAGNOSTIC [₱40,911.00]",
+        "44950 - APPENDECTOMY (OPEN OR LAPAROSCOPIC) [₱46,800.00]",
+        "47562 - LAPAROSCOPIC CHOLECYSTECTOMY [₱60,450.00]",
+        "49505 - REPAIR INITIAL INGUINAL HERNIA [₱40,950.00]",
+        "49560 - REPAIR INITIAL INCISIONAL HERNIA [₱40,950.00]",
+    ],
+    "URINARY SYSTEM": [
+        "50080 - PERCUTANEOUS NEPHROSTOLITHOTOMY (PCNL) [₱59,085.00]",
+        "50220 - NEPHRECTOMY, SIMPLE OR RADICAL [₱52,884.00]",
+        "50360 - RENAL ALLOTRANSPLANTATION (KIDNEY TRANSPLANT) [₱90,675.00]",
+        "51530 - CYSTOTOMY FOR EXCISION OF BLADDER TUMOR [₱52,884.00]",
+        "52000 - CYSTOURETHROSCOPY [₱16,107.00]",
+        "52601 - TRANSURETHRAL RESECTION OF PROSTATE (TURP) [₱73,710.00]",
+    ],
+    "MALE & FEMALE GENITAL SYSTEMS": [
+        "54150 - CIRCUMCISION, SURGICAL / CLAMP [₱2,457.00]",
+        "56620 - VULVECTOMY SIMPLE / RADICAL [₱23,634.00]",
+        "57240 - ANTERIOR COLPORRHAPHY (CYSTOCELE REPAIR) [₱40,911.00]",
+        "57250 - POSTERIOR COLPORRHAPHY (RECTOCELE REPAIR) [₱40,911.00]",
+        "58120 - DILATION AND CURETTAGE (D&C) [₱21,450.00]",
+        "58150 - TOTAL ABDOMINAL HYSTERECTOMY (TAHBSO) [₱58,500.00]",
+        "58558 - HYSTEROSCOPY W/ ENDOMETRIAL SAMPLING / POLYPECTOMY [₱25,155.00]",
+        "58600 - LIGATION OR TRANSECTION OF FALLOPIAN TUBES [₱7,800.00]",
+        "59510 - CESAREAN SECTION PROCEDURES [₱19,734.00]",
+    ],
+}
 
 GNU_SHEET_HEADER = [
     "MONTH",
@@ -1483,7 +1496,7 @@ if st.session_state["role"] == "Administrator":
                 "LAPAROSCOPIC CHOLECYSTECTOMY",
                 "HERNIORRHAPHY",
             ])
-            row_data["PROCEDURE CATEGORY"] = "MAJOR SURGERY"
+            row_data["PROCEDURE CATEGORY"] = "27130 - TOTAL HIP REPLACEMENT [₱104,130.00]"
             row_data["ATTENDING PHYSICIAN"] = "DR. M. REYES"
             row_data["ATTENDING SPECIALIZATION"] = "GENERAL SURGERY"
             row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
@@ -1510,7 +1523,7 @@ if st.session_state["role"] == "Administrator":
             )
             row_data["PROCEDURE NAME"] = "LOWER SEGMENT CESAREAN SECTION"
             row_data["SURGICAL PROCEDURE"] = "PRIMARY LSCS DUE TO CPD"
-            row_data["PROCEDURE CATEGORY"] = "CS PRIMARY"
+            row_data["PROCEDURE CATEGORY"] = "59510 - CESAREAN SECTION PROCEDURES [₱19,734.00]"
             row_data["ATTENDING PHYSICIAN"] = "DR. R. OCAMPO"
             row_data["ATTENDING SPECIALIZATION"] = "OBSTETRICS & GYNAECOLOGY"
             row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
@@ -1539,7 +1552,7 @@ if st.session_state["role"] == "Administrator":
                 "DIAGNOSTIC GASTROSCOPY",
                 "COLONOSCOPY WITH BIOPSY",
             ])
-            row_data["PROCEDURE CATEGORY"] = "GASTROSCOPY"
+            row_data["PROCEDURE CATEGORY"] = "43235 - UPPER GASTROINTESTINAL ENDOSCOPY (DIAGNOSTIC / EGD) [₱20,553.00]"
             row_data["ATTENDING PHYSICIAN"] = "DR. M. REYES"
             row_data["ATTENDING SPECIALIZATION"] = "GASTROENTEROLOGY"
             row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
@@ -1922,11 +1935,25 @@ def render_inpatient_order_updater_form(dept_name_label):
           f"**Selected Inpatient:** `{selected_inpatient_label}` | **Unit:**"
           f" `{target_sheet}`"
       )
-      add_procs = st.multiselect(
-          f"Add Procedures Performed in {dept_name_label} (Annex B Case Rates)",
-          ANNEX_B_PROCEDURES,
-          key=f"c_proc_{dept_name_label}",
+      
+      # Cascaded Annex B Selector for Cross-Dept Updaters
+      st.markdown("##### 🏷️ Procedure Selection (Annex B Case Rates)")
+      chosen_cat_up = st.selectbox(
+          "Select Anatomical / Surgical Category",
+          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+          key=f"up_cat_{dept_name_label}"
       )
+      added_cross_procs = []
+      if chosen_cat_up and chosen_cat_up != "Select Category":
+        sub_procs_up = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_up])
+        chosen_proc_up = st.selectbox(
+            f"Select Procedure under `{chosen_cat_up}`",
+            ["Select Procedure"] + sub_procs_up,
+            key=f"up_proc_{dept_name_label}_{chosen_cat_up}"
+        )
+        if chosen_proc_up and chosen_proc_up != "Select Procedure":
+          added_cross_procs.append(chosen_proc_up)
+
       add_meds = st.text_area(
           f"Add Medications / Orders",
           value="",
@@ -1966,13 +1993,13 @@ def render_inpatient_order_updater_form(dept_name_label):
               f"[%m/%d/%Y %I:%M %p - {st.session_state['name']}]"
           )
           
-          if add_procs:
+          if added_cross_procs:
             ex_p = (
                 str(unit_full_df.loc[idx, "PROCEDURES"])
                 if "PROCEDURES" in unit_full_df.columns
                 else ""
             )
-            bullet_item = f"• {now_ts} {', '.join(add_procs)}"
+            bullet_item = f"• {now_ts} {', '.join(added_cross_procs)}"
             unit_full_df.loc[idx, "PROCEDURES"] = (
                 f"{ex_p}\n{bullet_item}".strip()
                 if ex_p and ex_p != "NAN"
@@ -2676,9 +2703,23 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
       diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip().upper()
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      procedures_text = st.multiselect(
-          "Procedures (Annex B Case Rates)", ANNEX_B_PROCEDURES, key=f"gnu_{form_key_slug}_procs"
+      # Hierarchical Annex B Cascaded Selector for GNU
+      chosen_cat_gnu = st.selectbox(
+          "Select Anatomical / Surgical Category",
+          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+          key=f"gnu_cat_{form_key_slug}"
       )
+      gnu_selected_proc = []
+      if chosen_cat_gnu and chosen_cat_gnu != "Select Category":
+        sub_p = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_gnu])
+        chosen_p = st.selectbox(
+            f"Select Procedure under `{chosen_cat_gnu}`",
+            ["Select Procedure"] + sub_p,
+            key=f"gnu_proc_{form_key_slug}_{chosen_cat_gnu}"
+        )
+        if chosen_p and chosen_p != "Select Procedure":
+          gnu_selected_proc.append(chosen_p)
+
       diagnostic_exams_text = st.text_area(
           "Diagnostic Examinations", value="", key=f"gnu_{form_key_slug}_diags"
       ).strip().upper()
@@ -2744,7 +2785,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
             "HOSPITALIZATION MODE": hosp_mode,
             "MODE OF PAYMENT": payment_selected,
             "PATIENT STATUS": patient_status,
-            "PROCEDURES": sanitize_medical_text(", ".join(procedures_text)),
+            "PROCEDURES": sanitize_medical_text(", ".join(gnu_selected_proc)),
             "DIAGNOSTIC EXAMINATIONS": sanitize_medical_text(
                 diagnostic_exams_text
             ),
@@ -2808,11 +2849,23 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
               index=0,
               key=f"st_{form_key_slug}",
           )
-          up_procs = st.multiselect(
-              "New / Additional Procedures (Annex B Case Rates)",
-              ANNEX_B_PROCEDURES,
-              key=f"pr_{form_key_slug}",
+          
+          chosen_cat_up_g = st.selectbox(
+              "Select Anatomical / Surgical Category for Procedures",
+              ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+              key=f"up_cat_g_{form_key_slug}"
           )
+          up_procs_g = []
+          if chosen_cat_up_g and chosen_cat_up_g != "Select Category":
+            sub_pg = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_up_g])
+            chosen_pg = st.selectbox(
+                f"Select Procedure under `{chosen_cat_up_g}`",
+                ["Select Procedure"] + sub_pg,
+                key=f"up_proc_g_{form_key_slug}_{chosen_cat_up_g}"
+            )
+            if chosen_pg and chosen_pg != "Select Procedure":
+              up_procs_g.append(chosen_pg)
+
           up_diags = st.text_area(
               "New / Additional Diagnostic Examinations",
               value="",
@@ -2857,13 +2910,13 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
             )
             if up_status:
               dept_df_up.loc[matched_idx, "PATIENT STATUS"] = up_status
-            if up_procs:
+            if up_procs_g:
               existing_p = (
                   str(dept_df_up.loc[matched_idx, "PROCEDURES"])
                   if "PROCEDURES" in dept_df_up.columns
                   else ""
               )
-              bullet_item = f"• {now_ts} {', '.join(up_procs)}"
+              bullet_item = f"• {now_ts} {', '.join(up_procs_g)}"
               dept_df_up.loc[matched_idx, "PROCEDURES"] = (
                   f"{existing_p}\n{bullet_item}".strip()
                   if existing_p and existing_p != "NAN"
@@ -3042,7 +3095,6 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
       kit_package = st.checkbox("Hospital Kit Package", value=False, key="ecc_kit")
-      # Annex B case rates removed from ECC; using standard text procedure field
       ecc_procedures = st.text_area("Procedures Performed", value="", key="ecc_procs").strip().upper()
       ecc_diagnostic_exams = st.text_area(
           "Diagnostic Examinations", value="", key="ecc_diags"
@@ -3243,7 +3295,21 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         procedure_text = st.text_input("Procedure Name", value="").strip().upper()
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      selected_procs = st.multiselect("Procedure Category (Annex B Case Rates)", ANNEX_B_PROCEDURES)
+      chosen_cat_endo = st.selectbox(
+          "Select Anatomical / Surgical Category",
+          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+          key="endo_cat_sel"
+      )
+      endo_selected_procs = []
+      if chosen_cat_endo and chosen_cat_endo != "Select Category":
+        sub_endo = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_endo])
+        chosen_endo = st.selectbox(
+            f"Select Procedure under `{chosen_cat_endo}`",
+            ["Select Procedure"] + sub_endo,
+            key=f"endo_proc_sel_{chosen_cat_endo}"
+        )
+        if chosen_endo and chosen_endo != "Select Procedure":
+          endo_selected_procs.append(chosen_endo)
 
       ca, cb = st.columns(2)
       with ca:
@@ -3295,7 +3361,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
             "DIAGNOSIS": sanitize_medical_text(diagnosis_text),
             "PROCEDURE": sanitize_medical_text(procedure_text),
             "PROCEDURE CATEGORY": (
-                ", ".join(selected_procs) if selected_procs else "NONE"
+                ", ".join(endo_selected_procs) if endo_selected_procs else "NONE"
             ),
             "ATTENDING PHYSICIAN": final_attending,
             "ATTENDING SPECIALIZATION": attending_spec,
@@ -3785,7 +3851,22 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         ).strip().upper()
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      selected_ob_procs = st.multiselect("Procedure Category (Annex B Case Rates)", ANNEX_B_PROCEDURES)
+      chosen_cat_ob = st.selectbox(
+          "Select Anatomical / Surgical Category",
+          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+          key="ob_cat_sel"
+      )
+      ob_selected_procs = []
+      if chosen_cat_ob and chosen_cat_ob != "Select Category":
+        sub_ob = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_ob])
+        chosen_ob = st.selectbox(
+            f"Select Procedure under `{chosen_cat_ob}`",
+            ["Select Procedure"] + sub_ob,
+            key=f"ob_proc_sel_{chosen_cat_ob}"
+        )
+        if chosen_ob and chosen_ob != "Select Procedure":
+          ob_selected_procs.append(chosen_ob)
+
       ca, cb, cc = st.columns(3)
       with ca:
         complexity = st.selectbox(
@@ -3835,7 +3916,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             "PROCEDURE NAME": sanitize_medical_text(procedure_name),
             "SURGICAL PROCEDURE": sanitize_medical_text(surgical_procedure),
             "PROCEDURE CATEGORY": (
-                ", ".join(selected_ob_procs) if selected_ob_procs else "NONE"
+                ", ".join(ob_selected_procs) if ob_selected_procs else "NONE"
             ),
             "ATTENDING PHYSICIAN": final_attending,
             "ATTENDING SPECIALIZATION": attending_spec,
@@ -3992,7 +4073,21 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
       procedure = st.text_area("Surgical Procedure", value="").strip().upper()
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      selected_scc_procs = st.multiselect("Procedure Category (Annex B Case Rates)", ANNEX_B_PROCEDURES)
+      chosen_cat_scc = st.selectbox(
+          "Select Anatomical / Surgical Category",
+          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+          key="scc_cat_sel"
+      )
+      scc_selected_procs = []
+      if chosen_cat_scc and chosen_cat_scc != "Select Category":
+        sub_scc = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_scc])
+        chosen_scc = st.selectbox(
+            f"Select Procedure under `{chosen_cat_scc}`",
+            ["Select Procedure"] + sub_scc,
+            key=f"scc_proc_sel_{chosen_cat_scc}"
+        )
+        if chosen_scc and chosen_scc != "Select Procedure":
+          scc_selected_procs.append(chosen_scc)
 
       ca, cb, cc = st.columns(3)
       with ca:
@@ -4042,7 +4137,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             "POST-OP DIAGNOSIS": sanitize_medical_text(post_op_diagnosis),
             "PROCEDURE": sanitize_medical_text(procedure),
             "PROCEDURE CATEGORY": (
-                ", ".join(selected_scc_procs) if selected_scc_procs else "NONE"
+                ", ".join(scc_selected_procs) if scc_selected_procs else "NONE"
             ),
             "ATTENDING PHYSICIAN": final_attending,
             "ATTENDING SPECIALIZATION": attending_spec,
