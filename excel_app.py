@@ -1302,6 +1302,9 @@ def display_paginated_dataframe(df, key_prefix="pag", is_historical=True):
     return df
 
   clean_df = clean_display_df(df)
+  for c in clean_df.columns:
+    clean_df[c] = clean_df[c].astype(str).str.upper().replace("NAN", "")
+
   total_rows = len(clean_df)
   editor_config = get_editor_column_config(
       clean_df.columns, is_historical=is_historical
@@ -2018,7 +2021,6 @@ def render_inpatient_order_updater_form(dept_name_label):
     target_sheet = matched_inpatient_row["TARGET_SHEET"]
 
     unit_full_df = read_google_sheet(target_sheet)
-    # Robust case-insensitive and whitespace-trimmed indexing match
     matched_idx = unit_full_df[
         (unit_full_df["LAST NAME"].astype(str).str.strip().str.upper() == str(matched_inpatient_row["LAST NAME"]).strip().upper())
         & (unit_full_df["FIRST NAME"].astype(str).str.strip().str.upper() == str(matched_inpatient_row["FIRST NAME"]).strip().upper())
