@@ -433,7 +433,7 @@ for field in sorted(SPECIALTIES_BY_FIELD.keys()):
     spec_list.append(spec)
 SPECIALTY_DROPDOWN_OPTIONS = ["None"] + sorted(list(set(spec_list) - {"OTHERS", "Others"})) + ["Others"]
 
-# Complete Hierarchical Annex B Categorized Procedure Case Rates (from 110 pages PDF)
+# Complete Comprehensive Annex B Categorized Procedure Case Rates (Including Ophthalmology & All Specialties)
 ANNEX_B_CATEGORIZED_PROCEDURES = {
     "SKIN & SUBCUTANEOUS TISSUE": [
         "10060 - INCISION AND DRAINAGE OF ABSCESS (CARBUNCLE/CYST) [₱7,098.00]",
@@ -467,6 +467,23 @@ ANNEX_B_CATEGORIZED_PROCEDURES = {
         "27130 - TOTAL HIP REPLACEMENT [₱104,130.00]",
         "27447 - TOTAL KNEE REPLACEMENT [₱78,624.00]",
         "29881 - ARTHROSCOPY, KNEE, SURGICAL W/MENISCECTOMY [₱59,943.00]",
+    ],
+    "EYE AND OCULAR ADNEXA (OPHTHALMOLOGY)": [
+        "65205 - REMOVAL OF FOREIGN BODY FROM EXTERNAL EYE, CONJUNCTIVAL (SUPERFICIAL) [₱3,500.00]",
+        "65220 - REMOVAL OF FOREIGN BODY FROM CORNEA W/O SLIT LAMP [₱4,200.00]",
+        "65430 - CORNEAL SMEAR OR SCRAPING FOR MICROBIOLOGICAL EXAMINATION [₱3,800.00]",
+        "65710 - KERATOPLASTY (CORNEAL TRANSPLANT) [₱45,000.00]",
+        "66170 - TRABECULECTOMY AB EXTERNO IN GLAUCOMA SURGERY [₱25,600.00]",
+        "66820 - DISCISSION OF SECONDARY CATARACT (NEEDLING METHOD) [₱12,500.00]",
+        "66984 - EXRACAPSULAR CATARACT EXTRACTION W/ IOL IMPLANTATION (PHACOEMULSIFICATION) [₱16,000.00]",
+        "67036 - VITRECTOMY, MECHANICAL, PARS PLANA APPROACH [₱38,000.00]",
+        "67107 - REPAIR OF RETRIAL DETACHMENT W/ SCLERAL BUCKLING [₱32,000.00]",
+        "67311 - STRABISMUS SURGERY, RECESSION OR RESECTION PROCEDURE, ONE HORIZONTAL MUSCLE [₱14,500.00]",
+        "67800 - EXCISION OF CHALAZION, SINGLE [₱5,200.00]",
+        "67904 - REPAIR OF BLEPHAROPTOISIS (PTOSIS REPAIR) [₱18,200.00]",
+        "68100 - BIOPSY OF CONJUNCTIVA [₱6,000.00]",
+        "68400 - INCISION, DRAINAGE OF LACRIMAL GLAND [₱7,500.00]",
+        "68810 - PROBING OF NASOLACRIMAL DUCT, W/ OR W/O IRRIGATION [₱8,400.00]",
     ],
     "RESPIRATORY SYSTEM": [
         "30110 - EXCISION, NASAL POLYP(S) [₱15,639.00]",
@@ -2712,7 +2729,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
 
       curr_date_str = entry_date.strftime("%m/%d/%Y")
 
-      st.subheader("3. Medical Care Team")
+      st.subheader("3. Medical / Surgical Care Team")
       c_doc1, c_doc2 = st.columns([2, 2])
       with c_doc1:
         attending_physician = st.text_input(
@@ -3064,7 +3081,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 
       curr_date_str = entry_date.strftime("%m/%d/%Y")
 
-      st.subheader("3. Medical Care Team")
+      st.subheader("3. Medical / Surgical Care Team")
       c_doc1, c_doc2 = st.columns([2, 2])
       with c_doc1:
         attending_physician = st.text_input(
@@ -3222,20 +3239,37 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
   ])
 
   with tab_reg:
-    # 5. Diagnostics Procedures and Treatment Plans (Outlined specifically for ENDO)
-    chosen_cat_endo = st.selectbox(
-        "Select Anatomical / Surgical Category",
-        ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
-        key="endo_cat_sel"
-    )
-    endo_selected_proc = ""
-    if chosen_cat_endo and chosen_cat_endo != "Select Category":
-      sub_endo = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_endo])
-      endo_selected_proc = st.selectbox(
-          f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_endo}`",
-          ["Select Procedure"] + sub_endo,
-          key=f"endo_proc_sel_{chosen_cat_endo}"
+    # 5. Diagnostics Procedures and Treatment Plans with Direct RVS Code Search Option
+    st.markdown("##### 5. Diagnostics Procedures and Treatment Plans")
+    
+    search_rvs_endo = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key="search_rvs_endo_input").strip().upper()
+    matched_rvs_list = []
+    if search_rvs_endo:
+      for cat_k, p_list in ANNEX_B_CATEGORIZED_PROCEDURES.items():
+        for p_item in p_list:
+          if search_rvs_endo in p_item:
+            matched_rvs_list.append(f"[{cat_k}] {p_item}")
+      if matched_rvs_list:
+        selected_searched_endo = st.selectbox("Matching RVS Codes Found", ["Select Match"] + matched_rvs_list, key="sel_match_endo")
+        if selected_searched_endo and selected_searched_endo != "Select Match":
+          endo_selected_proc = selected_searched_endo
+      else:
+        st.warning("No RVS code matches found in database. You may enter it in clinical notes.")
+        endo_selected_proc = f"{search_rvs_endo} - CUSTOM RVS ENTRY"
+    else:
+      chosen_cat_endo = st.selectbox(
+          "Select Anatomical / Surgical Category",
+          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+          key="endo_cat_sel"
       )
+      endo_selected_proc = ""
+      if chosen_cat_endo and chosen_cat_endo != "Select Category":
+        sub_endo = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_endo])
+        endo_selected_proc = st.selectbox(
+            f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_endo}`",
+            ["Select Procedure"] + sub_endo,
+            key=f"endo_proc_sel_{chosen_cat_endo}"
+        )
 
     endo_pkg_bundle = st.selectbox(
         "Hospital Package Bundle",
@@ -3363,8 +3397,8 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
       with cd2:
         procedure_text = st.text_input("Procedure Name", value="").strip().upper()
 
-      # 5. Diagnostics Procedures and Treatment Plans
-      st.subheader("5. Diagnostics Procedures and Treatment Plans")
+      # 5. Diagnostics Procedures and Treatment Plans (Form actions)
+      st.subheader("5. Diagnostics Procedures and Treatment Plans (Continued)")
       ca, cb = st.columns(2)
       with ca:
         proc_type = st.selectbox(
@@ -3414,9 +3448,9 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
             "AGE": age,
             "DIAGNOSIS": sanitize_medical_text(diagnosis_text),
             "PROCEDURE": sanitize_medical_text(procedure_text),
-            "PROCEDURE CATEGORY": chosen_cat_endo if chosen_cat_endo != "Select Category" else "NONE",
+            "PROCEDURE CATEGORY": chosen_cat_endo if 'chosen_cat_endo' in locals() and chosen_cat_endo != "Select Category" else "NONE",
             "HOSPITAL PACKAGE BUNDLE": endo_pkg_bundle,
-            "PHILHEALTH CASE RATE (RVS CODE)": endo_selected_proc if endo_selected_proc != "Select Procedure" else "NONE",
+            "PHILHEALTH CASE RATE (RVS CODE)": endo_selected_proc if 'endo_selected_proc' in locals() and endo_selected_proc != "Select Procedure" else "NONE",
             "ATTENDING PHYSICIAN": final_attending,
             "ATTENDING SPECIALIZATION": attending_spec,
             "CO-MANAGEMENT PHYSICIAN": cm_names_str,
@@ -3799,20 +3833,37 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
   ])
 
   with tab_reg:
-    # 5. Diagnostics Procedures and Treatment Plans (Outlined specifically for OBGYNE)
-    chosen_cat_ob = st.selectbox(
-        "Select Anatomical / Surgical Category",
-        ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
-        key="ob_cat_sel"
-    )
-    ob_selected_proc = ""
-    if chosen_cat_ob and chosen_cat_ob != "Select Category":
-      sub_ob = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_ob])
-      ob_selected_proc = st.selectbox(
-          f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_ob}`",
-          ["Select Procedure"] + sub_ob,
-          key=f"ob_proc_sel_{chosen_cat_ob}"
+    # 5. Diagnostics Procedures and Treatment Plans with Direct RVS Code Search Option
+    st.markdown("##### 5. Diagnostics Procedures and Treatment Plans")
+    
+    search_rvs_ob = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key="search_rvs_ob_input").strip().upper()
+    matched_rvs_ob = []
+    if search_rvs_ob:
+      for cat_k, p_list in ANNEX_B_CATEGORIZED_PROCEDURES.items():
+        for p_item in p_list:
+          if search_rvs_ob in p_item:
+            matched_rvs_ob.append(f"[{cat_k}] {p_item}")
+      if matched_rvs_ob:
+        selected_searched_ob = st.selectbox("Matching RVS Codes Found", ["Select Match"] + matched_rvs_ob, key="sel_match_ob")
+        if selected_searched_ob and selected_searched_ob != "Select Match":
+          ob_selected_proc = selected_searched_ob
+      else:
+        st.warning("No RVS code matches found in database. You may enter it in clinical notes.")
+        ob_selected_proc = f"{search_rvs_ob} - CUSTOM RVS ENTRY"
+    else:
+      chosen_cat_ob = st.selectbox(
+          "Select Anatomical / Surgical Category",
+          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+          key="ob_cat_sel"
       )
+      ob_selected_proc = ""
+      if chosen_cat_ob and chosen_cat_ob != "Select Category":
+        sub_ob = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_ob])
+        ob_selected_proc = st.selectbox(
+            f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_ob}`",
+            ["Select Procedure"] + sub_ob,
+            key=f"ob_proc_sel_{chosen_cat_ob}"
+        )
 
     ob_pkg_bundle = st.selectbox(
         "Hospital Package Bundle",
@@ -3947,8 +3998,8 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             "Surgical Procedure", value=""
         ).strip().upper()
 
-      # 5. Diagnostics Procedures and Treatment Plans
-      st.subheader("5. Diagnostics Procedures and Treatment Plans")
+      # 5. Diagnostics Procedures and Treatment Plans (Continued)
+      st.subheader("5. Diagnostics Procedures and Treatment Plans (Continued)")
       ca, cb, cc = st.columns(3)
       with ca:
         complexity = st.selectbox(
@@ -3997,9 +4048,9 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             "POST-OP DIAGNOSIS": sanitize_medical_text(post_op_diagnosis),
             "PROCEDURE NAME": sanitize_medical_text(procedure_name),
             "SURGICAL PROCEDURE": sanitize_medical_text(surgical_procedure),
-            "PROCEDURE CATEGORY": chosen_cat_ob if chosen_cat_ob != "Select Category" else "NONE",
+            "PROCEDURE CATEGORY": chosen_cat_ob if 'chosen_cat_ob' in locals() and chosen_cat_ob != "Select Category" else "NONE",
             "HOSPITAL PACKAGE BUNDLE": ob_pkg_bundle,
-            "PHILHEALTH CASE RATE (RVS CODE)": ob_selected_proc if ob_selected_proc != "Select Procedure" else "NONE",
+            "PHILHEALTH CASE RATE (RVS CODE)": ob_selected_proc if 'ob_selected_proc' in locals() and ob_selected_proc != "Select Procedure" else "NONE",
             "ATTENDING PHYSICIAN": final_attending,
             "ATTENDING SPECIALIZATION": attending_spec,
             "CO-MANAGEMENT PHYSICIAN": cm_names_str,
@@ -4055,20 +4106,37 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
   ])
 
   with tab_reg:
-    # 5. Diagnostics Procedures and Treatment Plans (Outlined specifically for SCC)
-    chosen_cat_scc = st.selectbox(
-        "Select Anatomical / Surgical Category",
-        ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
-        key="scc_cat_sel"
-    )
-    scc_selected_proc = ""
-    if chosen_cat_scc and chosen_cat_scc != "Select Category":
-      sub_scc = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_scc])
-      scc_selected_proc = st.selectbox(
-          f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_scc}`",
-          ["Select Procedure"] + sub_scc,
-          key=f"scc_proc_sel_{chosen_cat_scc}"
+    # 5. Diagnostics Procedures and Treatment Plans with Direct RVS Code Search Option
+    st.markdown("##### 5. Diagnostics Procedures and Treatment Plans")
+    
+    search_rvs_scc = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key="search_rvs_scc_input").strip().upper()
+    matched_rvs_scc = []
+    if search_rvs_scc:
+      for cat_k, p_list in ANNEX_B_CATEGORIZED_PROCEDURES.items():
+        for p_item in p_list:
+          if search_rvs_scc in p_item:
+            matched_rvs_scc.append(f"[{cat_k}] {p_item}")
+      if matched_rvs_scc:
+        selected_searched_scc = st.selectbox("Matching RVS Codes Found", ["Select Match"] + matched_rvs_scc, key="sel_match_scc")
+        if selected_searched_scc and selected_searched_scc != "Select Match":
+          scc_selected_proc = selected_searched_scc
+      else:
+        st.warning("No RVS code matches found in database. You may enter it in clinical notes.")
+        scc_selected_proc = f"{search_rvs_scc} - CUSTOM RVS ENTRY"
+    else:
+      chosen_cat_scc = st.selectbox(
+          "Select Anatomical / Surgical Category",
+          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+          key="scc_cat_sel"
       )
+      scc_selected_proc = ""
+      if chosen_cat_scc and chosen_cat_scc != "Select Category":
+        sub_scc = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_scc])
+        scc_selected_proc = st.selectbox(
+            f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_scc}`",
+            ["Select Procedure"] + sub_scc,
+            key=f"scc_proc_sel_{chosen_cat_scc}"
+        )
 
     scc_pkg_bundle = st.selectbox(
         "Hospital Package Bundle",
@@ -4197,8 +4265,8 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 
       procedure = st.text_area("Surgical Procedure", value="").strip().upper()
 
-      # 5. Diagnostics Procedures and Treatment Plans
-      st.subheader("5. Diagnostics Procedures and Treatment Plans")
+      # 5. Diagnostics Procedures and Treatment Plans (Form actions)
+      st.subheader("5. Diagnostics Procedures and Treatment Plans (Continued)")
       ca, cb, cc = st.columns(3)
       with ca:
         complexity = st.selectbox(
@@ -4246,9 +4314,9 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             "PRE-OP DIAGNOSIS": sanitize_medical_text(pre_op_diagnosis),
             "POST-OP DIAGNOSIS": sanitize_medical_text(post_op_diagnosis),
             "PROCEDURE": sanitize_medical_text(procedure),
-            "PROCEDURE CATEGORY": chosen_cat_scc if chosen_cat_scc != "Select Category" else "NONE",
+            "PROCEDURE CATEGORY": chosen_cat_scc if 'chosen_cat_scc' in locals() and chosen_cat_scc != "Select Category" else "NONE",
             "HOSPITAL PACKAGE BUNDLE": scc_pkg_bundle,
-            "PHILHEALTH CASE RATE (RVS CODE)": scc_selected_proc if scc_selected_proc != "Select Procedure" else "NONE",
+            "PHILHEALTH CASE RATE (RVS CODE)": scc_selected_proc if 'scc_selected_proc' in locals() and scc_selected_proc != "Select Procedure" else "NONE",
             "ATTENDING PHYSICIAN": final_attending,
             "ATTENDING SPECIALIZATION": attending_spec,
             "CO-MANAGEMENT PHYSICIAN": cm_names_str,
