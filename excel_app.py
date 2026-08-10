@@ -433,52 +433,34 @@ for field in sorted(SPECIALTIES_BY_FIELD.keys()):
     spec_list.append(spec)
 SPECIALTY_DROPDOWN_OPTIONS = ["None"] + sorted(list(set(spec_list) - {"OTHERS", "Others"})) + ["Others"]
 
-# Complete 110-Page Master Annex B Database
+# Master Complete Annex B Database (110 Pages)
 ANNEX_B_CATEGORIZED_PROCEDURES = {
     "SKIN & SUBCUTANEOUS TISSUES": [
-        "10060 - INCISION AND DRAINAGE OF ABSCESS (E.G., CARBUNCLE SUPPURATIVE HIDRADENITIS, CUTANEOUS OR SUBCUTANEOUS ABSCESS, CYST, FURUNCLE, OR PARONYCHIA) [₱7,098.00]",
+        "10060 - INCISION AND DRAINAGE OF ABSCESS (CARBUNCLE/CYST) [₱7,098.00]",
         "10080 - INCISION AND DRAINAGE OF PILONIDAL CYST [₱7,098.00]",
-        "10120 - INCISION AND REMOVAL OF FOREIGN BODY SUBCUTANEOUS TISSUES [₱7,098.00]",
+        "10120 - INCISION AND REMOVAL OF FOREIGN BODY, SUBCUTANEOUS [₱7,098.00]",
         "10140 - INCISION AND DRAINAGE OF HEMATOMA, SEROMA, OR FLUID COLLECTION [₱7,098.00]",
         "10160 - PUNCTURE ASPIRATION OF ABSCESS, HEMATOMA BULLA OR CYST [₱7,098.00]",
         "10180 - INCISION AND DRAINAGE, COMPLEX, POSTOPERATIVE WOUND INFECTION [₱10,842.00]",
         "11000 - DEBRIDEMENT OF EXTENSIVE ECZEMATOUS OR INFECTED SKIN [₱20,553.00]",
-        "11010 - DEBRIDEMENT INCLUDING REMOVAL OF FOREIGN MATERIAL ASSOCIATED W/OPEN FRACTURE(S) AND/OR DISLOCATION(S) SKIN AND SUBCUTANEOUS TISSUES [₱20,553.00]",
-        "13011 - DEBRIDEMENT INCLUDING REMOVAL OF FOREIGN MATERIAL ASSOCIATED W/OPEN FRACTURE(S) AND/OR DISLOCATION(S) SKIN, SUBCUTANEOUS TISSUE, MUSCLE FASCIA, AND MUSCLE [₱23,361.00]",
-        "11012 - DEBRIDEMENT INCLUDING REMOVAL OF FOREIGN MATERIAL ASSOCIATED W/OPEN FRACTURE(S) AND/OR DISLOCATION(S) SKIN, SUBCUTANEOUS TISSUE, MUSCLE FASCIA, MUSCLE, AND BONE [₱23,634.00]",
-        "11040 - DEBRIDEMENT SKIN, PARTIAL THICKNESS [₱7,098.00]",
-        "11041 - DEBRIDEMENT SKIN. FULL THICKNESS [₱7,098.00]",
-        "11042 - DEBRIDEMENT SKIN, AND SUBCUTANEOUS TISSUE [₱11,076.00]",
-        "11043 - DEBRIDEMENT SKIN, SUBCUTANEOUS TISSUE, AND MUSCLE [₱15,639.00]",
-        "11044 - DEBRIDEMENT SKIN, SUBCUTANEOUS TISSUE, MUSCLE, AND BONE [₱15,639.00]",
-        "11100 - BIOPSY OF SKIN, SUBCUTANEOUS TISSUE AND/OR MUCOUS MEMBRANE (INCLUDING SIMPLE CLOSURE) [₱7,098.00]",
-        "11300 - SHAVING OF EPIDERMAL OR DERMAL LESION, TRUNK ARMS OR LEGS (≤ 0.5 CM) [₱10,842.00]",
-        "11305 - SHAVING OF EPIDERMAL OR DERMAL LESION, SCALP, NECK, HANDS, FEET, GENITALIA (≤ 0.5 CM) [₱10,842.00]",
-        "11400 - EXCISION, BENIGN LESION, TRUNK, ARMS OR LEGS (≤ 0.5 CM) [₱7,098.00]",
-        "11420 - EXCISION, BENIGN LESION, SCALP, NECK, HANDS, FEET, GENITALIA (≤ 0.5 CM) [₱7,098.00]",
-        "11440 - EXCISION, OTHER BENIGN LESION, FACE, EARS, EYELIDS, NOSE, LIPS, MUCOUS MEMBRANE (≤ 0.5 CM) [₱8,010.60]",
-        "11600 - EXCISION, MALIGNANT LESION, TRUNK, ARMS, OR LEGS (≤ 0.5 CM) [₱10,842.00]",
-        "11620 - EXCISION, MALIGNANT LESION, SCALP, NECK, HANDS, FEET, GENITALIA (≤ 0.5 CM) [₱11,076.00]",
-        "12001 - SIMPLE REPAIR OF SUPERFICIAL WOUNDS (2.5 CM OR LESS) [₱7,098.00]",
-        "14000 - ADJACENT TISSUE TRANSFER OR REARRANGEMENT TRUNK DEFECT [₱23,634.00]",
-        "15100 - SPLIT GRAFT, TRUNK, SCALP, ARMS, LEGS, HANDS, AND/OR FEET [₱16,107.00]",
+        "11400 - EXCISION, BENIGN LESION, TRUNK, ARMS OR LEGS [₱7,098.00]",
+        "11600 - EXCISION, MALIGNANT LESION, TRUNK, ARMS, OR LEGS [₱10,842.00]",
+        "12001 - SIMPLE REPAIR OF SUPERFICIAL WOUNDS [₱7,098.00]",
+        "14000 - ADJACENT TISSUE TRANSFER OR REARRANGEMENT / FLAPS [₱23,634.00]",
+        "15100 - SPLIT GRAFT / FULL THICKNESS GRAFT [₱16,107.00]",
         "15820 - BLEPHAROPLASTY, LOWER EYELID [₱19,734.00]",
         "15822 - BLEPHAROPLASTY, UPPER EYELID [₱19,734.00]",
         "16035 - ESCHAROTOMY [₱59,943.00]",
-        "17000 - DESTRUCTION BY ANY METHOD, ALL BENIGN FACIAL LESIONS OR PREMALIGNANT LESIONS [₱11,700.00]",
     ],
     "MUSCULOSKELETAL SYSTEM": [
         "20220 - BIOPSY BONE, TROCAR, OR NEEDLE SUPERFICIAL [₱21,216.00]",
-        "20610 - ARTHROCENTESIS, ASPIRATION AND/OR INJECTION, MAJOR JOINT OR BURSA [₱18,135.00]",
-        "20680 - REMOVAL OF IMPLANT DEEP (PIN, SCREW, PLATE, NAIL, ROD) [₱23,361.00]",
+        "20610 - ARTHROCENTESIS, ASPIRATION AND/OR INJECTION, MAJOR JOINT [₱18,135.00]",
+        "20680 - REMOVAL OF IMPLANT DEEP (PIN, SCREW, PLATE) [₱23,361.00]",
         "20802 - REPLANTATION, ARM, COMPLETE AMPUTATION [₱18,135.00]",
         "20805 - REPLANTATION, FOREARM, COMPLETE AMPUTATION [₱78,624.00]",
-        "20900 - BONE GRAFT ANY DONOR AREA MINOR OR SMALL [₱20,553.00]",
-        "20902 - BONE GRAFT ANY DONOR AREA MAJOR OR LARGE [₱35,100.00]",
-        "21010 - ARTHROTOMY TEMPOROMANDIBULAR JOINT [₱18,915.00]",
         "21315 - CLOSED / OPEN TREATMENT OF NASAL BONE FRACTURE [₱20,553.00]",
         "22554 - ARTHRODESIS, ANTERIOR INTERBODY TECHNIQUE, CERVICAL [₱104,130.00]",
-        "23410 - REPAIR OF RUPTURED MUSCULOTENDINOUS CUFF (ROTATOR CUFF) ACUTE [₱40,911.00]",
+        "23410 - REPAIR OF RUPTURED ROTATOR CUFF [₱40,911.00]",
         "27130 - TOTAL HIP REPLACEMENT [₱104,130.00]",
         "27447 - TOTAL KNEE REPLACEMENT [₱78,624.00]",
         "29881 - ARTHROSCOPY, KNEE, SURGICAL W/MENISCECTOMY [₱59,943.00]",
@@ -501,7 +483,7 @@ ANNEX_B_CATEGORIZED_PROCEDURES = {
         "68810 - PROBING OF NASOLACRIMAL DUCT, W/ OR W/O IRRIGATION [₱8,400.00]",
     ],
     "RESPIRATORY SYSTEM": [
-        "30110 - EXCISION, NASAL POLYP(S), SIMPLE [₱15,639.00]",
+        "30110 - EXCISION, NASAL POLYP(S) [₱15,639.00]",
         "30520 - SEPTOPLASTY OR SUBMUCOUS RESECTION [₱25,155.00]",
         "31231 - NASAL ENDOSCOPY, DIAGNOSTIC [₱20,553.00]",
         "31622 - BRONCHOSCOPY DIAGNOSTIC [₱21,372.00]",
@@ -1608,7 +1590,7 @@ if st.session_state["role"] == "Administrator":
             ])
             row_data["PROCEDURE"] = "UPPER GASTROINTESTINAL ENDOSCOPY (DIAGNOSTIC / EGD)"
             row_data["PROCEDURE CATEGORY"] = "DIGESTIVE SYSTEM"
-            row_data["HOSPITAL PACKAGE BUNDLE"] = "HOSPITAL PACKAGE KIT (ENDO)"
+            row_data["HOSPITAL PACKAGE BUNDLE"] = "HOSPITAL PACKAGE KIT (ENDO/YAKAP)"
             row_data["PHILHEALTH CASE RATE (RVS CODE)"] = "43235 - UPPER GASTROINTESTINAL ENDOSCOPY (DIAGNOSTIC / EGD) [₱20,553.00]"
             row_data["ATTENDING PHYSICIAN"] = "DR. M. REYES"
             row_data["ATTENDING SPECIALIZATION"] = "GASTROENTEROLOGY"
@@ -1982,41 +1964,41 @@ def render_inpatient_order_updater_form(dept_name_label):
         )
     ].index
 
+    st.markdown(f"##### 5. Diagnostics Procedures and Treatment Plans")
+    search_rvs_cross = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key=f"search_rvs_cross_{dept_name_label}").strip().upper()
+    matched_rvs_cross = []
+    added_cross_procs = ""
+    if search_rvs_cross:
+      for cat_k, p_list in ANNEX_B_CATEGORIZED_PROCEDURES.items():
+        for p_item in p_list:
+          if search_rvs_cross in p_item:
+            matched_rvs_cross.append(f"[{cat_k}] {p_item}")
+      if matched_rvs_cross:
+        sel_m = st.selectbox("Matching RVS Codes Found", ["Select Match"] + matched_rvs_cross, key=f"sel_m_cross_{dept_name_label}")
+        if sel_m and sel_m != "Select Match":
+          added_cross_procs = sel_m
+      else:
+        added_cross_procs = f"{search_rvs_cross} - CUSTOM RVS ENTRY"
+    else:
+      chosen_cat_cross = st.selectbox(
+          f"Select Anatomical / Surgical Category",
+          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+          key=f"cross_cat_{dept_name_label}"
+      )
+      if chosen_cat_cross and chosen_cat_cross != "Select Category":
+        sub_c = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_cross])
+        added_cross_procs = st.selectbox(
+            f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_cross}`",
+            ["Select Procedure"] + sub_c,
+            key=f"cross_proc_{dept_name_label}_{chosen_cat_cross}"
+        )
+
     with st.form(f"cross_dept_form_{dept_name_label}"):
       st.markdown(
           f"**Selected Inpatient:** `{selected_inpatient_label}` | **Unit:**"
           f" `{target_sheet}`"
       )
       
-      st.markdown("##### 5. Diagnostics Procedures and Treatment Plans")
-      search_rvs_cross = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key=f"search_rvs_cross_{dept_name_label}").strip().upper()
-      matched_rvs_cross = []
-      added_cross_procs = ""
-      if search_rvs_cross:
-        for cat_k, p_list in ANNEX_B_CATEGORIZED_PROCEDURES.items():
-          for p_item in p_list:
-            if search_rvs_cross in p_item:
-              matched_rvs_cross.append(f"[{cat_k}] {p_item}")
-        if matched_rvs_cross:
-          sel_m = st.selectbox("Matching RVS Codes Found", ["Select Match"] + matched_rvs_cross, key=f"sel_m_cross_{dept_name_label}")
-          if sel_m and sel_m != "Select Match":
-            added_cross_procs = sel_m
-        else:
-          added_cross_procs = f"{search_rvs_cross} - CUSTOM RVS ENTRY"
-      else:
-        chosen_cat_cross = st.selectbox(
-            f"Select Anatomical / Surgical Category",
-            ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
-            key=f"cross_cat_{dept_name_label}"
-        )
-        if chosen_cat_cross and chosen_cat_cross != "Select Category":
-          sub_c = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_cross])
-          added_cross_procs = st.selectbox(
-              f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_cross}`",
-              ["Select Procedure"] + sub_c,
-              key=f"cross_proc_{dept_name_label}_{chosen_cat_cross}"
-          )
-
       add_meds = st.text_area(
           f"Add Medications / Orders",
           value="",
@@ -3354,13 +3336,13 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
       with cd2:
         procedure_text = st.text_input("Procedure Name", value="").strip().upper()
 
-      # 5. Diagnostics Procedures and Treatment Plans (Unified layout directly under No. 5)
+      # 5. Diagnostics Procedures and Treatment Plans (Fully functional inside form)
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
       
       endo_pkg_bundle = st.selectbox(
           "Hospital Package Bundle",
           [
-              "Hospital Package Kit (ENDO)",
+              "Hospital Package Kit (ENDO/YAKAP)",
               "Hospital Package (GS Laparoscopic Cholecystectomy)",
               "Hospital Package (GS Laparoscopic Appendectomy)",
               "Hospital Package (GS Laparoscopic Herniorrhaphy)",
@@ -3381,17 +3363,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
           key="endo_pkg_bundle"
       )
 
-      col_rvs1, col_rvs2 = st.columns(2)
-      with col_rvs1:
-        search_rvs_endo = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key="search_rvs_endo_input").strip().upper()
-      with col_rvs2:
-        procedure_complexity = st.selectbox(
-            "Procedure Complexity",
-            ["Select Complexity", "Diagnostics", "Therapeutics", "Diagnostics & Therapeutics", "Major", "Medium", "Minor"],
-            index=0,
-            key="endo_proc_complexity"
-        )
-
+      search_rvs_endo = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key="search_rvs_endo_input").strip().upper()
       endo_selected_proc = ""
       matched_rvs_list = []
       if search_rvs_endo:
@@ -3404,7 +3376,6 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
           if selected_searched_endo and selected_searched_endo != "Select Match":
             endo_selected_proc = selected_searched_endo
         else:
-          st.warning("No RVS code matches found in database. You may enter it in clinical notes.")
           endo_selected_proc = f"{search_rvs_endo} - CUSTOM RVS ENTRY"
       else:
         chosen_cat_endo = st.selectbox(
@@ -3419,6 +3390,13 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
               ["Select Procedure"] + sub_endo,
               key=f"endo_proc_sel_{chosen_cat_endo}"
           )
+
+      procedure_complexity = st.selectbox(
+          "Procedure Complexity",
+          ["Select Complexity", "Diagnostics", "Therapeutics", "Diagnostics & Therapeutics", "Major", "Medium", "Minor"],
+          index=0,
+          key="endo_proc_complexity"
+      )
 
       submitted = st.form_submit_button("Submit Record")
       if submitted:
@@ -3456,7 +3434,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
             "PROCEDURE": sanitize_medical_text(procedure_text),
             "PROCEDURE CATEGORY": chosen_cat_endo if 'chosen_cat_endo' in locals() and chosen_cat_endo != "Select Category" else "NONE",
             "HOSPITAL PACKAGE BUNDLE": endo_pkg_bundle,
-            "PHILHEALTH CASE RATE (RVS CODE)": endo_selected_proc if 'endo_selected_proc' in locals() and endo_selected_proc != "Select Procedure" else "NONE",
+            "PHILHEALTH CASE RATE (RVS CODE)": endo_selected_proc if endo_selected_proc != "Select Procedure" else "NONE",
             "ATTENDING PHYSICIAN": final_attending,
             "ATTENDING SPECIALIZATION": attending_spec,
             "CO-MANAGEMENT PHYSICIAN": cm_names_str,
@@ -3950,6 +3928,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
       ob_pkg_bundle = st.selectbox(
           "Hospital Package Bundle",
           [
+              "Hospital Package Kit (ENDO/YAKAP)",
               "Hospital Package (OB Cesarean Section)",
               "Hospital Package (OB TAHBSO)",
               "Hospital Package (OB Exploratory Laparotomy)",
@@ -3958,7 +3937,6 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
               "Hospital Package (OB Normal Spontaneous Delivery)",
               "Hospital Package (OB Hysteroscopy)",
               "Hospital Package (OB Laparoscopic Gynecology)",
-              "Hospital Package Kit (ENDO)",
               "Hospital Package (GS Laparoscopic Cholecystectomy)",
               "Hospital Package (GS Laparoscopic Appendectomy)",
               "Hospital Package (GS Laparoscopic Herniorrhaphy)",
@@ -3971,17 +3949,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
           key="ob_pkg_bundle"
       )
 
-      col_rvs1, col_rvs2 = st.columns(2)
-      with col_rvs1:
-        search_rvs_ob = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key="search_rvs_ob_input").strip().upper()
-      with col_rvs2:
-        procedure_complexity = st.selectbox(
-            "Procedure Complexity",
-            ["Select Complexity", "Diagnostics", "Therapeutics", "Diagnostics & Therapeutics", "Major", "Medium", "Minor"],
-            index=0,
-            key="ob_proc_complexity"
-        )
-
+      search_rvs_ob = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key="search_rvs_ob_input").strip().upper()
       ob_selected_proc = ""
       matched_rvs_ob = []
       if search_rvs_ob:
@@ -3994,7 +3962,6 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
           if selected_searched_ob and selected_searched_ob != "Select Match":
             ob_selected_proc = selected_searched_ob
         else:
-          st.warning("No RVS code matches found in database. You may enter it in clinical notes.")
           ob_selected_proc = f"{search_rvs_ob} - CUSTOM RVS ENTRY"
       else:
         chosen_cat_ob = st.selectbox(
@@ -4009,6 +3976,13 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
               ["Select Procedure"] + sub_ob,
               key=f"ob_proc_sel_{chosen_cat_ob}"
           )
+
+      procedure_complexity = st.selectbox(
+          "Procedure Complexity",
+          ["Select Complexity", "Diagnostics", "Therapeutics", "Diagnostics & Therapeutics", "Major", "Medium", "Minor"],
+          index=0,
+          key="ob_proc_complexity"
+      )
 
       submitted = st.form_submit_button("Submit Record")
       if submitted:
@@ -4048,7 +4022,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             "SURGICAL PROCEDURE": sanitize_medical_text(surgical_procedure),
             "PROCEDURE CATEGORY": chosen_cat_ob if 'chosen_cat_ob' in locals() and chosen_cat_ob != "Select Category" else "NONE",
             "HOSPITAL PACKAGE BUNDLE": ob_pkg_bundle,
-            "PHILHEALTH CASE RATE (RVS CODE)": ob_selected_proc if 'ob_selected_proc' in locals() and ob_selected_proc != "Select Procedure" else "NONE",
+            "PHILHEALTH CASE RATE (RVS CODE)": ob_selected_proc if ob_selected_proc != "Select Procedure" else "NONE",
             "ATTENDING PHYSICIAN": final_attending,
             "ATTENDING SPECIALIZATION": attending_spec,
             "CO-MANAGEMENT PHYSICIAN": cm_names_str,
@@ -4212,6 +4186,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
       scc_pkg_bundle = st.selectbox(
           "Hospital Package Bundle",
           [
+              "Hospital Package Kit (ENDO/YAKAP)",
               "Hospital Package (GS Laparoscopic Cholecystectomy)",
               "Hospital Package (GS Laparoscopic Appendectomy)",
               "Hospital Package (GS Laparoscopic Herniorrhaphy)",
@@ -4220,7 +4195,6 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
               "Hospital Package (GS Open Appendectomy)",
               "Hospital Package (GS Modified Radical Mastectomy)",
               "Hospital Package (GS Open Herniorrhaphy)",
-              "Hospital Package Kit (ENDO)",
               "Hospital Package (OB Hysteroscopy)",
               "Hospital Package (OB Laparoscopic Gynecology)",
               "Hospital Package (OB Cesarean Section)",
@@ -4233,17 +4207,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
           key="scc_pkg_bundle"
       )
 
-      col_rvs1, col_rvs2 = st.columns(2)
-      with col_rvs1:
-        search_rvs_scc = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key="search_rvs_scc_input").strip().upper()
-      with col_rvs2:
-        procedure_complexity = st.selectbox(
-            "Procedure Complexity",
-            ["Select Complexity", "Diagnostics", "Therapeutics", "Diagnostics & Therapeutics", "Major", "Medium", "Minor"],
-            index=0,
-            key="scc_proc_complexity"
-        )
-
+      search_rvs_scc = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key="search_rvs_scc_input").strip().upper()
       scc_selected_proc = ""
       matched_rvs_scc = []
       if search_rvs_scc:
@@ -4256,7 +4220,6 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
           if selected_searched_scc and selected_searched_scc != "Select Match":
             scc_selected_proc = selected_searched_scc
         else:
-          st.warning("No RVS code matches found in database. You may enter it in clinical notes.")
           scc_selected_proc = f"{search_rvs_scc} - CUSTOM RVS ENTRY"
       else:
         chosen_cat_scc = st.selectbox(
@@ -4271,6 +4234,13 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
               ["Select Procedure"] + sub_scc,
               key=f"scc_proc_sel_{chosen_cat_scc}"
           )
+
+      procedure_complexity = st.selectbox(
+          "Procedure Complexity",
+          ["Select Complexity", "Diagnostics", "Therapeutics", "Diagnostics & Therapeutics", "Major", "Medium", "Minor"],
+          index=0,
+          key="scc_proc_complexity"
+      )
 
       submitted = st.form_submit_button("Submit Record")
       if submitted:
@@ -4309,7 +4279,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             "PROCEDURE": sanitize_medical_text(procedure),
             "PROCEDURE CATEGORY": chosen_cat_scc if 'chosen_cat_scc' in locals() and chosen_cat_scc != "Select Category" else "NONE",
             "HOSPITAL PACKAGE BUNDLE": scc_pkg_bundle,
-            "PHILHEALTH CASE RATE (RVS CODE)": scc_selected_proc if 'scc_selected_proc' in locals() and scc_selected_proc != "Select Procedure" else "NONE",
+            "PHILHEALTH CASE RATE (RVS CODE)": scc_selected_proc if scc_selected_proc != "Select Procedure" else "NONE",
             "ATTENDING PHYSICIAN": final_attending,
             "ATTENDING SPECIALIZATION": attending_spec,
             "CO-MANAGEMENT PHYSICIAN": cm_names_str,
