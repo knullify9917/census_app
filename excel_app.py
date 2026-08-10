@@ -211,6 +211,24 @@ if "df_cache" not in st.session_state:
 if "sync_health_status" not in st.session_state:
   st.session_state["sync_health_status"] = "Healthy (Idle)"
 
+sorted_departments = sorted([
+    "Emergency Care Complex (ECC)",
+    "Endoscopy Unit (ENDO)",
+    "Hemodialysis Unit (HDU)",
+    "OBGYNE Care Complex (LRDR-OB Surgery)",
+    "Surgical Care Complex (OR Main)",
+    "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
+    "General Nursing Unit (GNU 1C)",
+    "General Nursing Unit (GNU 2A)",
+    "General Nursing Unit (GNU 2B)",
+    "General Nursing Unit (GNU 2C)",
+    "General Nursing Unit (GNU 2D)",
+    "General Nursing Unit (GNU 3A)",
+    "General Nursing Unit (GNU 3B)",
+    "General Nursing Unit (GNU 3C)",
+    "General Nursing Unit (GNU 4A)",
+])
+
 # Customization State Initialization
 if "custom_titles" not in st.session_state:
   st.session_state["custom_titles"] = {
@@ -218,6 +236,9 @@ if "custom_titles" not in st.session_state:
       "subtitle": "Touching Lives Through Expert Care",
       "system_name": "PATIENT DATA RECORDING SYSTEM",
   }
+
+if "custom_dept_names" not in st.session_state:
+  st.session_state["custom_dept_names"] = {d: d for d in sorted_departments}
 
 for form_key in [
     "ecc",
@@ -320,24 +341,6 @@ HOSPITAL_UNIT_AREAS = sorted([
     "NSU (NEWBORN SERVICE UNIT)",
     "PCN (PROGRESSIVE CARE UNIT)",
     "OUTBORN (OUTBORN BABIES ADMITTED IN THE UNIT)",
-])
-
-sorted_departments = sorted([
-    "Emergency Care Complex (ECC)",
-    "Endoscopy Unit (ENDO)",
-    "Hemodialysis Unit (HDU)",
-    "OBGYNE Care Complex (LRDR-OB Surgery)",
-    "Surgical Care Complex (OR Main)",
-    "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
-    "General Nursing Unit (GNU 1C)",
-    "General Nursing Unit (GNU 2A)",
-    "General Nursing Unit (GNU 2B)",
-    "General Nursing Unit (GNU 2C)",
-    "General Nursing Unit (GNU 2D)",
-    "General Nursing Unit (GNU 3A)",
-    "General Nursing Unit (GNU 3B)",
-    "General Nursing Unit (GNU 3C)",
-    "General Nursing Unit (GNU 4A)",
 ])
 
 SPECIALTIES_BY_FIELD = {
@@ -1251,21 +1254,29 @@ st.sidebar.markdown("---")
 # APP CUSTOMIZATION & LABEL RENAMING SIDEBAR EXPANDER
 # ---------------------------------------------------------
 with st.sidebar.expander("🎨 App Customization & Renaming"):
-  st.markdown("Customize system titles and headers.")
+  st.markdown("Customize system titles, headers, and department names.")
   custom_main_title = st.text_input(
       "Main Header Title", value=st.session_state["custom_titles"]["main_title"]
   )
   custom_sys_name = st.text_input(
       "System Subtitle", value=st.session_state["custom_titles"]["system_name"]
   )
-  if st.button("Save Custom Titles"):
+
+  st.markdown("---")
+  st.markdown("**Department / Table Name Renaming:**")
+  for dept in sorted_departments:
+    current_custom = st.session_state["custom_dept_names"].get(dept, dept)
+    new_name = st.text_input(f"Rename: {dept}", value=current_custom, key=f"rename_{dept}")
+    st.session_state["custom_dept_names"][dept] = new_name.strip().upper()
+
+  if st.button("Save Customizations"):
     st.session_state["custom_titles"]["main_title"] = (
         custom_main_title.strip().upper()
     )
     st.session_state["custom_titles"]["system_name"] = (
         custom_sys_name.strip().upper()
     )
-    st.success("Custom labels updated successfully!")
+    st.success("Custom titles and department headers updated!")
     st.rerun()
 st.sidebar.markdown("---")
 
@@ -1646,8 +1657,16 @@ all_department_modules = [
     "Hospital Information System",
     "Pareto Tally Sheet",
 ] + sorted_departments
+
+# Remap modules based on custom department names
+custom_dept_map = st.session_state["custom_dept_names"]
+reverse_custom_map = {v: k for k, v in custom_dept_map.items()}
+
 if allowed_modules == "All":
-  MODULES = all_department_modules
+  display_modules = [
+      "Hospital Information System",
+      "Pareto Tally Sheet",
+  ] + [custom_dept_map.get(d, d) for d in sorted_departments]
 else:
   allowed_list = (
       list(allowed_modules)
@@ -1660,15 +1679,20 @@ else:
       if m in allowed_list or allowed_modules == "All"
   ]
   other_allowed = sorted([
-      m
+      custom_dept_map.get(m, m)
       for m in allowed_list
       if m not in ["Hospital Information System", "Pareto Tally Sheet"]
   ])
-  MODULES = fixed_front + other_allowed
+  display_modules = fixed_front + other_allowed
 
 st.sidebar.markdown("### 🧭 Department Navigation")
-selected_sheet = st.sidebar.selectbox(
-    "Select Target Google Sheet Module", MODULES, index=0
+selected_display_sheet = st.sidebar.selectbox(
+    "Select Target Google Sheet Module", display_modules, index=0
+)
+
+# Resolve back to actual internal sheet name
+selected_sheet = reverse_custom_map.get(
+    selected_display_sheet, selected_display_sheet
 )
 
 st.sidebar.markdown("---")
@@ -1725,7 +1749,7 @@ def convert_df_to_pdf_html(df, title):
 
 st.sidebar.download_button(
     label="📄 Export as PDF",
-    data=convert_df_to_pdf_html(active_export_df, selected_sheet),
+    data=convert_df_to_pdf_html(active_export_df, selected_display_sheet),
     file_name=f"MTCMC_{selected_sheet.replace(' ', '_')}_Report.html",
     mime="text/html",
 )
@@ -1784,10 +1808,14 @@ if selected_sheet == "Pareto Tally Sheet":
       if d.startswith("General Nursing Unit")
   ]
 
-  selected_tally_dept = st.selectbox(
+  display_dept_options = [custom_dept_map.get(d, d) for d in all_dept_options]
+  selected_display_tally_dept = st.selectbox(
       "🏥 Choose Department / Unit for Pareto Tally & Census Analysis",
-      all_dept_options,
+      display_dept_options,
   )
+  selected_tally_dept = {
+      v: k for k, v in custom_dept_map.items()
+  }.get(selected_display_tally_dept, selected_display_tally_dept)
 
   sheet_target_map = {
       "Emergency Care Complex (ECC)": "Emergency Care Complex (ECC)",
@@ -1813,7 +1841,8 @@ if selected_sheet == "Pareto Tally Sheet":
 
   if not dept_df.empty:
     st.markdown(
-        f"### 📋 Patient Census & Category Breakdown for `{selected_tally_dept}`"
+        f"### 📋 Patient Census & Category Breakdown for"
+        f" `{selected_display_tally_dept}`"
     )
     clean_dept_df = clean_display_df(dept_df)
 
@@ -1851,7 +1880,8 @@ if selected_sheet == "Pareto Tally Sheet":
 
     st.markdown("---")
     st.markdown(
-        f"### 📅 Daily & Monthly Census Tallies (`{selected_tally_dept}`)"
+        f"### 📅 Daily & Monthly Census Tallies"
+        f" (`{selected_display_tally_dept}`)"
     )
     dt_col1, dt_col2 = st.columns(2)
     with dt_col1:
@@ -1896,7 +1926,9 @@ if selected_sheet == "Pareto Tally Sheet":
         st.info("No specialization column found for this department.")
 
     st.markdown("---")
-    st.markdown(f"### 🔀 Cross-Tabulation Tallies (`{selected_tally_dept}`)")
+    st.markdown(
+        f"### 🔀 Cross-Tabulation Tallies (`{selected_display_tally_dept}`)"
+    )
 
     cross_col1, cross_col2 = st.columns(2)
     with cross_col1:
@@ -1952,7 +1984,10 @@ if selected_sheet == "Pareto Tally Sheet":
       st.dataframe(sh_counts, use_container_width=True)
 
     st.markdown("---")
-    st.markdown(f"### 👨‍⚕️ Doctors Census per Specialization (`{selected_tally_dept}`)")
+    st.markdown(
+        f"### 👨‍⚕️ Doctors Census per Specialization"
+        f" (`{selected_display_tally_dept}`)"
+    )
 
     if (
         spec_col
@@ -1982,7 +2017,7 @@ if selected_sheet == "Pareto Tally Sheet":
     else:
       st.info("No doctor specialization breakdown available for this department yet.")
   else:
-    st.info(f"No records found in live database for `{selected_tally_dept}`.")
+    st.info(f"No records found in live database for `{selected_display_tally_dept}`.")
 
 # ---------------------------------------------------------
 # MODULE: HOSPITAL INFORMATION SYSTEM (LANDING PAGE)
@@ -2061,8 +2096,9 @@ elif selected_sheet == "Hospital Information System":
           elif cleaned_st == "CAB":
             count_cab_gnu += 1
 
+      display_dept_name = custom_dept_map.get(dept, dept)
       summary_data.append({
-          "Department Module": dept,
+          "Department Module": display_dept_name,
           "Total Census Records": record_count,
           "Daily Patient Census": daily_count,
           "Monthly Patient Census": monthly_count,
@@ -2132,7 +2168,7 @@ elif selected_sheet == "Hospital Information System":
       gnu_df = dept_data_map.get(gnu, pd.DataFrame())
       if not gnu_df.empty:
         df_c = gnu_df.copy()
-        df_c.insert(0, "SOURCE DEPARTMENT", gnu)
+        df_c.insert(0, "SOURCE DEPARTMENT", custom_dept_map.get(gnu, gnu))
         gnu_roster_frames.append(df_c)
 
     if gnu_roster_frames:
@@ -2238,9 +2274,13 @@ elif selected_sheet == "Hospital Information System":
 
     st.markdown("---")
     st.subheader("📑 Department Summary")
-    selected_dept_view = st.selectbox(
-        "Select Department to Inspect", department_sheets
+    display_dept_sheets = [custom_dept_map.get(d, d) for d in department_sheets]
+    selected_display_dept_view = st.selectbox(
+        "Select Department to Inspect", display_dept_sheets
     )
+    selected_dept_view = {
+        v: k for k, v in custom_dept_map.items()
+    }.get(selected_display_dept_view, selected_display_dept_view)
 
     dept_df = dept_data_map.get(selected_dept_view, pd.DataFrame())
     if not dept_df.empty:
@@ -2270,14 +2310,14 @@ elif selected_sheet == "Hospital Information System":
       )
 
       if st.button(
-          f"💾 Save Changes to `{selected_dept_view}`", type="primary"
+          f"💾 Save Changes to `{selected_display_dept_view}`", type="primary"
       ):
         if update_google_sheet_from_df(selected_dept_view, edited_dept_df):
           st.cache_data.clear()
           st.session_state["df_cache"] = {}
           st.success(
-              f"Successfully updated records for `{selected_dept_view}` in"
-              " Google Sheets!"
+              f"Successfully updated records for `{selected_display_dept_view}`"
+              " in Google Sheets!"
           )
           st.rerun()
         else:
@@ -2286,7 +2326,7 @@ elif selected_sheet == "Hospital Information System":
               " connection."
           )
     else:
-      st.info(f"No records found yet for {selected_dept_view}.")
+      st.info(f"No records found yet for {selected_display_dept_view}.")
 
   render_hospital_summary_fragment()
 
@@ -2295,8 +2335,9 @@ elif selected_sheet == "Hospital Information System":
 # ---------------------------------------------------------
 elif selected_sheet.startswith("General Nursing Unit (GNU"):
   gnu_title = selected_sheet
+  display_gnu_title = custom_dept_map.get(gnu_title, gnu_title)
   st.header(
-      f"🛏️ {gnu_title} Patient Registration & Admitted Patient Update"
+      f"🛏️ {display_gnu_title} Patient Registration & Admitted Patient Update"
   )
   ph_now = get_ph_time()
   form_key_slug = (
@@ -2475,11 +2516,11 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
         if append_record_to_google_sheet(gnu_title, row_data):
           st.cache_data.clear()
           st.session_state["df_cache"] = {}
-          st.success(f"Successfully saved to Google Sheets `{gnu_title}` tab!")
+          st.success(f"Successfully saved to Google Sheets `{display_gnu_title}` tab!")
           st.session_state[cm_list_key] = []
 
   with tab_update:
-    st.markdown(f"##### 🔄 Update Admitted Patient Orders (`{gnu_title}`)")
+    st.markdown(f"##### 🔄 Update Admitted Patient Orders (`{display_gnu_title}`)")
     dept_df_up = read_google_sheet(gnu_title)
     if not dept_df_up.empty and "LAST NAME" in dept_df_up.columns:
       active_patients = dept_df_up[
@@ -2612,8 +2653,9 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
 # FORM 1: Emergency Care Complex (ECC)
 # ---------------------------------------------------------
 elif selected_sheet == "Emergency Care Complex (ECC)":
+  display_ecc_title = custom_dept_map.get("Emergency Care Complex (ECC)", "Emergency Care Complex (ECC)")
   st.header(
-      "🚑 Emergency Care Complex Patient Registration & Admitted Patient"
+      f"🚑 {display_ecc_title} Patient Registration & Admitted Patient"
       " Update"
   )
   ph_now = get_ph_time()
@@ -2815,15 +2857,13 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
           st.cache_data.clear()
           st.session_state["df_cache"] = {}
           st.success(
-              "Successfully saved to Google Sheets `Emergency Care Complex"
-              " (ECC)` tab!"
+              f"Successfully saved to Google Sheets `{display_ecc_title}` tab!"
           )
           st.session_state["cm_list_ecc"] = []
 
   with tab_update:
     st.markdown(
-        "##### 🔄 Update Admitted Patient Orders (`Emergency Care Complex"
-        " (ECC)`)"
+        f"##### 🔄 Update Admitted Patient Orders (`{display_ecc_title}`)"
     )
     ecc_df_up = read_google_sheet("Emergency Care Complex (ECC)")
     if not ecc_df_up.empty and "LAST NAME" in ecc_df_up.columns:
@@ -2940,7 +2980,8 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 # FORM 2: Endoscopy Unit (ENDO)
 # ---------------------------------------------------------
 elif selected_sheet == "Endoscopy Unit (ENDO)":
-  st.header("🔬 Endoscopy Unit Patient Registration")
+  display_endo_title = custom_dept_map.get("Endoscopy Unit (ENDO)", "Endoscopy Unit (ENDO)")
+  st.header(f"🔬 {display_endo_title} Patient Registration")
   ph_now = get_ph_time()
 
   with st.form("endo_form", clear_on_submit=True):
@@ -3141,7 +3182,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         st.cache_data.clear()
         st.session_state["df_cache"] = {}
         st.success(
-            "Successfully saved to Google Sheets `Endoscopy Unit (ENDO)` tab!"
+            f"Successfully saved to Google Sheets `{display_endo_title}` tab!"
         )
         st.session_state["cm_list_endo"] = []
 
@@ -3149,9 +3190,10 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 # FORM 3: Hemodialysis Unit (HDU)
 # ---------------------------------------------------------
 elif selected_sheet == "Hemodialysis Unit (HDU)":
+  display_hdu_title = custom_dept_map.get("Hemodialysis Unit (HDU)", "Hemodialysis Unit (HDU)")
   hdu_icon_html = get_custom_icon_html("medical_icon.png", width=38)
   st.markdown(
-      f"<h2>{hdu_icon_html} Hemodialysis Unit Patient Registration & Update</h2>",
+      f"<h2>{hdu_icon_html} {display_hdu_title} Patient Registration & Update</h2>",
       unsafe_allow_html=True,
   )
   ph_now = get_ph_time()
@@ -3331,14 +3373,14 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
           st.cache_data.clear()
           st.session_state["df_cache"] = {}
           st.success(
-              "Successfully saved to Google Sheets `Hemodialysis Unit (HDU)`"
+              f"Successfully saved to Google Sheets `{display_hdu_title}`"
               " tab!"
           )
           st.session_state["cm_list_hdu"] = []
 
   with tab_update:
     st.markdown(
-        "##### 🔄 Update Admitted Patient Orders (`Hemodialysis Unit (HDU)`)"
+        f"##### 🔄 Update Admitted Patient Orders (`{display_hdu_title}`)"
     )
     hdu_df_up = read_google_sheet("Hemodialysis Unit (HDU)")
     if not hdu_df_up.empty and "LAST NAME" in hdu_df_up.columns:
@@ -3434,7 +3476,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
                   if "SPECIAL ENDORSEMENTS" in hdu_df_up.columns
                   else ""
               )
-              st_end = f"{now_ts} {up_ends_hdu}"
+              st_end = f"{now_ts} {up_ends}"
               hdu_df_up.loc[matched_hdu_idx, "SPECIAL ENDORSEMENTS"] = (
                   f"{ex_e}; {st_end}".strip("; ")
               )
@@ -3453,9 +3495,10 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
 # FORM 4: OBGYNE Care Complex (LRDR-OB Surgery)
 # ---------------------------------------------------------
 elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
+  display_ob_title = custom_dept_map.get("OBGYNE Care Complex (LRDR-OB Surgery)", "OBGYNE Care Complex (LRDR-OB Surgery)")
   ob_icon_html = get_custom_icon_html("pregnant_icon.png", width=38)
   st.markdown(
-      f"<h2>{ob_icon_html} OBGYNE Care Complex Patient Registration</h2>",
+      f"<h2>{ob_icon_html} {display_ob_title} Patient Registration</h2>",
       unsafe_allow_html=True,
   )
   ph_now = get_ph_time()
@@ -3665,8 +3708,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         st.cache_data.clear()
         st.session_state["df_cache"] = {}
         st.success(
-            "Successfully saved to Google Sheets `OBGYNE Care Complex (LRDR-OB"
-            " Surgery)` tab!"
+            f"Successfully saved to Google Sheets `{display_ob_title}` tab!"
         )
         st.session_state["cm_list_ob"] = []
 
@@ -3674,9 +3716,10 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 # FORM 5: Surgical Care Complex (OR Main)
 # ---------------------------------------------------------
 elif selected_sheet == "Surgical Care Complex (OR Main)":
+  display_scc_title = custom_dept_map.get("Surgical Care Complex (OR Main)", "Surgical Care Complex (OR Main)")
   surgery_icon_html = get_custom_icon_html("surgery_icon.png", width=38)
   st.markdown(
-      f"<h2>{surgery_icon_html} Surgical Care Complex Patient Registration</h2>",
+      f"<h2>{surgery_icon_html} {display_scc_title} Patient Registration</h2>",
       unsafe_allow_html=True,
   )
   ph_now = get_ph_time()
@@ -3906,8 +3949,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         st.cache_data.clear()
         st.session_state["df_cache"] = {}
         st.success(
-            "Successfully saved to Google Sheets `Surgical Care Complex (OR"
-            " Main)` tab!"
+            f"Successfully saved to Google Sheets `{display_scc_title}` tab!"
         )
         st.session_state["cm_list_scc"] = []
 
@@ -3915,9 +3957,10 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 # FORM 6: Special Care Complex (NICU-PICU-NSU/PCN-Outborn)
 # ---------------------------------------------------------
 elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
+  display_scu_title = custom_dept_map.get("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)")
   baby_icon_html = get_custom_icon_html("baby_feet_icon.png", width=38)
   st.markdown(
-      f"<h2>{baby_icon_html} Special Care Unit Patient Registration</h2>",
+      f"<h2>{baby_icon_html} {display_scu_title} Patient Registration</h2>",
       unsafe_allow_html=True,
   )
   ph_now = get_ph_time()
@@ -4108,7 +4151,6 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         st.cache_data.clear()
         st.session_state["df_cache"] = {}
         st.success(
-            "Successfully saved to Google Sheets `Special Care Complex"
-            " (NICU-PICU-NSU/PCN-Outborn)` tab!"
+            f"Successfully saved to Google Sheets `{display_scu_title}` tab!"
         )
         st.session_state["cm_list_scu"] = []
