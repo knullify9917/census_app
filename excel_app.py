@@ -581,7 +581,6 @@ GNU_SHEET_HEADER = [
     "CO-MANAGEMENT PHYSICIAN",
     "CO-MANAGEMENT SPECIALIZATION",
     "HOSPITALIZATION MODE",
-    "HOSPITAL KIT PACKAGE",
     "MODE OF PAYMENT",
     "PATIENT STATUS",
     "PROCEDURES",
@@ -611,7 +610,6 @@ SCU_SHEET_HEADER = [
     "CO-MANAGEMENT PHYSICIAN",
     "CO-MANAGEMENT SPECIALIZATION",
     "HOSPITALIZATION MODE",
-    "HOSPITAL KIT PACKAGE",
     "MODE OF PAYMENT",
     "PATIENT STATUS",
     "PROCEDURES",
@@ -639,7 +637,6 @@ ECC_SHEET_HEADER = [
     "CO-MANAGEMENT SPECIALIZATION",
     "HOSPITALIZATION MODE",
     "CASE TYPE",
-    "HOSPITAL KIT PACKAGE",
     "MODE OF PAYMENT",
     "ADMITTED TO",
     "PROCEDURES",
@@ -666,7 +663,6 @@ HDU_SHEET_HEADER = [
     "CO-MANAGEMENT SPECIALIZATION",
     "DIALYSIS SHIFT SLOT",
     "HOSPITALIZATION MODE",
-    "HOSPITAL KIT PACKAGE",
     "MODE OF PAYMENT",
     "PATIENT STATUS",
     "PROCEDURES",
@@ -1622,7 +1618,7 @@ if st.session_state["role"] == "Administrator":
             row_data["SURGEON SPECIALIZATION"] = "GASTROENTEROLOGY"
             row_data["ANESTHESIOLOGIST"] = "N/A"
             row_data["ANESTHESIOLOGIST SPECIALIZATION"] = "NONE"
-            row_data["PROCEDURE COMPLEXITY"] = "DIAGNOSTICS"
+            row_data["PROCEDURE COMPLEXITY"] = "Diagnostics"
             row_data["HOSPITALIZATION MODE"] = "OUTPATIENT"
             row_data["PATIENT STATUS"] = stat
 
@@ -1986,27 +1982,41 @@ def render_inpatient_order_updater_form(dept_name_label):
         )
     ].index
 
-    st.markdown("##### 5. Diagnostics Procedures and Treatment Plans")
-    chosen_cat_cross = st.selectbox(
-        f"Select Anatomical / Surgical Category",
-        ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
-        key=f"cross_cat_{dept_name_label}"
-    )
-    added_cross_procs = ""
-    if chosen_cat_cross and chosen_cat_cross != "Select Category":
-      sub_c = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_cross])
-      added_cross_procs = st.selectbox(
-          f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_cross}`",
-          ["Select Procedure"] + sub_c,
-          key=f"cross_proc_{dept_name_label}_{chosen_cat_cross}"
-      )
-
     with st.form(f"cross_dept_form_{dept_name_label}"):
       st.markdown(
           f"**Selected Inpatient:** `{selected_inpatient_label}` | **Unit:**"
           f" `{target_sheet}`"
       )
       
+      st.markdown("##### 5. Diagnostics Procedures and Treatment Plans")
+      search_rvs_cross = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key=f"search_rvs_cross_{dept_name_label}").strip().upper()
+      matched_rvs_cross = []
+      added_cross_procs = ""
+      if search_rvs_cross:
+        for cat_k, p_list in ANNEX_B_CATEGORIZED_PROCEDURES.items():
+          for p_item in p_list:
+            if search_rvs_cross in p_item:
+              matched_rvs_cross.append(f"[{cat_k}] {p_item}")
+        if matched_rvs_cross:
+          sel_m = st.selectbox("Matching RVS Codes Found", ["Select Match"] + matched_rvs_cross, key=f"sel_m_cross_{dept_name_label}")
+          if sel_m and sel_m != "Select Match":
+            added_cross_procs = sel_m
+        else:
+          added_cross_procs = f"{search_rvs_cross} - CUSTOM RVS ENTRY"
+      else:
+        chosen_cat_cross = st.selectbox(
+            f"Select Anatomical / Surgical Category",
+            ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+            key=f"cross_cat_{dept_name_label}"
+        )
+        if chosen_cat_cross and chosen_cat_cross != "Select Category":
+          sub_c = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_cross])
+          added_cross_procs = st.selectbox(
+              f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_cross}`",
+              ["Select Procedure"] + sub_c,
+              key=f"cross_proc_{dept_name_label}_{chosen_cat_cross}"
+          )
+
       add_meds = st.text_area(
           f"Add Medications / Orders",
           value="",
@@ -3344,7 +3354,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
       with cd2:
         procedure_text = st.text_input("Procedure Name", value="").strip().upper()
 
-      # 5. Diagnostics Procedures and Treatment Plans
+      # 5. Diagnostics Procedures and Treatment Plans (Unified layout directly under No. 5)
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
       
       endo_pkg_bundle = st.selectbox(
