@@ -1737,8 +1737,8 @@ if selected_sheet == "Pareto Tally Sheet":
   st.header("📊 Pareto Tally Sheet & Department Analytics")
   st.markdown(
       "Organized per department with dynamic patient census categorization,"
-      " specialization breakdowns, doctor census tables, and cross-tabulation"
-      " tallies displayed in table format."
+      " specialization breakdowns, doctor census tables, and separate Daily &"
+      " Monthly Tally tables displayed in table format."
   )
 
   all_dept_options = [
@@ -1819,6 +1819,30 @@ if selected_sheet == "Pareto Tally Sheet":
       if "SHIFT" in c_upper or "SLOT" in c_upper or "SET" in c_upper:
         shift_col = col
 
+    # Newly added separate Daily & Monthly Tally Tables
+    st.markdown("---")
+    st.markdown(
+        f"### 📅 Daily & Monthly Census Tallies (`{selected_tally_dept}`)"
+    )
+    dt_col1, dt_col2 = st.columns(2)
+    with dt_col1:
+      st.markdown("##### 📆 Daily Tally (By Date)")
+      if "DATE" in clean_dept_df.columns:
+        daily_tally = clean_dept_df["DATE"].value_counts().reset_index()
+        daily_tally.columns = ["Date", "Total Cases"]
+        st.dataframe(daily_tally, use_container_width=True)
+      else:
+        st.info("No Date column found for daily tally.")
+    with dt_col2:
+      st.markdown("##### 🗓️ Monthly Tally (By Month)")
+      if "MONTH" in clean_dept_df.columns:
+        monthly_tally = clean_dept_df["MONTH"].value_counts().reset_index()
+        monthly_tally.columns = ["Month", "Total Cases"]
+        st.dataframe(monthly_tally, use_container_width=True)
+      else:
+        st.info("No Month column found for monthly tally.")
+
+    st.markdown("---")
     col_p1, col_p2 = st.columns(2)
     with col_p1:
       st.markdown("##### 🏷️ Patient Census by Category / Procedure")
