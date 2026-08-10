@@ -1146,7 +1146,7 @@ def append_record_to_google_sheet(sheet_name, row_dict):
       sheet_name,
       f"Added record for {row_dict.get('LAST NAME', '')}",
   )
-  st.toast("Record saved instantly (Local-First). Background sync queued.", icon="💾")
+  st.toast(f"Record saved instantly to `{sheet_name}` (Local-First).", icon="💾")
   return True
 
 
@@ -2923,7 +2923,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
     render_department_live_roster(gnu_title)
 
 # ---------------------------------------------------------
-# FORM 1: Emergency Care Complex (ECC) - With Auto-Cross-Registration Mirroring
+# FORM 1: Emergency Care Complex (ECC)
 # ---------------------------------------------------------
 elif selected_sheet == "Emergency Care Complex (ECC)":
   st.header("🚑 Emergency Care Complex (Standalone Registration)")
@@ -3115,11 +3115,9 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
             "SEEDED_TRIAL": "NO",
         }
 
-        # Save to ECC Register
-        if append_record_to_google_sheet("Emergency Care Complex (ECC)", row_data):
-          
-          # AUTOMATIC CROSS-REGISTRATION MIRRORING RULE
-          # If registered as INPATIENT and admitted to a GNU or Special Care Unit, automatically append to target unit's sheet
+        if append_record_to_google_sheet(
+            "Emergency Care Complex (ECC)", row_data
+        ):
           target_unit_str = str(admitted_to).strip().upper()
           target_sheet_to_sync = None
           
@@ -3155,7 +3153,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
                   "CASE COUNT": 1,
                   "SEEDED_TRIAL": "NO",
               }
-            else: # Special Care Complex
+            else:
               target_row_data = {
                   "MONTH": get_month_str(entry_date, "numeric_prefix"),
                   "DATE": curr_date_str,
@@ -3190,6 +3188,8 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
           else:
             st.success("Successfully saved to ECC register!")
 
+          st.cache_data.clear()
+          st.session_state["df_cache"] = {}
           st.session_state["cm_list_ecc"] = []
 
   with tab_update_inpatient:
