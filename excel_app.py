@@ -433,7 +433,7 @@ for field in sorted(SPECIALTIES_BY_FIELD.keys()):
     spec_list.append(spec)
 SPECIALTY_DROPDOWN_OPTIONS = ["None"] + sorted(list(set(spec_list) - {"OTHERS", "Others"})) + ["Others"]
 
-# Simplified ANNEX B Procedures Case Rates List for Diagnostic Procedures & Treatment Plans
+# Simplified ANNEX B Procedures Case Rates List for Surgical Care, Endoscopy, and OBGYNE
 ANNEX_B_PROCEDURES = [
     "INCISION AND DRAINAGE OF ABSCESS (CARBUNCLE/ABSCESS/CYST)",
     "INCISION AND DRAINAGE OF PILONIDAL CYST",
@@ -1922,11 +1922,11 @@ def render_inpatient_order_updater_form(dept_name_label):
           f"**Selected Inpatient:** `{selected_inpatient_label}` | **Unit:**"
           f" `{target_sheet}`"
       )
-      add_procs = st.text_area(
-          f"Add Procedures Performed in {dept_name_label}",
-          value="",
+      add_procs = st.multiselect(
+          f"Add Procedures Performed in {dept_name_label} (Annex B Case Rates)",
+          ANNEX_B_PROCEDURES,
           key=f"c_proc_{dept_name_label}",
-      ).strip().upper()
+      )
       add_meds = st.text_area(
           f"Add Medications / Orders",
           value="",
@@ -1972,7 +1972,7 @@ def render_inpatient_order_updater_form(dept_name_label):
                 if "PROCEDURES" in unit_full_df.columns
                 else ""
             )
-            bullet_item = f"• {now_ts} {add_procs}"
+            bullet_item = f"• {now_ts} {', '.join(add_procs)}"
             unit_full_df.loc[idx, "PROCEDURES"] = (
                 f"{ex_p}\n{bullet_item}".strip()
                 if ex_p and ex_p != "NAN"
@@ -3042,7 +3042,8 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
       kit_package = st.checkbox("Hospital Kit Package", value=False, key="ecc_kit")
-      ecc_procedures = st.multiselect("Procedures (Annex B Case Rates)", ANNEX_B_PROCEDURES, key="ecc_procs")
+      # Annex B case rates removed from ECC; using standard text procedure field
+      ecc_procedures = st.text_area("Procedures Performed", value="", key="ecc_procs").strip().upper()
       ecc_diagnostic_exams = st.text_area(
           "Diagnostic Examinations", value="", key="ecc_diags"
       ).strip().upper()
@@ -3101,7 +3102,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
             "HOSPITAL KIT PACKAGE": "YES" if kit_package else "NO",
             "MODE OF PAYMENT": payment_selected,
             "ADMITTED TO": admitted_to,
-            "PROCEDURES": sanitize_medical_text(", ".join(ecc_procedures)),
+            "PROCEDURES": sanitize_medical_text(ecc_procedures),
             "DIAGNOSTIC EXAMINATIONS": sanitize_medical_text(
                 ecc_diagnostic_exams
             ),
@@ -3242,19 +3243,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         procedure_text = st.text_input("Procedure Name", value="").strip().upper()
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      proc_cols = sorted([
-          "GASTROSCOPY",
-          "COLONOSCOPY",
-          "NASAL PROCEDURE",
-          "PEG PROCEDURE",
-          "ERCP",
-          "PROCTOSIGMOIDOSCOPY",
-          "PARACENTESIS",
-          "BRONCHOSCOPY",
-          "OTHERS",
-      ])
-      proc_cols = sorted([x for x in proc_cols if x != "OTHERS"]) + ["OTHERS"]
-      selected_procs = st.multiselect("Procedure Category", proc_cols)
+      selected_procs = st.multiselect("Procedure Category (Annex B Case Rates)", ANNEX_B_PROCEDURES)
 
       ca, cb = st.columns(2)
       with ca:
@@ -3390,7 +3379,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
       c8, c9, c10, c11 = st.columns(4)
       with c8:
         hosp_mode = st.selectbox(
-            "Hospitalization Mode", ["Select Mode", "Inpatient", "Outpatient"], index=0
+            "Hospitalization Mode", ["Select Mode", "Outpatient", "Inpatient"], index=0
         )
       with c9:
         payment_options = ["Select Payment", "HMO", "PHIC", "SELF-PAY"]
@@ -3796,28 +3785,18 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         ).strip().upper()
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      all_ob_procs = sorted([
-          "CS PRIMARY",
-          "CS",
-          "NSD",
-          "D&C",
-          "HYSTERECTOMY",
-          "EXLAP",
-          "OTHERS",
-          "NST",
-      ])
-      all_ob_procs = sorted([x for x in all_ob_procs if x != "OTHERS"]) + ["OTHERS"]
+      selected_ob_procs = st.multiselect("Procedure Category (Annex B Case Rates)", ANNEX_B_PROCEDURES)
       ca, cb, cc = st.columns(3)
       with ca:
-        selected_ob_procs = st.multiselect("Procedure Category", all_ob_procs)
-      with cb:
         complexity = st.selectbox(
             "Complexity Tier",
             ["Select Complexity", "DIAGNOSTIC", "MAJOR", "MINOR"],
             index=0,
         )
-      with cc:
+      with cb:
         kit_used = st.checkbox("Hospital Kit Package", value=False)
+      with cc:
+        pass
 
       submitted = st.form_submit_button("Submit Record")
       if submitted:
@@ -4013,58 +3992,19 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
       procedure = st.text_area("Surgical Procedure", value="").strip().upper()
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      all_scc_procs = sorted([
-          "EXCISION BIOPSY",
-          "INCISION AND DRAINAGE",
-          "WOUND SUTURING & CLOSING AND CHANGE OF DRESSING",
-          "PLEURAL CATH INSERTION",
-          "COLOSTOMY",
-          "DEBRIDEMENT",
-          "ANAL BIOPSY",
-          "CORE NEEDLE BIOPSY",
-          "THYROIDECTOMY",
-          "PAROTIDECTOMY",
-          "MASTECTOMY",
-          "CHOLECYSTECTOMY",
-          "APPENDECTOMY",
-          "TONSILLECTOMY",
-          "HERNIORRHAPY",
-          "CHANGE OF TRACHEOSTOMY",
-          "LAPAROTOMY",
-          "GASTROSTOMY TUBE INSERTION",
-          "OPTHA SURGERY",
-          "PLASTIC SURGERY",
-          "SPINE SURGERY",
-          "CRANIOTOMY",
-          "MASTOIDECTOMY",
-          "TYMPANOPLASTY",
-          "MAXILLECTOMY",
-          "ORTHO SURGERY",
-          "MICROLARYNGEAL SURGERY",
-          "HYSTEROSCOPY",
-          "ULTRASOUND GUIDED",
-          "MIS",
-          "AVF",
-          "IJ CATH",
-          "PERM CATH/ FEMORAL CATH",
-          "PROCTOSCOPY",
-          "CHOLEDOSCOPY",
-          "DENTAL PROCEDURES",
-          "OTHERS",
-      ])
-      all_scc_procs = sorted([x for x in all_scc_procs if x != "OTHERS"]) + ["OTHERS"]
+      selected_scc_procs = st.multiselect("Procedure Category (Annex B Case Rates)", ANNEX_B_PROCEDURES)
 
       ca, cb, cc = st.columns(3)
       with ca:
-        selected_scc_procs = st.multiselect("Procedure Category", all_scc_procs)
-      with cb:
         complexity = st.selectbox(
             "Complexity Tier",
             ["Select Complexity", "DIAGNOSTICS", "MAJOR", "MEDIUM", "MINOR"],
             index=0,
         )
-      with cc:
+      with cb:
         kit_package = st.checkbox("Hospital Kit Package", value=False)
+      with cc:
+        pass
 
       submitted = st.form_submit_button("Submit Record")
       if submitted:
