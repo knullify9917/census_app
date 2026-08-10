@@ -433,6 +433,27 @@ for field in sorted(SPECIALTIES_BY_FIELD.keys()):
     spec_list.append(spec)
 SPECIALTY_DROPDOWN_OPTIONS = ["None"] + sorted(list(set(spec_list) - {"OTHERS", "Others"})) + ["Others"]
 
+HOSPITAL_PACKAGE_BUNDLES = [
+    "None",
+    "Hospital Package Kit (ENDO/YAKAP)",
+    "Hospital Package (GS Laparoscopic Cholecystectomy)",
+    "Hospital Package (GS Laparoscopic Appendectomy)",
+    "Hospital Package (GS Laparoscopic Herniorrhaphy)",
+    "Hospital Package (GS Thyroidectomy)",
+    "Hospital Package (GS Open Cholecystectomy)",
+    "Hospital Package (GS Open Appendectomy)",
+    "Hospital Package (GS Modified Radical Mastectomy)",
+    "Hospital Package (GS Open Herniorrhaphy)",
+    "Hospital Package (OB Hysteroscopy)",
+    "Hospital Package (OB Laparoscopic Gynecology)",
+    "Hospital Package (OB Cesarean Section)",
+    "Hospital Package (OB TAHBSO)",
+    "Hospital Package (OB Exploratory Laparotomy)",
+    "Hospital Package (OB D&C/Pregnant)",
+    "Hospital Package (OB D&C/Non-Pregnant)",
+    "Hospital Package (OB Normal Spontaneous Delivery)",
+]
+
 # Master Complete Annex B Database (110 Pages)
 ANNEX_B_CATEGORIZED_PROCEDURES = {
     "SKIN & SUBCUTANEOUS TISSUES": [
@@ -3234,7 +3255,6 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
   ])
 
   with tab_reg:
-    # RVS Code Search Bar & Categorical Selection Placed at the Top Most Part
     st.markdown("##### 🔍 PhilHealth RVS Code Lookup & Master Directory")
     search_rvs_endo = st.text_input("Search / Enter Specific RVS Code Directly", value="", key="search_rvs_endo_top").strip().upper()
     endo_selected_proc = ""
@@ -3374,25 +3394,8 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
       with c_p1:
         endo_pkg_bundle = st.selectbox(
             "Hospital Package Bundle",
-            [
-                "Hospital Package Kit (ENDO/YAKAP)",
-                "Hospital Package (GS Laparoscopic Cholecystectomy)",
-                "Hospital Package (GS Laparoscopic Appendectomy)",
-                "Hospital Package (GS Laparoscopic Herniorrhaphy)",
-                "Hospital Package (GS Thyroidectomy)",
-                "Hospital Package (GS Open Cholecystectomy)",
-                "Hospital Package (GS Open Appendectomy)",
-                "Hospital Package (GS Modified Radical Mastectomy)",
-                "Hospital Package (GS Open Herniorrhaphy)",
-                "Hospital Package (OB Hysteroscopy)",
-                "Hospital Package (OB Laparoscopic Gynecology)",
-                "Hospital Package (OB Cesarean Section)",
-                "Hospital Package (OB TAHBSO)",
-                "Hospital Package (OB Exploratory Laparotomy)",
-                "Hospital Package (OB D&C/Pregnant)",
-                "Hospital Package (OB D&C/Non-Pregnant)",
-                "Hospital Package (OB Normal Spontaneous Delivery)",
-            ],
+            HOSPITAL_PACKAGE_BUNDLES,
+            index=0,
             key="endo_pkg_bundle"
         )
       with c_p2:
@@ -3818,7 +3821,6 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
   ])
 
   with tab_reg:
-    # RVS Code Search Bar & Categorical Selection Placed at the Top Most Part
     st.markdown("##### 🔍 PhilHealth RVS Code Lookup & Master Directory")
     search_rvs_ob = st.text_input("Search / Enter Specific RVS Code Directly", value="", key="search_rvs_ob_top").strip().upper()
     ob_selected_proc = ""
@@ -3965,25 +3967,8 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
       with c_p1:
         ob_pkg_bundle = st.selectbox(
             "Hospital Package Bundle",
-            [
-                "Hospital Package Kit (ENDO/YAKAP)",
-                "Hospital Package (OB Cesarean Section)",
-                "Hospital Package (OB TAHBSO)",
-                "Hospital Package (OB Exploratory Laparotomy)",
-                "Hospital Package (OB D&C/Pregnant)",
-                "Hospital Package (OB D&C/Non-Pregnant)",
-                "Hospital Package (OB Normal Spontaneous Delivery)",
-                "Hospital Package (OB Hysteroscopy)",
-                "Hospital Package (OB Laparoscopic Gynecology)",
-                "Hospital Package (GS Laparoscopic Cholecystectomy)",
-                "Hospital Package (GS Laparoscopic Appendectomy)",
-                "Hospital Package (GS Laparoscopic Herniorrhaphy)",
-                "Hospital Package (GS Thyroidectomy)",
-                "Hospital Package (GS Open Cholecystectomy)",
-                "Hospital Package (GS Open Appendectomy)",
-                "Hospital Package (GS Modified Radical Mastectomy)",
-                "Hospital Package (GS Open Herniorrhaphy)",
-            ],
+            HOSPITAL_PACKAGE_BUNDLES,
+            index=0,
             key="ob_pkg_bundle"
         )
       with c_p2:
@@ -4087,7 +4072,6 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
   ])
 
   with tab_reg:
-    # RVS Code Search Bar & Categorical Selection Placed at the Top Most Part
     st.markdown("##### 🔍 PhilHealth RVS Code Lookup & Master Directory")
     search_rvs_scc = st.text_input("Search / Enter Specific RVS Code Directly", value="", key="search_rvs_scc_top").strip().upper()
     scc_selected_proc = ""
@@ -4228,25 +4212,8 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
       with c_p1:
         scc_pkg_bundle = st.selectbox(
             "Hospital Package Bundle",
-            [
-                "Hospital Package Kit (ENDO/YAKAP)",
-                "Hospital Package (GS Laparoscopic Cholecystectomy)",
-                "Hospital Package (GS Laparoscopic Appendectomy)",
-                "Hospital Package (GS Laparoscopic Herniorrhaphy)",
-                "Hospital Package (GS Thyroidectomy)",
-                "Hospital Package (GS Open Cholecystectomy)",
-                "Hospital Package (GS Open Appendectomy)",
-                "Hospital Package (GS Modified Radical Mastectomy)",
-                "Hospital Package (GS Open Herniorrhaphy)",
-                "Hospital Package (OB Hysteroscopy)",
-                "Hospital Package (OB Laparoscopic Gynecology)",
-                "Hospital Package (OB Cesarean Section)",
-                "Hospital Package (OB TAHBSO)",
-                "Hospital Package (OB Exploratory Laparotomy)",
-                "Hospital Package (OB D&C/Pregnant)",
-                "Hospital Package (OB D&C/Non-Pregnant)",
-                "Hospital Package (OB Normal Spontaneous Delivery)",
-            ],
+            HOSPITAL_PACKAGE_BUNDLES,
+            index=0,
             key="scc_pkg_bundle"
         )
       with c_p2:
