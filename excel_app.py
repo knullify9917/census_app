@@ -1910,9 +1910,7 @@ st.sidebar.markdown(
 if st.sidebar.button("🔄 Refresh Data"):
   st.cache_data.clear()
   st.session_state["df_cache"] = {}
-  st.toast(
-      "Reloaded latest census & patient records.", icon="🔄"
-  )
+  st.toast("Fully refreshed local data cache and sync state.", icon="🔄")
   st.rerun()
 
 if st.sidebar.button("Sign Out"):
@@ -1993,9 +1991,9 @@ def render_inpatient_order_updater_form(dept_name_label):
             "["
             + gnu.split("(")[-1].replace(")", "")
             + "] "
-            + active_sub["LAST NAME"]
+            + active_sub["LAST NAME"].astype(str).str.strip()
             + ", "
-            + active_sub["FIRST NAME"]
+            + active_sub["FIRST NAME"].astype(str).str.strip()
         )
         all_inpatients.append(active_sub)
 
@@ -2020,13 +2018,10 @@ def render_inpatient_order_updater_form(dept_name_label):
     target_sheet = matched_inpatient_row["TARGET_SHEET"]
 
     unit_full_df = read_google_sheet(target_sheet)
+    # Robust case-insensitive and whitespace-trimmed indexing match
     matched_idx = unit_full_df[
-        (unit_full_df["LAST NAME"] == matched_inpatient_row["LAST NAME"])
-        & (unit_full_df["FIRST NAME"] == matched_inpatient_row["FIRST NAME"])
-        & (
-            unit_full_df["DATE"].astype(str).str.strip()
-            == str(matched_inpatient_row["DATE"]).strip()
-        )
+        (unit_full_df["LAST NAME"].astype(str).str.strip().str.upper() == str(matched_inpatient_row["LAST NAME"]).strip().upper())
+        & (unit_full_df["FIRST NAME"].astype(str).str.strip().str.upper() == str(matched_inpatient_row["FIRST NAME"]).strip().upper())
     ].index
 
     st.markdown("##### 5. Diagnostics Procedures and Treatment Plans")
@@ -2151,7 +2146,7 @@ def render_inpatient_order_updater_form(dept_name_label):
             )
             st.rerun()
         else:
-          st.error("Could not locate the specific inpatient record index.")
+          st.error("Could not locate the specific inpatient record index in target sheet.")
   else:
     st.info("No active inpatients currently admitted in GNU or Special Care Complex.")
 
@@ -2719,7 +2714,7 @@ elif selected_sheet == "Hospital Information System":
   render_hospital_summary_fragment()
 
 # ---------------------------------------------------------
-# GENERIC REGISTRATION FORM FOR GNU UNITS (Enforcing Transfer Rule Block)
+# GENERIC REGISTRATION FORM FOR GNU UNITS
 # ---------------------------------------------------------
 elif selected_sheet.startswith("General Nursing Unit (GNU"):
   gnu_title = selected_sheet
@@ -2739,22 +2734,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
   )
 
   with tab_reg:
-    st.warning("🚨 **Transfer Rule Notice:** If the patient was already registered as an INPATIENT in the Emergency Care Complex (ECC) and designated for transfer to this unit, **re-registering them here is blocked**. Please use the **Update Inpatient Orders** tab or check the **Active Live Roster**.")
-
-    # Guard check for active ECC Inpatient transfers on the current date
-    ecc_df_guard = read_google_sheet("Emergency Care Complex (ECC)")
-    today_date_str = ph_now.strftime("%m/%d/%Y")
-    ecc_transfer_patients = []
-    if not ecc_df_guard.empty and "ADMITTED TO" in ecc_df_guard.columns:
-      transfers = ecc_df_guard[
-          (ecc_df_guard["HOSPITALIZATION MODE"].astype(str).str.strip().str.upper() == "INPATIENT")
-          & (ecc_df_guard["ADMITTED TO"].astype(str).str.strip().str.upper().str.contains(gnu_title.split("(")[-1].replace(")", "").strip(), case=False, na=False))
-      ]
-      if not transfers.empty:
-        ecc_transfer_patients = (transfers["LAST NAME"] + ", " + transfers["FIRST NAME"]).tolist()
-
-    if ecc_transfer_patients:
-      st.error(f"⚠️ Active Inpatient Transfer(s) detected from ECC intended for this unit: `{', '.join(ecc_transfer_patients)}`. Standard registration is disabled for these patients per hospital transfer rules. Please update their orders via the **Update Inpatient Orders** tab.")
+    st.info("ℹ️ **Rule Notice:** If the patient was already registered as an INPATIENT in the Emergency Care Complex (ECC) and designated for transfer to this unit, you do not need to re-register them here using the standard form.")
 
     chosen_cat_gnu = st.selectbox(
         "Select Anatomical / Surgical Category",
@@ -2873,13 +2853,6 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
               "⚠️ Validation Error: Last Name and First Name are required fields."
           )
           st.stop()
-
-        # Enforce transfer rule block if patient originated as inpatient transfer from ECC
-        full_name_check = f"{sanitize_medical_text(last_name)}, {sanitize_medical_text(first_name)}"
-        if full_name_check in ecc_transfer_patients:
-          st.error(f"🚨 Transfer Rule Block: Patient `{full_name_check}` was registered as an Inpatient in ECC for transfer to this unit. Standard re-registration is prohibited. Please use the **Update Inpatient Orders** tab to manage this patient.")
-          st.stop()
-
         existing_record = check_existing_patient_ai(
             gnu_title, last_name, first_name, curr_date_str
         )
@@ -3849,13 +3822,13 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
                   if ex_m and ex_m != "NAN"
                   else bullet_item
               )
-            if up_ends_hdu:
+            if up_ends:
               ex_e = (
                   str(hdu_df_up.loc[matched_hdu_idx, "SPECIAL ENDORSEMENTS"])
                   if "SPECIAL ENDORSEMENTS" in hdu_df_up.columns
                   else ""
               )
-              bullet_item = f"• {now_ts} {up_ends_hdu}"
+              bullet_item = f"• {now_ts} {up_ends}"
               hdu_df_up.loc[matched_hdu_idx, "SPECIAL ENDORSEMENTS"] = (
                   f"{ex_e}\n{bullet_item}".strip()
                   if ex_e and ex_e != "NAN"
