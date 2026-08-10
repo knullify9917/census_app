@@ -1098,6 +1098,9 @@ def get_sheet_lock(sheet_name):
 
 
 def safe_gspread_call(sheet_name, func, *args, **kwargs):
+  global sh
+  if sh is None:
+    sh = init_google_sheets()
   if sh is None:
     return None
   max_retries = 3
@@ -1109,7 +1112,6 @@ def safe_gspread_call(sheet_name, func, *args, **kwargs):
         return func(*args, **kwargs)
       except Exception as e:
         if attempt == max_retries - 1:
-          global sh
           try:
             sh = init_google_sheets()
             if sh:
