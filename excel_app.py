@@ -2719,7 +2719,7 @@ elif selected_sheet == "Hospital Information System":
   render_hospital_summary_fragment()
 
 # ---------------------------------------------------------
-# GENERIC REGISTRATION FORM FOR GNU UNITS
+# GENERIC REGISTRATION FORM FOR GNU UNITS (Enforcing Transfer Rule Block)
 # ---------------------------------------------------------
 elif selected_sheet.startswith("General Nursing Unit (GNU"):
   gnu_title = selected_sheet
@@ -2739,7 +2739,22 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
   )
 
   with tab_reg:
-    st.info("ℹ️ **Rule Notice:** If the patient was already registered as an INPATIENT in the Emergency Care Complex (ECC) and designated for transfer to this unit, you do not need to re-register them here using the standard form.")
+    st.warning("🚨 **Transfer Rule Notice:** If the patient was already registered as an INPATIENT in the Emergency Care Complex (ECC) and designated for transfer to this unit, **re-registering them here is blocked**. Please use the **Update Inpatient Orders** tab or check the **Active Live Roster**.")
+
+    # Guard check for active ECC Inpatient transfers on the current date
+    ecc_df_guard = read_google_sheet("Emergency Care Complex (ECC)")
+    today_date_str = ph_now.strftime("%m/%d/%Y")
+    ecc_transfer_patients = []
+    if not ecc_df_guard.empty and "ADMITTED TO" in ecc_df_guard.columns:
+      transfers = ecc_df_guard[
+          (ecc_df_guard["HOSPITALIZATION MODE"].astype(str).str.strip().str.upper() == "INPATIENT")
+          & (ecc_df_guard["ADMITTED TO"].astype(str).str.strip().str.upper().str.contains(gnu_title.split("(")[-1].replace(")", "").strip(), case=False, na=False))
+      ]
+      if not transfers.empty:
+        ecc_transfer_patients = (transfers["LAST NAME"] + ", " + transfers["FIRST NAME"]).tolist()
+
+    if ecc_transfer_patients:
+      st.error(f"⚠️ Active Inpatient Transfer(s) detected from ECC intended for this unit: `{', '.join(ecc_transfer_patients)}`. Standard registration is disabled for these patients per hospital transfer rules. Please update their orders via the **Update Inpatient Orders** tab.")
 
     chosen_cat_gnu = st.selectbox(
         "Select Anatomical / Surgical Category",
@@ -2858,6 +2873,13 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
               "⚠️ Validation Error: Last Name and First Name are required fields."
           )
           st.stop()
+
+        # Enforce transfer rule block if patient originated as inpatient transfer from ECC
+        full_name_check = f"{sanitize_medical_text(last_name)}, {sanitize_medical_text(first_name)}"
+        if full_name_check in ecc_transfer_patients:
+          st.error(f"🚨 Transfer Rule Block: Patient `{full_name_check}` was registered as an Inpatient in ECC for transfer to this unit. Standard re-registration is prohibited. Please use the **Update Inpatient Orders** tab to manage this patient.")
+          st.stop()
+
         existing_record = check_existing_patient_ai(
             gnu_title, last_name, first_name, curr_date_str
         )
@@ -4353,7 +4375,21 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
   ])
 
   with tab_scu_reg:
-    st.info("ℹ️ **Rule Notice:** If registered in ECC as an inpatient transfer to this Special Care unit, standard re-registration is bypassed; use unit order updates or view via live roster.")
+    st.warning("🚨 **Transfer Rule Notice:** If registered in ECC as an inpatient transfer to this Special Care unit, **re-registration is blocked**. Please use the **Update Inpatient Orders** tab or check the **Active Live Roster**.")
+
+    ecc_df_guard = read_google_sheet("Emergency Care Complex (ECC)")
+    today_date_str = ph_now.strftime("%m/%d/%Y")
+    ecc_transfer_patients_scu = []
+    if not ecc_df_guard.empty and "ADMITTED TO" in ecc_df_guard.columns:
+      transfers = ecc_df_guard[
+          (ecc_df_guard["HOSPITALIZATION MODE"].astype(str).str.strip().str.upper() == "INPATIENT")
+          & (ecc_df_guard["ADMITTED TO"].astype(str).str.strip().str.upper().str.contains("NICU|PICU|NSU|PCN|OUTBORN", case=False, na=False))
+      ]
+      if not transfers.empty:
+        ecc_transfer_patients_scu = (transfers["LAST NAME"] + ", " + transfers["FIRST NAME"]).tolist()
+
+    if ecc_transfer_patients_scu:
+      st.error(f"⚠️ Active Inpatient Transfer(s) detected from ECC: `{', '.join(ecc_transfer_patients_scu)}`. Standard registration is disabled per transfer rules.")
 
     with st.form("scu_form", clear_on_submit=True):
       st.subheader("1. Patient Demographics")
@@ -4470,6 +4506,12 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
               "⚠️ Validation Error: Last Name and First Name are required fields."
           )
           st.stop()
+
+        full_name_check_scu = f"{sanitize_medical_text(last_name)}, {sanitize_medical_text(first_name)}"
+        if full_name_check_scu in ecc_transfer_patients_scu:
+          st.error(f"🚨 Transfer Rule Block: Patient `{full_name_check_scu}` was registered as an Inpatient in ECC for transfer. Standard re-registration is prohibited.")
+          st.stop()
+
         existing_record = check_existing_patient_ai(
             "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
             last_name,
