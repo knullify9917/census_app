@@ -2165,7 +2165,7 @@ st.markdown("---")
 
 
 # ---------------------------------------------------------
-# MODULE RENDERERS (LANDING, PARETO, GNU, & STANDALONE DEPTS)
+# DISPATCHER: RENDER SELECTED MODULE / DEPARTMENT
 # ---------------------------------------------------------
 
 if selected_sheet == "Pareto Tally Sheet":
