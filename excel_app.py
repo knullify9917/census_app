@@ -210,6 +210,8 @@ if "df_cache" not in st.session_state:
   st.session_state["df_cache"] = {}
 if "sync_health_status" not in st.session_state:
   st.session_state["sync_health_status"] = "Healthy (Idle)"
+if "status_checksum" not in st.session_state:
+  st.session_state["status_checksum"] = ""
 
 for form_key in [
     "ecc",
@@ -1478,7 +1480,6 @@ if st.session_state["role"] == "Administrator":
           [d for d in sorted_departments if d.startswith("General Nursing Unit")]
       )
 
-      # Enhanced Clinical Scenario Matrix for Comprehensive Stress-Testing
       clinical_scenarios = [
           {
               "condition": "ACUTE ST-SEGMENT ELEVATION MYOCARDIAL INFARCTION (STEMI)",
@@ -2404,10 +2405,10 @@ if selected_sheet == "Pareto Tally Sheet":
 # ---------------------------------------------------------
 elif selected_sheet == "Hospital Information System":
 
-  @st.fragment
+  @st.fragment(run_every=30)
   def render_hospital_summary_fragment():
     st.header("🏥 Hospital Summary")
-    st.markdown("This is the current active census summary today.")
+    st.markdown("This is the current active census summary today (Auto-refreshing every 30s & triggered on GNU/SCU status changes).")
 
     department_sheets = sorted([
         "Emergency Care Complex (ECC)",
@@ -2442,8 +2443,19 @@ elif selected_sheet == "Hospital Information System":
     current_month_name = ph_now_summary.strftime("%B").upper()
 
     summary_data = []
-
     dept_data_map = read_multiple_sheets_parallel(department_sheets)
+
+    # Checksum calculation across GNU and SCU patient statuses to trigger automatic re-rendering/refresh on changes
+    current_status_tokens = []
+    for gnu in gnu_sheets + [scu_sheet]:
+      df_chk = dept_data_map.get(gnu, pd.DataFrame())
+      if not df_chk.empty and "PATIENT STATUS" in df_chk.columns:
+        current_status_tokens.append(str(df_chk["PATIENT STATUS"].fillna("ACTIVE").tolist()))
+    new_checksum = hashlib.md5("".join(current_status_tokens).encode()).hexdigest()
+
+    if st.session_state.get("status_checksum", "") != new_checksum:
+      st.session_state["status_checksum"] = new_checksum
+      st.toast("⚡ Status change detected in GNU/SCU. Hospital Summary auto-refreshed!", icon="🔄")
 
     for dept in department_sheets:
       df = dept_data_map.get(dept, pd.DataFrame())
@@ -2726,6 +2738,8 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
   )
 
   with tab_reg:
+    st.info("ℹ️ **Rule Notice:** If the patient was already registered as an INPATIENT in the Emergency Care Complex (ECC) and designated for transfer to this unit, you do not need to re-register them here using the standard form.")
+
     chosen_cat_gnu = st.selectbox(
         "Select Anatomical / Surgical Category",
         ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
@@ -4336,6 +4350,8 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
   ])
 
   with tab_scu_reg:
+    st.info("ℹ️ **Rule Notice:** If registered in ECC as an inpatient transfer to this Special Care unit, standard re-registration is bypassed; use unit order updates or view via live roster.")
+
     with st.form("scu_form", clear_on_submit=True):
       st.subheader("1. Patient Demographics")
       c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
