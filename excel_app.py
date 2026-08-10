@@ -1398,10 +1398,10 @@ if st.session_state["role"] == "Administrator":
             row_data["CASE TYPE"] = "PRIVATE CASE"
             row_data["HOSPITAL KIT PACKAGE"] = "YES"
             row_data["ADMITTED TO"] = random.choice(["GNU 1C", "GNU 2A", "PCN"])
-            row_data["PROCEDURES"] = "IV REHYDRATION & NEBULIZATION"
-            row_data["DIAGNOSTIC EXAMINATIONS"] = "CBC, CREATININE, CHEST X-RAY"
-            row_data["MEDICATIONS"] = "NACL 0.9% 1L, SALBUTAMOL RESPULES"
-            row_data["SPECIAL ENDORSEMENTS"] = "VITALS STABLE, FOR WARD TRANSFER"
+            row_data["PROCEDURES"] = "• [08/10/2026 10:00 AM - SYSTEM]: IV REHYDRATION & NEBULIZATION"
+            row_data["DIAGNOSTIC EXAMINATIONS"] = "• [08/10/2026 10:00 AM - SYSTEM]: CBC, CREATININE, CHEST X-RAY"
+            row_data["MEDICATIONS"] = "• [08/10/2026 10:00 AM - SYSTEM]: NACL 0.9% 1L, SALBUTAMOL RESPULES"
+            row_data["SPECIAL ENDORSEMENTS"] = "• [08/10/2026 10:00 AM - SYSTEM]: VITALS STABLE, FOR WARD TRANSFER"
 
           elif target_dept == "Surgical Care Complex (OR Main)":
             row_data["SCHEDULED TIME"] = "09:00 AM"
@@ -1504,16 +1504,16 @@ if st.session_state["role"] == "Administrator":
             row_data["HOSPITALIZATION MODE"] = "OUTPATIENT"
             row_data["HOSPITAL KIT PACKAGE"] = "YES"
             row_data["PATIENT STATUS"] = stat
-            row_data["PROCEDURES"] = "BIPOLAR HEMODIALYSIS SESSION"
+            row_data["PROCEDURES"] = "• [08/10/2026 10:00 AM - SYSTEM]: BIPOLAR HEMODIALYSIS SESSION"
             row_data["DIAGNOSTIC EXAMINATIONS"] = (
-                "PRE/POST HD CREATININE, BUN, SERUM ELECTROLYTES"
+                "• [08/10/2026 10:00 AM - SYSTEM]: PRE/POST HD CREATININE, BUN, SERUM ELECTROLYTES"
             )
-            row_data["MEDICATIONS"] = "INTRADIALYTIC EPOETIN ALFA, HEPARIN"
-            row_data["SPECIAL ENDORSEMENTS"] = "AV FISTULA THRILL INTACT"
+            row_data["MEDICATIONS"] = "• [08/10/2026 10:00 AM - SYSTEM]: INTRADIALYTIC EPOETIN ALFA, HEPARIN"
+            row_data["SPECIAL ENDORSEMENTS"] = "• [08/10/2026 10:00 AM - SYSTEM]: AV FISTULA THRILL INTACT"
 
           elif target_dept == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
             row_data["AGE"] = f"{random.randint(1, 28)} DAYS"
-            row_data["AOG"] = "37 WKS"
+            row_data["AOG"] = "38 WKS"
             row_data["DIAGNOSIS"] = "NEONATAL SEPSIS / HYPERBILIRUBINEMIA"
             row_data["DIAGNOSIS CATEGORY"] = "NEONATAL INFECTION"
             row_data["ADMITTED FROM"] = "LRDR"
@@ -1531,12 +1531,12 @@ if st.session_state["role"] == "Administrator":
             row_data["HOSPITALIZATION MODE"] = "INPATIENT"
             row_data["HOSPITAL KIT PACKAGE"] = "YES"
             row_data["PATIENT STATUS"] = stat
-            row_data["PROCEDURES"] = "PHOTOTHERAPY & OXYGEN HOOD THERAPY"
+            row_data["PROCEDURES"] = "• [08/10/2026 10:00 AM - SYSTEM]: PHOTOTHERAPY & OXYGEN HOOD THERAPY"
             row_data["DIAGNOSTIC EXAMINATIONS"] = (
-                "TOTAL BILIRUBIN, CBC, BLOOD CULTURE"
+                "• [08/10/2026 10:00 AM - SYSTEM]: TOTAL BILIRUBIN, CBC, BLOOD CULTURE"
             )
-            row_data["MEDICATIONS"] = "AMPICILLIN, GENTAMICIN"
-            row_data["SPECIAL ENDORSEMENTS"] = "ACTIVE PHOTOTHERAPY, FEEDING WELL"
+            row_data["MEDICATIONS"] = "• [08/10/2026 10:00 AM - SYSTEM]: AMPICILLIN, GENTAMICIN"
+            row_data["SPECIAL ENDORSEMENTS"] = "• [08/10/2026 10:00 AM - SYSTEM]: ACTIVE PHOTOTHERAPY, FEEDING WELL"
 
           else:  # General Nursing Units
             row_data["TIME"] = "10:00 AM"
@@ -1555,13 +1555,13 @@ if st.session_state["role"] == "Administrator":
             row_data["HOSPITALIZATION MODE"] = "INPATIENT"
             row_data["HOSPITAL KIT PACKAGE"] = "YES"
             row_data["PATIENT STATUS"] = stat
-            row_data["PROCEDURES"] = "CONTINUOUS WOUND DRESSING & IV INFUSION"
+            row_data["PROCEDURES"] = "• [08/10/2026 10:00 AM - SYSTEM]: CONTINUOUS WOUND DRESSING & IV INFUSION"
             row_data["DIAGNOSTIC EXAMINATIONS"] = (
-                "RANDOM BLOOD SUGAR, CBC, URINALYSIS"
+                "• [08/10/2026 10:00 AM - SYSTEM]: RANDOM BLOOD SUGAR, CBC, URINALYSIS"
             )
-            row_data["MEDICATIONS"] = "CEFTRIAXONE, REGULAR INSULIN"
+            row_data["MEDICATIONS"] = "• [08/10/2026 10:00 AM - SYSTEM]: CEFTRIAXONE, REGULAR INSULIN"
             row_data["SPECIAL ENDORSEMENTS"] = (
-                "FOR GLUCEMIC MONITORING Q6H"
+                "• [08/10/2026 10:00 AM - SYSTEM]: FOR GLUCEMIC MONITORING Q6H"
             )
 
           append_record_to_google_sheet(target_dept, row_data)
@@ -1747,16 +1747,16 @@ if selected_sheet == "Hospital Information System":
 st.markdown("---")
 
 
-# Helper function with smart department-aware filtering for inpatient updates
+# Helper function with smart department-aware filtering, timestamped bullet points, and password re-authentication
 def render_inpatient_order_updater_form(dept_name_label):
   st.markdown(
       f"##### 🔄 Update Inpatient Orders from `{dept_name_label}` to GNU / SCU"
   )
-  
+
   show_all_toggle = st.checkbox(
       f"Show all active inpatients without smart pre-filtering ({dept_name_label})",
       value=False,
-      key=f"toggle_all_{dept_name_label}"
+      key=f"toggle_all_{dept_name_label}",
   )
 
   gnu_sheets = [
@@ -1776,18 +1776,29 @@ def render_inpatient_order_updater_form(dept_name_label):
           .str.upper()
           .isin(["DISCHARGED"])
       ]
-      
-      # Smart pre-filtering based on department context unless toggled off
+
       if not show_all_toggle and not active_sub.empty:
         if dept_name_label == "SCC":
           active_sub = active_sub[
-              active_sub["DIAGNOSIS"].astype(str).str.contains("SURGERY|APPENDICITIS|HERNIA|STONE|TUMOR|OR|COMPLEX", case=False, na=False) |
-              active_sub["SPECIAL ENDORSEMENTS"].astype(str).str.contains("OR|SURGERY|FOR OR", case=False, na=False)
+              active_sub["DIAGNOSIS"].astype(str).str.contains(
+                  "SURGERY|APPENDICITIS|HERNIA|STONE|TUMOR|OR|COMPLEX",
+                  case=False,
+                  na=False,
+              )
+              | active_sub["SPECIAL ENDORSEMENTS"].astype(str).str.contains(
+                  "OR|SURGERY|FOR OR", case=False, na=False
+              )
           ]
         elif dept_name_label == "ENDO":
           active_sub = active_sub[
-              active_sub["DIAGNOSIS"].astype(str).str.contains("BLEEDING|GASTRO|ULCER|POLYP|SCOPE|LIVER|GI", case=False, na=False) |
-              active_sub["PROCEDURES"].astype(str).str.contains("SCOPE|GASTRO|COLONO", case=False, na=False)
+              active_sub["DIAGNOSIS"].astype(str).str.contains(
+                  "BLEEDING|GASTRO|ULCER|POLYP|SCOPE|LIVER|GI",
+                  case=False,
+                  na=False,
+              )
+              | active_sub["PROCEDURES"].astype(str).str.contains(
+                  "SCOPE|GASTRO|COLONO", case=False, na=False
+              )
           ]
         elif dept_name_label == "OBGYNE":
           active_sub = active_sub[
@@ -1809,7 +1820,10 @@ def render_inpatient_order_updater_form(dept_name_label):
   if all_inpatients:
     master_inpatient_df = pd.concat(all_inpatients, ignore_index=True)
     if master_inpatient_df.empty:
-      st.info(f"No matching pre-filtered inpatients found for `{dept_name_label}`. Check the toggle above to view all active inpatients.")
+      st.info(
+          f"No matching pre-filtered inpatients found for `{dept_name_label}`."
+          " Check the toggle above to view all active inpatients."
+      )
       return
 
     selected_inpatient_label = st.selectbox(
@@ -1854,41 +1868,71 @@ def render_inpatient_order_updater_form(dept_name_label):
           key=f"c_end_{dept_name_label}",
       ).strip().upper()
 
+      st.markdown("---")
+      confirm_password = st.text_input(
+          "🔒 Re-enter Your Account Password to Authorize Update",
+          type="password",
+          key=f"reauth_pwd_{dept_name_label}",
+      )
+
       submit_cross = st.form_submit_button(
           "💾 Push Order Update to Inpatient Record"
       )
       if submit_cross:
+        current_username = st.session_state.get("username", "").strip().lower()
+        user_record = USER_DATABASE.get(current_username, {})
+        stored_hash = user_record.get("password", "")
+
+        if not confirm_password or hash_password(confirm_password) != stored_hash:
+          st.error(
+              "🚨 Authorization Error: Incorrect account password. Update"
+              " aborted."
+          )
+          st.stop()
+
         if len(matched_idx) > 0:
           idx = matched_idx[0]
           now_ts = get_ph_time().strftime(
-              f"[{dept_name_label} - %m/%d/%Y %I:%M %p]"
+              f"[%m/%d/%Y %I:%M %p - {st.session_state['name']}]"
           )
+          
           if add_procs:
             ex_p = (
                 str(unit_full_df.loc[idx, "PROCEDURES"])
                 if "PROCEDURES" in unit_full_df.columns
                 else ""
             )
+            bullet_item = f"• {now_ts} {add_procs}"
             unit_full_df.loc[idx, "PROCEDURES"] = (
-                f"{ex_p}; {now_ts} {add_procs}".strip("; ")
+                f"{ex_p}\n{bullet_item}".strip()
+                if ex_p and ex_p != "NAN"
+                else bullet_item
             )
+
           if add_meds:
             ex_m = (
                 str(unit_full_df.loc[idx, "MEDICATIONS"])
                 if "MEDICATIONS" in unit_full_df.columns
                 else ""
             )
+            bullet_item = f"• {now_ts} {add_meds}"
             unit_full_df.loc[idx, "MEDICATIONS"] = (
-                f"{ex_m}; {now_ts} {add_meds}".strip("; ")
+                f"{ex_m}\n{bullet_item}".strip()
+                if ex_m and ex_m != "NAN"
+                else bullet_item
             )
+
           if add_ends:
             ex_e = (
                 str(unit_full_df.loc[idx, "SPECIAL ENDORSEMENTS"])
                 if "SPECIAL ENDORSEMENTS" in unit_full_df.columns
                 else ""
             )
+            bullet_item = f"• {now_ts} {add_ends}"
             unit_full_df.loc[idx, "SPECIAL ENDORSEMENTS"] = (
-                f"{ex_e}; {now_ts} {add_ends}".strip("; ")
+                f"{ex_e}\n{bullet_item}".strip()
+                if ex_e and ex_e != "NAN"
+                else bullet_item
             )
 
           if update_google_sheet_from_df(target_sheet, unit_full_df):
@@ -1896,7 +1940,7 @@ def render_inpatient_order_updater_form(dept_name_label):
             st.session_state["df_cache"] = {}
             st.success(
                 f"Successfully updated inpatient record in `{target_sheet}` with"
-                f" orders from `{dept_name_label}`!"
+                f" timestamped bullet entries from `{dept_name_label}`!"
             )
             st.rerun()
         else:
@@ -2694,9 +2738,29 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
               key=f"en_{form_key_slug}",
           ).strip().upper()
 
+          st.markdown("---")
+          confirm_password_gnu = st.text_input(
+              "🔒 Re-enter Your Account Password to Authorize Update",
+              type="password",
+              key=f"reauth_pwd_gnu_{form_key_slug}",
+          )
+
           submit_update = st.form_submit_button("💾 Save Patient Orders Update")
           if submit_update:
-            now_ts = get_ph_time().strftime("[%m/%d/%Y %I:%M %p]")
+            current_username = st.session_state.get("username", "").strip().lower()
+            user_record = USER_DATABASE.get(current_username, {})
+            stored_hash = user_record.get("password", "")
+
+            if not confirm_password_gnu or hash_password(confirm_password_gnu) != stored_hash:
+              st.error(
+                  "🚨 Authorization Error: Incorrect account password. Update"
+                  " aborted."
+              )
+              st.stop()
+
+            now_ts = get_ph_time().strftime(
+                f"[%m/%d/%Y %I:%M %p - {st.session_state['name']}]"
+            )
             if up_status:
               dept_df_up.loc[matched_idx, "PATIENT STATUS"] = up_status
             if up_procs:
@@ -2705,9 +2769,11 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
                   if "PROCEDURES" in dept_df_up.columns
                   else ""
               )
-              st_proc = f"{now_ts} {up_procs}"
+              bullet_item = f"• {now_ts} {up_procs}"
               dept_df_up.loc[matched_idx, "PROCEDURES"] = (
-                  f"{existing_p}; {st_proc}".strip("; ")
+                  f"{existing_p}\n{bullet_item}".strip()
+                  if existing_p and existing_p != "NAN"
+                  else bullet_item
               )
             if up_diags:
               existing_d = (
@@ -2715,9 +2781,11 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
                   if "DIAGNOSTIC EXAMINATIONS" in dept_df_up.columns
                   else ""
               )
-              st_diag = f"{now_ts} {up_diags}"
+              bullet_item = f"• {now_ts} {up_diags}"
               dept_df_up.loc[matched_idx, "DIAGNOSTIC EXAMINATIONS"] = (
-                  f"{existing_d}; {st_diag}".strip("; ")
+                  f"{existing_d}\n{bullet_item}".strip()
+                  if existing_d and existing_d != "NAN"
+                  else bullet_item
               )
             if up_meds:
               existing_m = (
@@ -2725,9 +2793,11 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
                   if "MEDICATIONS" in dept_df_up.columns
                   else ""
               )
-              st_med = f"{now_ts} {up_meds}"
+              bullet_item = f"• {now_ts} {up_meds}"
               dept_df_up.loc[matched_idx, "MEDICATIONS"] = (
-                  f"{existing_m}; {st_med}".strip("; ")
+                  f"{existing_m}\n{bullet_item}".strip()
+                  if existing_m and existing_m != "NAN"
+                  else bullet_item
               )
             if up_ends:
               existing_e = (
@@ -2735,9 +2805,11 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
                   if "SPECIAL ENDORSEMENTS" in dept_df_up.columns
                   else ""
               )
-              st_end = f"{now_ts} {up_ends}"
+              bullet_item = f"• {now_ts} {up_ends}"
               dept_df_up.loc[matched_idx, "SPECIAL ENDORSEMENTS"] = (
-                  f"{existing_e}; {st_end}".strip("; ")
+                  f"{existing_e}\n{bullet_item}".strip()
+                  if existing_e and existing_e != "NAN"
+                  else bullet_item
               )
 
             if update_google_sheet_from_df(gnu_title, dept_df_up):
@@ -2745,7 +2817,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
               st.session_state["df_cache"] = {}
               st.success(
                   "Successfully updated patient medical orders and treatment"
-                  " plan with timestamp!"
+                  " plan with timestamped bullet entries!"
               )
               st.rerun()
       else:
@@ -3404,20 +3476,42 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
               "Special Endorsements / Notes", value="", key="up_e_hdu"
           ).strip().upper()
 
+          st.markdown("---")
+          confirm_password_hdu = st.text_input(
+              "🔒 Re-enter Your Account Password to Authorize Update",
+              type="password",
+              key="reauth_pwd_hdu_form",
+          )
+
           submit_update_hdu = st.form_submit_button(
               "💾 Save HDU Patient Orders Update"
           )
           if submit_update_hdu:
-            now_ts = get_ph_time().strftime("[%m/%d/%Y %I:%M %p]")
+            current_username = st.session_state.get("username", "").strip().lower()
+            user_record = USER_DATABASE.get(current_username, {})
+            stored_hash = user_record.get("password", "")
+
+            if not confirm_password_hdu or hash_password(confirm_password_hdu) != stored_hash:
+              st.error(
+                  "🚨 Authorization Error: Incorrect account password. Update"
+                  " aborted."
+              )
+              st.stop()
+
+            now_ts = get_ph_time().strftime(
+                f"[%m/%d/%Y %I:%M %p - {st.session_state['name']}]"
+            )
             if up_procs_hdu:
               ex_p = (
                   str(hdu_df_up.loc[matched_hdu_idx, "PROCEDURES"])
                   if "PROCEDURES" in hdu_df_up.columns
                   else ""
               )
-              st_proc = f"{now_ts} {up_procs_hdu}"
+              bullet_item = f"• {now_ts} {up_procs_hdu}"
               hdu_df_up.loc[matched_hdu_idx, "PROCEDURES"] = (
-                  f"{ex_p}; {st_proc}".strip("; ")
+                  f"{ex_p}\n{bullet_item}".strip()
+                  if ex_p and ex_p != "NAN"
+                  else bullet_item
               )
             if up_diags_hdu:
               ex_d = (
@@ -3425,9 +3519,11 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
                   if "DIAGNOSTIC EXAMINATIONS" in hdu_df_up.columns
                   else ""
               )
-              st_diag = f"{now_ts} {up_diags_hdu}"
+              bullet_item = f"• {now_ts} {up_diags_hdu}"
               hdu_df_up.loc[matched_hdu_idx, "DIAGNOSTIC EXAMINATIONS"] = (
-                  f"{ex_d}; {st_diag}".strip("; ")
+                  f"{ex_d}\n{bullet_item}".strip()
+                  if ex_d and ex_d != "NAN"
+                  else bullet_item
               )
             if up_meds_hdu:
               ex_m = (
@@ -3435,9 +3531,11 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
                   if "MEDICATIONS" in hdu_df_up.columns
                   else ""
               )
-              st_med = f"{now_ts} {up_meds_hdu}"
+              bullet_item = f"• {now_ts} {up_meds_hdu}"
               hdu_df_up.loc[matched_hdu_idx, "MEDICATIONS"] = (
-                  f"{ex_m}; {st_med}".strip("; ")
+                  f"{ex_m}\n{bullet_item}".strip()
+                  if ex_m and ex_m != "NAN"
+                  else bullet_item
               )
             if up_ends_hdu:
               ex_e = (
@@ -3445,15 +3543,17 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
                   if "SPECIAL ENDORSEMENTS" in hdu_df_up.columns
                   else ""
               )
-              st_end = f"{now_ts} {up_ends}"
+              bullet_item = f"• {now_ts} {up_ends_hdu}"
               hdu_df_up.loc[matched_hdu_idx, "SPECIAL ENDORSEMENTS"] = (
-                  f"{ex_e}; {st_end}".strip("; ")
+                  f"{ex_e}\n{bullet_item}".strip()
+                  if ex_e and ex_e != "NAN"
+                  else bullet_item
               )
 
             if update_google_sheet_from_df("Hemodialysis Unit (HDU)", hdu_df_up):
               st.cache_data.clear()
               st.session_state["df_cache"] = {}
-              st.success("Successfully updated HDU patient orders with timestamp!")
+              st.success("Successfully updated HDU patient orders with timestamped bullet entries!")
               st.rerun()
       else:
         st.info("No active patient records found in HDU.")
