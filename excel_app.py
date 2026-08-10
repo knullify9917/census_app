@@ -629,6 +629,7 @@ ECC_SHEET_HEADER = [
     "MONTH",
     "DATE",
     "TIME",
+    "ROOM NO",
     "LAST NAME",
     "FIRST NAME",
     "MIDDLE NAME",
@@ -1606,6 +1607,7 @@ if st.session_state["role"] == "Administrator":
 
           if target_dept == "Emergency Care Complex (ECC)":
             row_data["TIME"] = f"{random.randint(1,12):02d}:{random.choice(['00','15','30','45'])} AM"
+            row_data["ROOM NO"] = f"ECC-RM-{random.randint(1, 10)}"
             row_data["AGE"] = age
             row_data["DIAGNOSIS"] = scenario["condition"]
             row_data["DISEASE CATEGORY"] = scenario["spec"]
@@ -2445,7 +2447,6 @@ elif selected_sheet == "Hospital Information System":
     summary_data = []
     dept_data_map = read_multiple_sheets_parallel(department_sheets)
 
-    # Checksum calculation across GNU and SCU patient statuses to trigger automatic re-rendering/refresh on changes
     current_status_tokens = []
     for gnu in gnu_sheets + [scu_sheet]:
       df_chk = dept_data_map.get(gnu, pd.DataFrame())
@@ -3089,7 +3090,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
     render_department_live_roster(gnu_title)
 
 # ---------------------------------------------------------
-# FORM 1: Emergency Care Complex (ECC)
+# FORM 1: Emergency Care Complex (ECC) - Updated with Room No. Aligned to Date & Time
 # ---------------------------------------------------------
 elif selected_sheet == "Emergency Care Complex (ECC)":
   st.header("🚑 Emergency Care Complex (Standalone Registration)")
@@ -3103,7 +3104,17 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 
   with tab_reg:
     with st.form("ecc_form", clear_on_submit=True):
-      st.subheader("1. Patient Demographics")
+      st.subheader("1. Patient Demographics & Encounter Details")
+      
+      # Aligned Date, Time, and Room No.
+      c_dt1, c_dt2, c_dt3 = st.columns([1.5, 2, 2])
+      with c_dt1:
+        entry_date = st.date_input("Date", ph_now.date())
+      with c_dt2:
+        entry_time_str = civilian_time_input_field("Time", key_suffix="ecc_time")
+      with c_dt3:
+        room_no = st.text_input("Room No.", value="").strip().upper()
+
       c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
       with c1:
         last_name = st.text_input("Last Name", value="").strip().upper()
@@ -3116,12 +3127,6 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
       with c5:
         sex_options = ["Select Sex", "FEMALE", "MALE", "OTHERS"]
         sex = st.selectbox("Sex", sex_options, index=0)
-
-      c_d1, c_d2 = st.columns(2)
-      with c_d1:
-        entry_date = st.date_input("Date", ph_now.date())
-      with c_d2:
-        entry_time_str = civilian_time_input_field("Time", key_suffix="ecc_time")
 
       st.subheader("2. Hospitalization Plan")
       c_h1, c_h2, c_h3, c_h4 = st.columns(4)
@@ -3248,6 +3253,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
             "MONTH": get_month_str(entry_date, "full_month"),
             "DATE": curr_date_str,
             "TIME": entry_time_str,
+            "ROOM NO": room_no,
             "LAST NAME": sanitize_medical_text(last_name),
             "FIRST NAME": sanitize_medical_text(first_name),
             "MIDDLE NAME": sanitize_medical_text(middle_name),
