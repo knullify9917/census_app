@@ -211,6 +211,14 @@ if "df_cache" not in st.session_state:
 if "sync_health_status" not in st.session_state:
   st.session_state["sync_health_status"] = "Healthy (Idle)"
 
+# Customization State Initialization
+if "custom_titles" not in st.session_state:
+  st.session_state["custom_titles"] = {
+      "main_title": "MOTHER TERESA OF CALCUTTA MEDICAL CENTER",
+      "subtitle": "Touching Lives Through Expert Care",
+      "system_name": "PATIENT DATA RECORDING SYSTEM",
+  }
+
 for form_key in [
     "ecc",
     "endo",
@@ -236,10 +244,10 @@ if not st.session_state["authenticated"]:
   with col_l2:
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown(
-        """
+        f"""
             <div style="text-align: center; margin-bottom: 25px;">
-                <h1 style="color: #1e3a8a; margin-bottom: -2px; font-size: 2.8rem; white-space: nowrap; font-weight: 800;">Mother Teresa of Calcutta Medical Center</h1>
-                <p style="color: #0f766e; font-weight: 600; font-size: 1.4rem; margin-top: 0px; letter-spacing: 0.5px;">Patient Data System</p>
+                <h1 style="color: #1e3a8a; margin-bottom: -2px; font-size: 2.8rem; white-space: nowrap; font-weight: 800;">{st.session_state['custom_titles']['main_title']}</h1>
+                <p style="color: #0f766e; font-weight: 600; font-size: 1.4rem; margin-top: 0px; letter-spacing: 0.5px;">{st.session_state['custom_titles']['system_name']}</p>
             </div>
         """,
         unsafe_allow_html=True,
@@ -1223,8 +1231,8 @@ st.markdown(
     <div class="header-container">
         {logo_html}
         <div class="header-text-group">
-            <h1 class="header-title">MOTHER TERESA OF CALCUTTA MEDICAL CENTER</h1>
-            <p class="header-subtitle">Touching Lives Through Expert Care</p>
+            <h1 class="header-title">{st.session_state['custom_titles']['main_title']}</h1>
+            <p class="header-subtitle">{st.session_state['custom_titles']['system_name']}</p>
         </div>
     </div>
 """,
@@ -1237,6 +1245,28 @@ ph_now_display = get_ph_time()
 st.sidebar.markdown(
     f"**Date & Time:** `{ph_now_display.strftime('%B %d, %Y - %I:%M %p')}`"
 )
+st.sidebar.markdown("---")
+
+# ---------------------------------------------------------
+# APP CUSTOMIZATION & LABEL RENAMING SIDEBAR EXPANDER
+# ---------------------------------------------------------
+with st.sidebar.expander("🎨 App Customization & Renaming"):
+  st.markdown("Customize system titles and headers.")
+  custom_main_title = st.text_input(
+      "Main Header Title", value=st.session_state["custom_titles"]["main_title"]
+  )
+  custom_sys_name = st.text_input(
+      "System Subtitle", value=st.session_state["custom_titles"]["system_name"]
+  )
+  if st.button("Save Custom Titles"):
+    st.session_state["custom_titles"]["main_title"] = (
+        custom_main_title.strip().upper()
+    )
+    st.session_state["custom_titles"]["system_name"] = (
+        custom_sys_name.strip().upper()
+    )
+    st.success("Custom labels updated successfully!")
+    st.rerun()
 st.sidebar.markdown("---")
 
 # ---------------------------------------------------------
@@ -1681,7 +1711,7 @@ def convert_df_to_pdf_html(df, title):
     table {{ border-collapse: collapse; width: 100%; margin-top: 15px; font-size: 9px; }}
     th {{ background-color: #1e3a8a; color: white; padding: 6px; border: 1px solid #cbd5e1; text-align: left; }}
     td {{ padding: 5px; border: 1px solid #cbd5e1; }}</style></head>
-    <body><h2>MOTHER TERESA OF CALCUTTA MEDICAL CENTER</h2>
+    <body><h2>{st.session_state['custom_titles']['main_title']}</h2>
     <p><strong>Module:</strong> {title} | Generated: {datetime.now().strftime('%Y-%m-%d %I:%M %p')}</p><hr>
     """
   cleaned_pdf_df = clean_display_df(df)
@@ -1819,7 +1849,6 @@ if selected_sheet == "Pareto Tally Sheet":
       if "SHIFT" in c_upper or "SLOT" in c_upper or "SET" in c_upper:
         shift_col = col
 
-    # Newly added separate Daily & Monthly Tally Tables
     st.markdown("---")
     st.markdown(
         f"### 📅 Daily & Monthly Census Tallies (`{selected_tally_dept}`)"
