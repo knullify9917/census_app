@@ -2165,8 +2165,9 @@ st.markdown("---")
 
 
 # ---------------------------------------------------------
-# ROUTING & ROUTINE HANDLERS
+# MODULE RENDERERS (LANDING, PARETO, GNU, & STANDALONE DEPTS)
 # ---------------------------------------------------------
+
 if selected_sheet == "Pareto Tally Sheet":
   st.header("📊 Pareto Tally Sheet & Department Analytics")
   st.markdown(
@@ -2388,9 +2389,6 @@ if selected_sheet == "Pareto Tally Sheet":
   else:
     st.info(f"No records found in live database for `{selected_tally_dept}`.")
 
-# ---------------------------------------------------------
-# MODULE: HOSPITAL INFORMATION SYSTEM (LANDING PAGE)
-# ---------------------------------------------------------
 elif selected_sheet == "Hospital Information System":
 
   @st.fragment(run_every=30)
@@ -2702,9 +2700,6 @@ elif selected_sheet == "Hospital Information System":
 
   render_hospital_summary_fragment()
 
-# ---------------------------------------------------------
-# GENERIC REGISTRATION FORM FOR GNU UNITS
-# ---------------------------------------------------------
 elif selected_sheet.startswith("General Nursing Unit (GNU"):
   gnu_title = selected_sheet
   st.header(
@@ -2914,9 +2909,6 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
   with tab_roster:
     render_department_live_roster(gnu_title)
 
-# ---------------------------------------------------------
-# EMERGENCY CARE COMPLEX (ECC)
-# ---------------------------------------------------------
 elif selected_sheet == "Emergency Care Complex (ECC)":
   st.header("🚑 Emergency Care Complex (Standalone Registration)")
   ph_now = get_ph_time()
@@ -3196,9 +3188,6 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
   with tab_roster:
     render_department_live_roster("Emergency Care Complex (ECC)")
 
-# ---------------------------------------------------------
-# FORM 2: Endoscopy Unit (ENDO)
-# ---------------------------------------------------------
 elif selected_sheet == "Endoscopy Unit (ENDO)":
   st.header("🔬 Endoscopy Unit (Standalone Registration)")
   ph_now = get_ph_time()
@@ -3426,9 +3415,6 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
   with tab_roster:
     render_department_live_roster("Endoscopy Unit (ENDO)")
 
-# ---------------------------------------------------------
-# FORM 3: Hemodialysis Unit (HDU)
-# ---------------------------------------------------------
 elif selected_sheet == "Hemodialysis Unit (HDU)":
   hdu_icon_html = get_custom_icon_html("medical_icon.png", width=38)
   st.markdown(
@@ -3611,9 +3597,6 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
   with tab_roster:
     render_department_live_roster("Hemodialysis Unit (HDU)")
 
-# ---------------------------------------------------------
-# FORM 4: OBGYNE Care Complex (LRDR-OB Surgery)
-# ---------------------------------------------------------
 elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
   ob_icon_html = get_custom_icon_html("pregnant_icon.png", width=38)
   st.markdown(
@@ -3856,9 +3839,6 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
   with tab_roster:
     render_department_live_roster("OBGYNE Care Complex (LRDR-OB Surgery)")
 
-# ---------------------------------------------------------
-# FORM 5: Surgical Care Complex (OR Main)
-# ---------------------------------------------------------
 elif selected_sheet == "Surgical Care Complex (OR Main)":
   surgery_icon_html = get_custom_icon_html("surgery_icon.png", width=38)
   st.markdown(
@@ -4094,9 +4074,6 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
   with tab_roster:
     render_department_live_roster("Surgical Care Complex (OR Main)")
 
-# ---------------------------------------------------------
-# FORM 6: Special Care Complex (NICU-PICU-NSU/PCN-Outborn)
-# ---------------------------------------------------------
 elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
   baby_icon_html = get_custom_icon_html("baby_feet_icon.png", width=38)
   st.markdown(
