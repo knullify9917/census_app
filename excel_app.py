@@ -2164,9 +2164,9 @@ if selected_sheet == "Hospital Information System":
 st.markdown("---")
 
 
-# ---------------------------------------------------------
-# DISPATCHER: RENDER SELECTED MODULE / DEPARTMENT
-# ---------------------------------------------------------
+# =========================================================
+# MODULE DISPATCHER
+# =========================================================
 
 if selected_sheet == "Pareto Tally Sheet":
   st.header("📊 Pareto Tally Sheet & Department Analytics")
