@@ -1260,12 +1260,14 @@ if st.session_state["role"] == "Administrator":
 
   with st.sidebar.expander("🤖 Admin Intelligent Seeder"):
     st.markdown(
-        "Generate accurate multi-disciplinary trial patient records across all"
-        " hospital departments."
+        "Generate balanced, realistic multi-disciplinary patient records"
+        " distributed evenly across all hospital units."
     )
-    batch_size = st.selectbox("Batch Size", [5, 10, 20], index=0)
+    batch_size = st.selectbox(
+        "Records per Department", [5, 10, 20, 50], index=1
+    )
 
-    if st.button("🚀 Generate Trial Batch", type="primary"):
+    if st.button("🚀 Generate Balanced Batch", type="primary"):
       first_names = [
           "JUAN",
           "MARIA",
@@ -1275,11 +1277,38 @@ if st.session_state["role"] == "Administrator":
           "LUIS",
           "CARMEN",
           "ROSA",
+          "BEATRICE",
+          "CARLOS",
+          "DANTE",
+          "ELENA",
+          "FERDINAND",
+          "GRACE",
+          "ISABELA",
+          "JORGE",
       ]
-      middle_names = ["SANTOS", "REYES", "GARCIA", "TORRES", "FLORES", "RAMOS"]
-      last_names = ["CRUZ", "BAUTISTA", "OCAMPO", "MENDOZA", "GONZALES", "AQUINO"]
+      middle_names = [
+          "SANTOS",
+          "REYES",
+          "GARCIA",
+          "TORRES",
+          "FLORES",
+          "RAMOS",
+          "DIZON",
+          "SANTIA",
+      ]
+      last_names = [
+          "CRUZ",
+          "BAUTISTA",
+          "OCAMPO",
+          "MENDOZA",
+          "GONZALES",
+          "AQUINO",
+          "VILLANUEVA",
+          "SANTOS",
+          "DEL ROSARIO",
+      ]
 
-      department_targets = [
+      all_seeded_targets = [
           "Emergency Care Complex (ECC)",
           "Surgical Care Complex (OR Main)",
           "OBGYNE Care Complex (LRDR-OB Surgery)",
@@ -1290,187 +1319,250 @@ if st.session_state["role"] == "Administrator":
           [d for d in sorted_departments if d.startswith("General Nursing Unit")]
       )
 
+      total_tasks = len(all_seeded_targets) * batch_size
       progress_bar = st.sidebar.progress(0)
-      for i in range(batch_size):
-        fn = random.choice(first_names)
-        mn = random.choice(middle_names)
-        ln = random.choice(last_names)
-        sex = random.choice(["MALE", "FEMALE"])
-        age = str(random.randint(1, 80))
-        pay_mode = random.choice(["PHIC", "HMO", "SELF-PAY", "CHARITY"])
-        stat = random.choice(["ACTIVE", "MGH", "DISCHARGED", "CAB"])
-        date_str = ph_now_display.strftime("%m/%d/%Y")
-        target_dept = department_targets[i % len(department_targets)]
+      completed_count = 0
 
-        headers = SHEET_HEADERS.get(target_dept, [])
-        row_data = {h: "" for h in headers}
-
-        row_data["MONTH"] = get_month_str(
-            ph_now_display.date(),
-            (
-                "full_month"
-                if "General Nursing Unit" in target_dept
-                or target_dept == "Emergency Care Complex (ECC)"
-                else "numeric_prefix"
-            ),
-        )
-        row_data["DATE"] = date_str
-        row_data["LAST NAME"] = ln
-        row_data["FIRST NAME"] = fn
-        row_data["MIDDLE NAME"] = mn
-        row_data["SEX"] = sex
-        row_data["MODE OF PAYMENT"] = pay_mode
-        row_data["CASE COUNT"] = "1"
-        row_data["SEEDED_TRIAL"] = "YES"
-
-        if target_dept == "Emergency Care Complex (ECC)":
-          row_data["TIME"] = "10:00 AM"
-          row_data["AGE"] = age
-          row_data["DIAGNOSIS"] = "ACUTE GASTROENTERITIS / DEHYDRATION"
-          row_data["DISEASE CATEGORY"] = "ACUTE GASTROENTERITIS"
-          row_data["ATTENDING PHYSICIAN"] = "DR. E. SANTOS"
-          row_data["ATTENDING SPECIALIZATION"] = "EMERGENCY MEDICINE"
-          row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
-          row_data["CO-MANAGEMENT SPECIALIZATION"] = "N/A"
-          row_data["HOSPITALIZATION MODE"] = "INPATIENT"
-          row_data["CASE TYPE"] = "PRIVATE CASE"
-          row_data["HOSPITAL KIT PACKAGE"] = "YES"
-          row_data["ADMITTED TO"] = "GNU 1C"
-          row_data["PROCEDURES"] = "IV HYDRATION & OXYGEN THERAPY"
-          row_data["DIAGNOSTIC EXAMINATIONS"] = "CBC, ELECTROLYTES"
-          row_data["MEDICATIONS"] = "NACL 0.9% 1L, ONDANSETRON"
-          row_data["SPECIAL ENDORSEMENTS"] = "FOR SERIAL HYDRATION MONITORING"
-
-        elif target_dept == "Surgical Care Complex (OR Main)":
-          row_data["SCHEDULED TIME"] = "09:00 AM"
-          row_data["ACTUAL TIME"] = "09:30 AM"
-          row_data["AGE"] = float(age)
-          row_data["PRE-OP DIAGNOSIS"] = "ACUTE APPENDICITIS"
-          row_data["POST-OP DIAGNOSIS"] = "ACUTE SUPPURATIVE APPENDICITIS"
-          row_data["PROCEDURE"] = "OPEN APPENDECTOMY"
-          row_data["PROCEDURE CATEGORY"] = "APPENDECTOMY"
-          row_data["ATTENDING PHYSICIAN"] = "DR. M. REYES"
-          row_data["ATTENDING SPECIALIZATION"] = "GENERAL SURGERY"
-          row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
-          row_data["CO-MANAGEMENT SPECIALIZATION"] = "N/A"
-          row_data["PRIMARY SURGEON"] = "DR. J. BAUTISTA"
-          row_data["SURGEON SPECIALIZATION"] = "GENERAL SURGERY"
-          row_data["ANESTHESIOLOGIST"] = "DR. A. CRUZ"
-          row_data["ANESTHESIOLOGIST SPECIALIZATION"] = "GENERAL ANAESTHESIOLOGY"
-          row_data["COMPLEXITY TIER"] = "MAJOR"
-          row_data["HOSPITALIZATION MODE"] = "INPATIENT"
-          row_data["HOSPITAL KIT PACKAGE"] = "YES"
-          row_data["PATIENT STATUS"] = stat
-
-        elif target_dept == "OBGYNE Care Complex (LRDR-OB Surgery)":
-          row_data["SEX"] = "FEMALE"
-          row_data["SCHEDULED TIME"] = "08:00 AM"
-          row_data["ACTUAL TIME"] = "08:15 AM"
-          row_data["AGE"] = float(age)
-          row_data["PRE-OP DIAGNOSIS"] = "FULL TERM PREGNANCY IN LABOR"
-          row_data["POST-OP DIAGNOSIS"] = (
-              "TERM PREGNANCY DELIVERED VIA PRIMARY LSCS"
+      for target_dept in all_seeded_targets:
+        for _ in range(batch_size):
+          fn = random.choice(first_names)
+          mn = random.choice(middle_names)
+          ln = random.choice(last_names)
+          sex = (
+              "FEMALE"
+              if target_dept == "OBGYNE Care Complex (LRDR-OB Surgery)"
+              else random.choice(["MALE", "FEMALE"])
           )
-          row_data["PROCEDURE NAME"] = "LOWER SEGMENT CESAREAN SECTION"
-          row_data["SURGICAL PROCEDURE"] = "PRIMARY LSCS DUE TO CPD"
-          row_data["PROCEDURE CATEGORY"] = "CS PRIMARY"
-          row_data["ATTENDING PHYSICIAN"] = "DR. R. OCAMPO"
-          row_data["ATTENDING SPECIALIZATION"] = "OBSTETRICS & GYNAECOLOGY"
-          row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
-          row_data["CO-MANAGEMENT SPECIALIZATION"] = "N/A"
-          row_data["SURGEON / OBGYNE"] = "DR. R. OCAMPO"
-          row_data["SURGEON SPECIALIZATION"] = "OBSTETRICS & GYNAECOLOGY"
-          row_data["ANESTHESIOLOGIST"] = "DR. E. SANTOS"
-          row_data["ANESTHESIOLOGIST SPECIALIZATION"] = "GENERAL ANAESTHESIOLOGY"
-          row_data["COMPLEXITY TIER"] = "MAJOR"
-          row_data["HOSPITALIZATION MODE"] = "INPATIENT"
-          row_data["HOSPITAL KIT PACKAGE"] = "YES"
-          row_data["PATIENT STATUS"] = stat
+          age = str(random.randint(1, 88))
+          pay_mode = random.choice(["PHIC", "HMO", "SELF-PAY", "CHARITY"])
+          stat = random.choice(["ACTIVE", "MGH", "DISCHARGED", "CAB"])
+          date_str = ph_now_display.strftime("%m/%d/%Y")
 
-        elif target_dept == "Endoscopy Unit (ENDO)":
-          row_data["SCHEDULED TIME"] = "10:30 AM"
-          row_data["ACTUAL TIME"] = "11:00 AM"
-          row_data["AGE"] = age
-          row_data["DIAGNOSIS"] = "UPPER GASTROINTESTINAL BLEEDING"
-          row_data["PROCEDURE"] = "DIAGNOSTIC GASTROSCOPY"
-          row_data["PROCEDURE CATEGORY"] = "GASTROSCOPY"
-          row_data["ATTENDING PHYSICIAN"] = "DR. M. REYES"
-          row_data["ATTENDING SPECIALIZATION"] = "GASTROENTEROLOGY"
-          row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
-          row_data["CO-MANAGEMENT SPECIALIZATION"] = "N/A"
-          row_data["SURGEON / PROCEDURALIST"] = "DR. M. REYES"
-          row_data["SURGEON SPECIALIZATION"] = "GASTROENTEROLOGY"
-          row_data["ANESTHESIOLOGIST"] = "N/A"
-          row_data["ANESTHESIOLOGIST SPECIALIZATION"] = "NONE"
-          row_data["PROCEDURE NATURE"] = "DIAGNOSTICS"
-          row_data["HOSPITALIZATION MODE"] = "OUTPATIENT"
-          row_data["HOSPITAL KIT PACKAGE"] = "NO"
-          row_data["PATIENT STATUS"] = stat
+          headers = SHEET_HEADERS.get(target_dept, [])
+          row_data = {h: "" for h in headers}
 
-        elif target_dept == "Hemodialysis Unit (HDU)":
-          row_data["TRUE DATE"] = "0"
-          row_data["AGE"] = age
-          row_data["DIAGNOSIS"] = "CHRONIC KIDNEY DISEASE STAGE 5 ON HD"
-          row_data["ATTENDING PHYSICIAN"] = "DR. A. CRUZ"
-          row_data["ATTENDING SPECIALIZATION"] = "NEPHROLOGY"
-          row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
-          row_data["CO-MANAGEMENT SPECIALIZATION"] = "N/A"
-          row_data["DIALYSIS SHIFT SLOT"] = "1ST SET"
-          row_data["HOSPITALIZATION MODE"] = "OUTPATIENT"
-          row_data["HOSPITAL KIT PACKAGE"] = "YES"
-          row_data["PATIENT STATUS"] = stat
-          row_data["PROCEDURES"] = "HEMODIALYSIS SESSION"
-          row_data["DIAGNOSTIC EXAMINATIONS"] = "CREATININE, BUN, ELECTROLYTES"
-          row_data["MEDICATIONS"] = "HEPARIN, EPOETIN ALFA"
-          row_data["SPECIAL ENDORSEMENTS"] = "AV FISTULA INTACT"
+          row_data["MONTH"] = get_month_str(
+              ph_now_display.date(),
+              (
+                  "full_month"
+                  if "General Nursing Unit" in target_dept
+                  or target_dept == "Emergency Care Complex (ECC)"
+                  else "numeric_prefix"
+              ),
+          )
+          row_data["DATE"] = date_str
+          row_data["LAST NAME"] = ln
+          row_data["FIRST NAME"] = fn
+          row_data["MIDDLE NAME"] = mn
+          row_data["SEX"] = sex
+          row_data["MODE OF PAYMENT"] = pay_mode
+          row_data["CASE COUNT"] = "1"
+          row_data["SEEDED_TRIAL"] = "YES"
 
-        elif target_dept == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
-          row_data["AGE"] = "3 DAYS"
-          row_data["AOG"] = "38 WKS"
-          row_data["DIAGNOSIS"] = "NEONATAL SEPSIS"
-          row_data["DIAGNOSIS CATEGORY"] = "SEPSIS"
-          row_data["ADMITTED FROM"] = "LRDR"
-          row_data["ADMITTED TO"] = "NICU"
-          row_data["TRANSFERRED TO"] = "NONE"
-          row_data["ATTENDING PHYSICIAN"] = "DR. E. SANTOS"
-          row_data["ATTENDING SPECIALIZATION"] = "NEONATOLOGY"
-          row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
-          row_data["CO-MANAGEMENT SPECIALIZATION"] = "N/A"
-          row_data["HOSPITALIZATION MODE"] = "INPATIENT"
-          row_data["HOSPITAL KIT PACKAGE"] = "YES"
-          row_data["PATIENT STATUS"] = stat
-          row_data["PROCEDURES"] = "OXYGEN THERAPY"
-          row_data["DIAGNOSTIC EXAMINATIONS"] = "ABG, CBC, X-RAY"
-          row_data["MEDICATIONS"] = "AMPICILLIN, GENTAMICIN"
-          row_data["SPECIAL ENDORSEMENTS"] = "STABLE ON O2"
+          if target_dept == "Emergency Care Complex (ECC)":
+            row_data["TIME"] = f"{random.randint(1,12):02d}:{random.choice(['00','15','30','45'])} AM"
+            row_data["AGE"] = age
+            row_data["DIAGNOSIS"] = random.choice([
+                "ACUTE GASTROENTERITIS WITH DEHYDRATION",
+                "COMMUNITY ACQUIRED PNEUMONIA CLASS II",
+                "HYPERTENSIVE URGENCY",
+                "ACUTE BRONCHIAL ASTHMA ATTACK",
+            ])
+            row_data["DISEASE CATEGORY"] = random.choice([
+                "ACUTE GASTROENTERITIS",
+                "PNEUMONIA",
+                "HYPERTENSION",
+                "ASTHMA",
+            ])
+            row_data["ATTENDING PHYSICIAN"] = "DR. E. SANTOS"
+            row_data["ATTENDING SPECIALIZATION"] = "EMERGENCY MEDICINE"
+            row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
+            row_data["CO-MANAGEMENT SPECIALIZATION"] = "N/A"
+            row_data["HOSPITALIZATION MODE"] = "INPATIENT"
+            row_data["CASE TYPE"] = "PRIVATE CASE"
+            row_data["HOSPITAL KIT PACKAGE"] = "YES"
+            row_data["ADMITTED TO"] = random.choice(["GNU 1C", "GNU 2A", "PCN"])
+            row_data["PROCEDURES"] = "IV REHYDRATION & NEBULIZATION"
+            row_data["DIAGNOSTIC EXAMINATIONS"] = "CBC, CREATININE, CHEST X-RAY"
+            row_data["MEDICATIONS"] = "NACL 0.9% 1L, SALBUTAMOL RESPULES"
+            row_data["SPECIAL ENDORSEMENTS"] = "VITALS STABLE, FOR WARD TRANSFER"
 
-        else:
-          row_data["TIME"] = "10:00 AM"
-          row_data["ROOM NO"] = f"RM-{random.randint(201, 399)}"
-          row_data["AGE"] = age
-          row_data["DIAGNOSIS"] = "COMMUNITY ACQUIRED PNEUMONIA"
-          row_data["ATTENDING PHYSICIAN"] = "DR. M. REYES"
-          row_data["ATTENDING SPECIALIZATION"] = "INTERNAL MEDICINE"
-          row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
-          row_data["CO-MANAGEMENT SPECIALIZATION"] = "N/A"
-          row_data["HOSPITALIZATION MODE"] = "INPATIENT"
-          row_data["HOSPITAL KIT PACKAGE"] = "YES"
-          row_data["PATIENT STATUS"] = stat
-          row_data["PROCEDURES"] = "OXYGEN INHALATION & IV FLUIDS"
-          row_data["DIAGNOSTIC EXAMINATIONS"] = "CBC, CHEST X-RAY"
-          row_data["MEDICATIONS"] = "CEFTRIAXONE"
-          row_data["SPECIAL ENDORSEMENTS"] = "FOR REPEAT CBC"
+          elif target_dept == "Surgical Care Complex (OR Main)":
+            row_data["SCHEDULED TIME"] = "09:00 AM"
+            row_data["ACTUAL TIME"] = "09:30 AM"
+            row_data["AGE"] = float(age)
+            row_data["PRE-OP DIAGNOSIS"] = random.choice([
+                "ACUTE SUPPURATIVE APPENDICITIS",
+                "SYMPTOMATIC CHOLELITHIASIS",
+                "INGUINAL HERNIA",
+            ])
+            row_data["POST-OP DIAGNOSIS"] = row_data["PRE-OP DIAGNOSIS"]
+            row_data["PROCEDURE"] = random.choice([
+                "LAPAROSCOPIC APPENDECTOMY",
+                "LAPAROSCOPIC CHOLECYSTECTOMY",
+                "HERNIORRHAPHY",
+            ])
+            row_data["PROCEDURE CATEGORY"] = "MAJOR SURGERY"
+            row_data["ATTENDING PHYSICIAN"] = "DR. M. REYES"
+            row_data["ATTENDING SPECIALIZATION"] = "GENERAL SURGERY"
+            row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
+            row_data["CO-MANAGEMENT SPECIALIZATION"] = "N/A"
+            row_data["PRIMARY SURGEON"] = "DR. J. BAUTISTA"
+            row_data["SURGEON SPECIALIZATION"] = "GENERAL SURGERY"
+            row_data["ANESTHESIOLOGIST"] = "DR. A. CRUZ"
+            row_data["ANESTHESIOLOGIST SPECIALIZATION"] = (
+                "GENERAL ANAESTHESIOLOGY"
+            )
+            row_data["COMPLEXITY TIER"] = "MAJOR"
+            row_data["HOSPITALIZATION MODE"] = "INPATIENT"
+            row_data["HOSPITAL KIT PACKAGE"] = "YES"
+            row_data["PATIENT STATUS"] = stat
 
-        append_record_to_google_sheet(target_dept, row_data)
-        progress_bar.progress((i + 1) / batch_size)
-        py_time.sleep(0.05)
+          elif target_dept == "OBGYNE Care Complex (LRDR-OB Surgery)":
+            row_data["SEX"] = "FEMALE"
+            row_data["SCHEDULED TIME"] = "08:00 AM"
+            row_data["ACTUAL TIME"] = "08:15 AM"
+            row_data["AGE"] = float(age)
+            row_data["PRE-OP DIAGNOSIS"] = "FULL TERM PREGNANCY, CEPHALOPELVIC DISPROPORTION"
+            row_data["POST-OP DIAGNOSIS"] = (
+                "TERM PREGNANCY DELIVERED VIA PRIMARY LSCS"
+            )
+            row_data["PROCEDURE NAME"] = "LOWER SEGMENT CESAREAN SECTION"
+            row_data["SURGICAL PROCEDURE"] = "PRIMARY LSCS DUE TO CPD"
+            row_data["PROCEDURE CATEGORY"] = "CS PRIMARY"
+            row_data["ATTENDING PHYSICIAN"] = "DR. R. OCAMPO"
+            row_data["ATTENDING SPECIALIZATION"] = "OBSTETRICS & GYNAECOLOGY"
+            row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
+            row_data["CO-MANAGEMENT SPECIALIZATION"] = "N/A"
+            row_data["SURGEON / OBGYNE"] = "DR. R. OCAMPO"
+            row_data["SURGEON SPECIALIZATION"] = "OBSTETRICS & GYNAECOLOGY"
+            row_data["ANESTHESIOLOGIST"] = "DR. E. SANTOS"
+            row_data["ANESTHESIOLOGIST SPECIALIZATION"] = (
+                "GENERAL ANAESTHESIOLOGY"
+            )
+            row_data["COMPLEXITY TIER"] = "MAJOR"
+            row_data["HOSPITALIZATION MODE"] = "INPATIENT"
+            row_data["HOSPITAL KIT PACKAGE"] = "YES"
+            row_data["PATIENT STATUS"] = stat
+
+          elif target_dept == "Endoscopy Unit (ENDO)":
+            row_data["SCHEDULED TIME"] = "10:30 AM"
+            row_data["ACTUAL TIME"] = "11:00 AM"
+            row_data["AGE"] = age
+            row_data["DIAGNOSIS"] = random.choice([
+                "UPPER GASTROINTESTINAL BLEEDING / PEPTIC ULCER",
+                "CHRONIC GASTRITIS",
+                "COLONIC POLYP",
+            ])
+            row_data["PROCEDURE"] = random.choice([
+                "DIAGNOSTIC GASTROSCOPY",
+                "COLONOSCOPY WITH BIOPSY",
+            ])
+            row_data["PROCEDURE CATEGORY"] = "GASTROSCOPY"
+            row_data["ATTENDING PHYSICIAN"] = "DR. M. REYES"
+            row_data["ATTENDING SPECIALIZATION"] = "GASTROENTEROLOGY"
+            row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
+            row_data["CO-MANAGEMENT SPECIALIZATION"] = "N/A"
+            row_data["SURGEON / PROCEDURALIST"] = "DR. M. REYES"
+            row_data["SURGEON SPECIALIZATION"] = "GASTROENTEROLOGY"
+            row_data["ANESTHESIOLOGIST"] = "N/A"
+            row_data["ANESTHESIOLOGIST SPECIALIZATION"] = "NONE"
+            row_data["PROCEDURE NATURE"] = "DIAGNOSTICS & THERAPEUTICS"
+            row_data["HOSPITALIZATION MODE"] = "OUTPATIENT"
+            row_data["HOSPITAL KIT PACKAGE"] = "NO"
+            row_data["PATIENT STATUS"] = stat
+
+          elif target_dept == "Hemodialysis Unit (HDU)":
+            row_data["TRUE DATE"] = "0"
+            row_data["AGE"] = age
+            row_data["DIAGNOSIS"] = "CHRONIC KIDNEY DISEASE STAGE 5 SECONDARY TO DIABETIC NEPHROPATHY"
+            row_data["ATTENDING PHYSICIAN"] = "DR. A. CRUZ"
+            row_data["ATTENDING SPECIALIZATION"] = "NEPHROLOGY"
+            row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
+            row_data["CO-MANAGEMENT SPECIALIZATION"] = "N/A"
+            row_data["DIALYSIS SHIFT SLOT"] = random.choice([
+                "1ST SET",
+                "2ND SET",
+                "3RD SET",
+            ])
+            row_data["HOSPITALIZATION MODE"] = "OUTPATIENT"
+            row_data["HOSPITAL KIT PACKAGE"] = "YES"
+            row_data["PATIENT STATUS"] = stat
+            row_data["PROCEDURES"] = "BIPOLAR HEMODIALYSIS SESSION"
+            row_data["DIAGNOSTIC EXAMINATIONS"] = (
+                "PRE/POST HD CREATININE, BUN, SERUM ELECTROLYTES"
+            )
+            row_data["MEDICATIONS"] = "INTRADIALYTIC EPOETIN ALFA, HEPARIN"
+            row_data["SPECIAL ENDORSEMENTS"] = "AV FISTULA THRILL INTACT"
+
+          elif target_dept == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
+            row_data["AGE"] = f"{random.randint(1, 28)} DAYS"
+            row_data["AOG"] = "37 WKS"
+            row_data["DIAGNOSIS"] = "NEONATAL SEPSIS / HYPERBILIRUBINEMIA"
+            row_data["DIAGNOSIS CATEGORY"] = "NEONATAL INFECTION"
+            row_data["ADMITTED FROM"] = "LRDR"
+            row_data["ADMITTED TO"] = random.choice([
+                "NICU",
+                "PICU",
+                "NSU",
+                "PCN",
+            ])
+            row_data["TRANSFERRED TO"] = "NONE"
+            row_data["ATTENDING PHYSICIAN"] = "DR. E. SANTOS"
+            row_data["ATTENDING SPECIALIZATION"] = "NEONATOLOGY"
+            row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
+            row_data["CO-MANAGEMENT SPECIALIZATION"] = "N/A"
+            row_data["HOSPITALIZATION MODE"] = "INPATIENT"
+            row_data["HOSPITAL KIT PACKAGE"] = "YES"
+            row_data["PATIENT STATUS"] = stat
+            row_data["PROCEDURES"] = "PHOTOTHERAPY & OXYGEN HOOD THERAPY"
+            row_data["DIAGNOSTIC EXAMINATIONS"] = (
+                "TOTAL BILIRUBIN, CBC, BLOOD CULTURE"
+            )
+            row_data["MEDICATIONS"] = "AMPICILLIN, GENTAMICIN"
+            row_data["SPECIAL ENDORSEMENTS"] = "ACTIVE PHOTOTHERAPY, FEEDING WELL"
+
+          else:  # General Nursing Units
+            row_data["TIME"] = "10:00 AM"
+            row_data["ROOM NO"] = f"RM-{random.randint(201, 450)}"
+            row_data["AGE"] = age
+            row_data["DIAGNOSIS"] = random.choice([
+                "COMMUNITY ACQUIRED PNEUMONIA HIGH RISK",
+                "ACUTE GASTROENTERITIS WITH SEVERE DEHYDRATION",
+                "TYPE 2 DIABETES MELLITUS WITH DIABETIC FOOT",
+                "URINARY TRACT INFECTION UROSEPSIS",
+            ])
+            row_data["ATTENDING PHYSICIAN"] = "DR. M. REYES"
+            row_data["ATTENDING SPECIALIZATION"] = "INTERNAL MEDICINE"
+            row_data["CO-MANAGEMENT PHYSICIAN"] = "DR. A. CRUZ"
+            row_data["CO-MANAGEMENT SPECIALIZATION"] = "ENDOCRINOLOGY"
+            row_data["HOSPITALIZATION MODE"] = "INPATIENT"
+            row_data["HOSPITAL KIT PACKAGE"] = "YES"
+            row_data["PATIENT STATUS"] = stat
+            row_data["PROCEDURES"] = "CONTINUOUS WOUND DRESSING & IV INFUSION"
+            row_data["DIAGNOSTIC EXAMINATIONS"] = (
+                "RANDOM BLOOD SUGAR, CBC, URINALYSIS"
+            )
+            row_data["MEDICATIONS"] = "CEFTRIAXONE, REGULAR INSULIN"
+            row_data["SPECIAL ENDORSEMENTS"] = (
+                "FOR GLUCEMIC MONITORING Q6H"
+            )
+
+          append_record_to_google_sheet(target_dept, row_data)
+          completed_count += 1
+          progress_bar.progress(completed_count / total_tasks)
+          py_time.sleep(0.01)
 
       st.cache_data.clear()
       st.session_state["df_cache"] = {}
-      log_audit_event("SEED", "ALL", f"Generated batch size of {batch_size}")
+      log_audit_event(
+          "SEED",
+          "ALL",
+          f"Generated balanced batch of {batch_size} records per department",
+      )
       st.sidebar.success(
-          f"Successfully generated {batch_size} multi-disciplinary trial"
-          " records!"
+          "Successfully generated balanced multi-disciplinary patient records"
+          " across all units!"
       )
       st.rerun()
 
