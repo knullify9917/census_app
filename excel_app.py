@@ -229,7 +229,7 @@ sorted_departments = sorted([
     "General Nursing Unit (GNU 4A)",
 ])
 
-# Customization State Initialization
+# Comprehensive Customization State Initialization
 if "custom_titles" not in st.session_state:
   st.session_state["custom_titles"] = {
       "main_title": "MOTHER TERESA OF CALCUTTA MEDICAL CENTER",
@@ -239,6 +239,12 @@ if "custom_titles" not in st.session_state:
 
 if "custom_dept_names" not in st.session_state:
   st.session_state["custom_dept_names"] = {d: d for d in sorted_departments}
+
+if "custom_dept_headers" not in st.session_state:
+  st.session_state["custom_dept_headers"] = {
+      d: f"{d} PATIENT REGISTRATION & ADMISSION CENSUS"
+      for d in sorted_departments
+  }
 
 for form_key in [
     "ecc",
@@ -1253,6 +1259,10 @@ st.sidebar.markdown("---")
 # ---------------------------------------------------------
 # APP CUSTOMIZATION & LABEL RENAMING SIDEBAR EXPANDER
 # ---------------------------------------------------------
+custom_dept_map = st.session_state["custom_dept_names"]
+custom_dept_head_map = st.session_state["custom_dept_headers"]
+reverse_custom_map = {v: k for k, v in custom_dept_map.items()}
+
 with st.sidebar.expander("🎨 App Customization & Renaming"):
   st.markdown("Customize system titles, headers, and department names.")
   custom_main_title = st.text_input(
@@ -1265,18 +1275,31 @@ with st.sidebar.expander("🎨 App Customization & Renaming"):
   st.markdown("---")
   st.markdown("**Department / Table Name Renaming:**")
   for dept in sorted_departments:
-    current_custom = st.session_state["custom_dept_names"].get(dept, dept)
-    new_name = st.text_input(f"Rename: {dept}", value=current_custom, key=f"rename_{dept}")
-    st.session_state["custom_dept_names"][dept] = new_name.strip().upper()
+    current_custom = custom_dept_map.get(dept, dept)
+    new_name = st.text_input(
+        f"Rename Table: {dept}", value=current_custom, key=f"rename_{dept}"
+    )
+    custom_dept_map[dept] = new_name.strip().upper()
 
-  if st.button("Save Customizations"):
+  st.markdown("---")
+  st.markdown("**Department Form / Header Title Renaming:**")
+  for dept in sorted_departments:
+    current_head = custom_dept_head_map.get(
+        dept, f"{dept} PATIENT REGISTRATION & UPDATE"
+    )
+    new_head = st.text_input(
+        f"Form Title: {dept}", value=current_head, key=f"head_{dept}"
+    )
+    custom_dept_head_map[dept] = new_head.strip().upper()
+
+  if st.button("Save All Customizations"):
     st.session_state["custom_titles"]["main_title"] = (
         custom_main_title.strip().upper()
     )
     st.session_state["custom_titles"]["system_name"] = (
         custom_sys_name.strip().upper()
     )
-    st.success("Custom titles and department headers updated!")
+    st.success("All table names, headers, and titles updated successfully!")
     st.rerun()
 st.sidebar.markdown("---")
 
@@ -1657,10 +1680,6 @@ all_department_modules = [
     "Hospital Information System",
     "Pareto Tally Sheet",
 ] + sorted_departments
-
-# Remap modules based on custom department names
-custom_dept_map = st.session_state["custom_dept_names"]
-reverse_custom_map = {v: k for k, v in custom_dept_map.items()}
 
 if allowed_modules == "All":
   display_modules = [
@@ -2336,9 +2355,10 @@ elif selected_sheet == "Hospital Information System":
 elif selected_sheet.startswith("General Nursing Unit (GNU"):
   gnu_title = selected_sheet
   display_gnu_title = custom_dept_map.get(gnu_title, gnu_title)
-  st.header(
-      f"🛏️ {display_gnu_title} Patient Registration & Admitted Patient Update"
+  display_form_header = custom_dept_head_map.get(
+      gnu_title, f"{gnu_title} PATIENT REGISTRATION & ADMISSION CENSUS"
   )
+  st.header(f"🛏️ {display_form_header}")
   ph_now = get_ph_time()
   form_key_slug = (
       gnu_title.replace("General Nursing Unit (", "")
@@ -2654,10 +2674,8 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
 # ---------------------------------------------------------
 elif selected_sheet == "Emergency Care Complex (ECC)":
   display_ecc_title = custom_dept_map.get("Emergency Care Complex (ECC)", "Emergency Care Complex (ECC)")
-  st.header(
-      f"🚑 {display_ecc_title} Patient Registration & Admitted Patient"
-      " Update"
-  )
+  display_ecc_header = custom_dept_head_map.get("Emergency Care Complex (ECC)", "Emergency Care Complex (ECC) Patient Registration & Admitted Patient Update")
+  st.header(f"🚑 {display_ecc_header}")
   ph_now = get_ph_time()
 
   tab_reg, tab_update = st.tabs(
@@ -2959,7 +2977,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
                   if "SPECIAL ENDORSEMENTS" in ecc_df_up.columns
                   else ""
               )
-              st_end = f"{now_ts} {up_ends_ecc}"
+              st_end = f"{now_ts} {up_ends}"
               ecc_df_up.loc[matched_ecc_idx, "SPECIAL ENDORSEMENTS"] = (
                   f"{ex_e}; {st_end}".strip("; ")
               )
@@ -2981,7 +2999,8 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 # ---------------------------------------------------------
 elif selected_sheet == "Endoscopy Unit (ENDO)":
   display_endo_title = custom_dept_map.get("Endoscopy Unit (ENDO)", "Endoscopy Unit (ENDO)")
-  st.header(f"🔬 {display_endo_title} Patient Registration")
+  display_endo_header = custom_dept_head_map.get("Endoscopy Unit (ENDO)", "Endoscopy Unit (ENDO) Patient Registration")
+  st.header(f"🔬 {display_endo_header}")
   ph_now = get_ph_time()
 
   with st.form("endo_form", clear_on_submit=True):
@@ -3191,9 +3210,10 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 # ---------------------------------------------------------
 elif selected_sheet == "Hemodialysis Unit (HDU)":
   display_hdu_title = custom_dept_map.get("Hemodialysis Unit (HDU)", "Hemodialysis Unit (HDU)")
+  display_hdu_header = custom_dept_head_map.get("Hemodialysis Unit (HDU)", "Hemodialysis Unit Patient Registration & Update")
   hdu_icon_html = get_custom_icon_html("medical_icon.png", width=38)
   st.markdown(
-      f"<h2>{hdu_icon_html} {display_hdu_title} Patient Registration & Update</h2>",
+      f"<h2>{hdu_icon_html} {display_hdu_header}</h2>",
       unsafe_allow_html=True,
   )
   ph_now = get_ph_time()
@@ -3496,9 +3516,10 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
 # ---------------------------------------------------------
 elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
   display_ob_title = custom_dept_map.get("OBGYNE Care Complex (LRDR-OB Surgery)", "OBGYNE Care Complex (LRDR-OB Surgery)")
+  display_ob_header = custom_dept_head_map.get("OBGYNE Care Complex (LRDR-OB Surgery)", "OBGYNE Care Complex Patient Registration")
   ob_icon_html = get_custom_icon_html("pregnant_icon.png", width=38)
   st.markdown(
-      f"<h2>{ob_icon_html} {display_ob_title} Patient Registration</h2>",
+      f"<h2>{ob_icon_html} {display_ob_header}</h2>",
       unsafe_allow_html=True,
   )
   ph_now = get_ph_time()
@@ -3717,9 +3738,10 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 # ---------------------------------------------------------
 elif selected_sheet == "Surgical Care Complex (OR Main)":
   display_scc_title = custom_dept_map.get("Surgical Care Complex (OR Main)", "Surgical Care Complex (OR Main)")
+  display_scc_header = custom_dept_head_map.get("Surgical Care Complex (OR Main)", "Surgical Care Complex Patient Registration")
   surgery_icon_html = get_custom_icon_html("surgery_icon.png", width=38)
   st.markdown(
-      f"<h2>{surgery_icon_html} {display_scc_title} Patient Registration</h2>",
+      f"<h2>{surgery_icon_html} {display_scc_header}</h2>",
       unsafe_allow_html=True,
   )
   ph_now = get_ph_time()
@@ -3958,9 +3980,10 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 # ---------------------------------------------------------
 elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
   display_scu_title = custom_dept_map.get("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)")
+  display_scu_header = custom_dept_head_map.get("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", "Special Care Unit Patient Registration")
   baby_icon_html = get_custom_icon_html("baby_feet_icon.png", width=38)
   st.markdown(
-      f"<h2>{baby_icon_html} {display_scu_title} Patient Registration</h2>",
+      f"<h2>{baby_icon_html} {display_scu_header}</h2>",
       unsafe_allow_html=True,
   )
   ph_now = get_ph_time()
