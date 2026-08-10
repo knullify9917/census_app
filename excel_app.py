@@ -1937,224 +1937,181 @@ st.markdown("---")
 
 def render_inpatient_order_updater_form(dept_name_label):
   st.markdown(
-      f"##### 🔄 Update Inpatient Orders from `{dept_name_label}` to GNU / SCU"
+      f"##### 🔄 Update Inpatient Orders in `{dept_name_label}`"
   )
 
-  show_all_toggle = st.checkbox(
-      f"Show all active inpatients without smart pre-filtering ({dept_name_label})",
-      value=False,
-      key=f"toggle_all_{dept_name_label}",
+  # Scope this department strictly to its own records (re-organized isolation logic)
+  unit_full_df = read_google_sheet(dept_name_label if dept_name_label in SHEET_HEADERS else selected_sheet)
+  if unit_full_df.empty or "LAST NAME" not in unit_full_df.columns:
+    st.info("No active admitted patient records found in this unit.")
+    return
+
+  active_sub = unit_full_df[
+      ~unit_full_df.get("PATIENT STATUS", pd.Series(["ACTIVE"] * len(unit_full_df)))
+      .astype(str)
+      .str.upper()
+      .isin(["DISCHARGED"])
+  ]
+
+  if active_sub.empty:
+    st.info("No active admitted inpatients in this department.")
+    return
+
+  active_sub["DISPLAY_LABEL"] = (
+      active_sub["LAST NAME"].astype(str).str.strip()
+      + ", "
+      + active_sub["FIRST NAME"].astype(str).str.strip()
+      + " (Rm: "
+      + active_sub.get("ROOM NO", "N/A").astype(str)
+      + ")"
   )
 
-  gnu_sheets = sorted([
-      d
-      for d in sorted_departments
-      if d.startswith("General Nursing Unit (GNU")
-  ]) + ["Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"]
+  selected_inpatient_label = st.selectbox(
+      "Select Active Patient in Department",
+      sorted(active_sub["DISPLAY_LABEL"].tolist()),
+      key=f"isolated_inpatient_sel_{dept_name_label}",
+  )
 
-  all_inpatients = []
-  sheet_data_cache = read_multiple_sheets_parallel(gnu_sheets)
-  for gnu in gnu_sheets:
-    g_df = sheet_data_cache.get(gnu, pd.DataFrame())
-    if not g_df.empty and "LAST NAME" in g_df.columns:
-      active_sub = g_df[
-          ~g_df.get("PATIENT STATUS", pd.Series(["ACTIVE"] * len(g_df)))
-          .astype(str)
-          .str.upper()
-          .isin(["DISCHARGED"])
-      ]
+  matched_inpatient_row = active_sub[
+      active_sub["DISPLAY_LABEL"] == selected_inpatient_label
+  ].iloc[0]
 
-      if not show_all_toggle and not active_sub.empty:
-        if dept_name_label == "SCC":
-          active_sub = active_sub[
-              active_sub["DIAGNOSIS"].astype(str).str.contains(
-                  "SURGERY|APPENDICITIS|HERNIA|STONE|TUMOR|OR|COMPLEX",
-                  case=False,
-                  na=False,
-              )
-              | active_sub["SPECIAL ENDORSEMENTS"].astype(str).str.contains(
-                  "OR|SURGERY|FOR OR", case=False, na=False
-              )
-          ]
-        elif dept_name_label == "ENDO":
-          active_sub = active_sub[
-              active_sub["DIAGNOSIS"].astype(str).str.contains(
-                  "BLEEDING|GASTRO|ULCER|POLYP|SCOPE|LIVER|GI",
-                  case=False,
-                  na=False,
-              )
-              | active_sub["PROCEDURES"].astype(str).str.contains(
-                  "SCOPE|GASTRO|COLONO", case=False, na=False
-              )
-          ]
-        elif dept_name_label == "OBGYNE":
-          active_sub = active_sub[
-              active_sub["SEX"].astype(str).str.upper() == "FEMALE"
-          ]
+  matched_idx = unit_full_df[
+      (unit_full_df["LAST NAME"].astype(str).str.strip().str.upper() == str(matched_inpatient_row["LAST NAME"]).strip().upper())
+      & (unit_full_df["FIRST NAME"].astype(str).str.strip().str.upper() == str(matched_inpatient_row["FIRST NAME"]).strip().upper())
+  ].index
 
-      if not active_sub.empty:
-        active_sub["TARGET_SHEET"] = gnu
-        active_sub["DISPLAY_LABEL"] = (
-            "["
-            + gnu.split("(")[-1].replace(")", "")
-            + "] "
-            + active_sub["LAST NAME"].astype(str).str.strip()
-            + ", "
-            + active_sub["FIRST NAME"].astype(str).str.strip()
-        )
-        all_inpatients.append(active_sub)
-
-  if all_inpatients:
-    master_inpatient_df = pd.concat(all_inpatients, ignore_index=True)
-    if master_inpatient_df.empty:
-      st.info(
-          f"No matching pre-filtered inpatients found for `{dept_name_label}`."
-          " Check the toggle above to view all active inpatients."
+  st.markdown("##### 5. Diagnostics Procedures and Treatment Plans")
+  search_rvs_cross = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key=f"search_rvs_cross_{dept_name_label}").strip().upper()
+  matched_rvs_cross = []
+  added_cross_procs = ""
+  if search_rvs_cross:
+    for cat_k, p_list in ANNEX_B_CATEGORIZED_PROCEDURES.items():
+      for p_item in p_list:
+        if search_rvs_cross in p_item:
+          matched_rvs_cross.append(f"[{cat_k}] {p_item}")
+    if matched_rvs_cross:
+      sel_m = st.selectbox("Matching RVS Codes Found", ["Select Match"] + matched_rvs_cross, key=f"sel_m_cross_{dept_name_label}")
+      if sel_m and sel_m != "Select Match":
+        added_cross_procs = sel_m
+    else:
+      added_cross_procs = f"{search_rvs_cross} - CUSTOM RVS ENTRY"
+  else:
+    chosen_cat_cross = st.selectbox(
+        "Select Anatomical / Surgical Category",
+        ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+        key=f"cross_cat_{dept_name_label}"
+    )
+    if chosen_cat_cross and chosen_cat_cross != "Select Category":
+      sub_c = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_cross])
+      added_cross_procs = st.selectbox(
+          f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_cross}`",
+          ["Select Procedure"] + sub_c,
+          key=f"cross_proc_{dept_name_label}_{chosen_cat_cross}"
       )
-      return
 
-    selected_inpatient_label = st.selectbox(
-        "Select Active Inpatient from GNU / SCU",
-        sorted(master_inpatient_df["DISPLAY_LABEL"].tolist()),
-        key=f"cross_inpatient_sel_{dept_name_label}",
+  with st.form(f"isolated_dept_form_{dept_name_label}"):
+    st.markdown(
+        f"**Selected Patient:** `{selected_inpatient_label}`"
     )
 
-    matched_inpatient_row = master_inpatient_df[
-        master_inpatient_df["DISPLAY_LABEL"] == selected_inpatient_label
-    ].iloc[0]
-    target_sheet = matched_inpatient_row["TARGET_SHEET"]
+    up_status = st.selectbox(
+        "Update Patient Status",
+        ["ACTIVE", "CAB", "DISCHARGED", "MGH"],
+        index=0,
+        key=f"iso_st_{dept_name_label}",
+    )
+    add_meds = st.text_area(
+        "Add Medications / Orders",
+        value="",
+        key=f"iso_med_{dept_name_label}",
+    ).strip().upper()
+    add_ends = st.text_area(
+        "Special Endorsements / Notes",
+        value="",
+        key=f"iso_end_{dept_name_label}",
+    ).strip().upper()
 
-    unit_full_df = read_google_sheet(target_sheet)
-    matched_idx = unit_full_df[
-        (unit_full_df["LAST NAME"].astype(str).str.strip().str.upper() == str(matched_inpatient_row["LAST NAME"]).strip().upper())
-        & (unit_full_df["FIRST NAME"].astype(str).str.strip().str.upper() == str(matched_inpatient_row["FIRST NAME"]).strip().upper())
-    ].index
+    st.markdown("---")
+    confirm_password = st.text_input(
+        "🔒 Re-enter Your Account Password to Authorize Update",
+        type="password",
+        key=f"iso_pwd_{dept_name_label}",
+    )
 
-    st.markdown("##### 5. Diagnostics Procedures and Treatment Plans")
-    search_rvs_cross = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key=f"search_rvs_cross_{dept_name_label}").strip().upper()
-    matched_rvs_cross = []
-    added_cross_procs = ""
-    if search_rvs_cross:
-      for cat_k, p_list in ANNEX_B_CATEGORIZED_PROCEDURES.items():
-        for p_item in p_list:
-          if search_rvs_cross in p_item:
-            matched_rvs_cross.append(f"[{cat_k}] {p_item}")
-      if matched_rvs_cross:
-        sel_m = st.selectbox("Matching RVS Codes Found", ["Select Match"] + matched_rvs_cross, key=f"sel_m_cross_{dept_name_label}")
-        if sel_m and sel_m != "Select Match":
-          added_cross_procs = sel_m
-      else:
-        added_cross_procs = f"{search_rvs_cross} - CUSTOM RVS ENTRY"
-    else:
-      chosen_cat_cross = st.selectbox(
-          "Select Anatomical / Surgical Category",
-          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
-          key=f"cross_cat_{dept_name_label}"
-      )
-      if chosen_cat_cross and chosen_cat_cross != "Select Category":
-        sub_c = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_cross])
-        added_cross_procs = st.selectbox(
-            f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_cross}`",
-            ["Select Procedure"] + sub_c,
-            key=f"cross_proc_{dept_name_label}_{chosen_cat_cross}"
+    submit_cross = st.form_submit_button(
+        "💾 Push Order Update & Status"
+    )
+    if submit_cross:
+      current_username = st.session_state.get("username", "").strip().lower()
+      user_record = USER_DATABASE.get(current_username, {})
+      stored_hash = user_record.get("password", "")
+
+      if not confirm_password or hash_password(confirm_password) != stored_hash:
+        st.error(
+            "🚨 Authorization Error: Incorrect account password. Update"
+            " aborted."
+        )
+        st.stop()
+
+      if len(matched_idx) > 0:
+        idx = matched_idx[0]
+        now_ts = get_ph_time().strftime(
+            f"[%m/%d/%Y %I:%M %p - {st.session_state['name']}]"
         )
 
-    with st.form(f"cross_dept_form_{dept_name_label}"):
-      st.markdown(
-          f"**Selected Inpatient:** `{selected_inpatient_label}` | **Unit:**"
-          f" `{target_sheet}`"
-      )
+        if up_status:
+          unit_full_df.loc[idx, "PATIENT STATUS"] = up_status
 
-      add_meds = st.text_area(
-          "Add Medications / Orders",
-          value="",
-          key=f"c_med_{dept_name_label}",
-      ).strip().upper()
-      add_ends = st.text_area(
-          "Special Endorsements / Notes",
-          value="",
-          key=f"c_end_{dept_name_label}",
-      ).strip().upper()
-
-      st.markdown("---")
-      confirm_password = st.text_input(
-          "🔒 Re-enter Your Account Password to Authorize Update",
-          type="password",
-          key=f"reauth_pwd_{dept_name_label}",
-      )
-
-      submit_cross = st.form_submit_button(
-          "💾 Push Order Update to Inpatient Record"
-      )
-      if submit_cross:
-        current_username = st.session_state.get("username", "").strip().lower()
-        user_record = USER_DATABASE.get(current_username, {})
-        stored_hash = user_record.get("password", "")
-
-        if not confirm_password or hash_password(confirm_password) != stored_hash:
-          st.error(
-              "🚨 Authorization Error: Incorrect account password. Update"
-              " aborted."
+        if added_cross_procs and added_cross_procs != "Select Procedure":
+          ex_p = (
+              str(unit_full_df.loc[idx, "PROCEDURES"])
+              if "PROCEDURES" in unit_full_df.columns
+              else ""
           )
-          st.stop()
-
-        if len(matched_idx) > 0:
-          idx = matched_idx[0]
-          now_ts = get_ph_time().strftime(
-              f"[%m/%d/%Y %I:%M %p - {st.session_state['name']}]"
+          bullet_item = f"• {now_ts} {added_cross_procs}"
+          unit_full_df.loc[idx, "PROCEDURES"] = (
+              f"{ex_p}\n{bullet_item}".strip()
+              if ex_p and ex_p != "NAN"
+              else bullet_item
           )
 
-          if added_cross_procs and added_cross_procs != "Select Procedure":
-            ex_p = (
-                str(unit_full_df.loc[idx, "PROCEDURES"])
-                if "PROCEDURES" in unit_full_df.columns
-                else ""
-            )
-            bullet_item = f"• {now_ts} {added_cross_procs}"
-            unit_full_df.loc[idx, "PROCEDURES"] = (
-                f"{ex_p}\n{bullet_item}".strip()
-                if ex_p and ex_p != "NAN"
-                else bullet_item
-            )
+        if add_meds:
+          ex_m = (
+              str(unit_full_df.loc[idx, "MEDICATIONS"])
+              if "MEDICATIONS" in unit_full_df.columns
+              else ""
+          )
+          bullet_item = f"• {now_ts} {add_meds}"
+          unit_full_df.loc[idx, "MEDICATIONS"] = (
+              f"{ex_m}\n{bullet_item}".strip()
+              if ex_m and ex_m != "NAN"
+              else bullet_item
+          )
 
-          if add_meds:
-            ex_m = (
-                str(unit_full_df.loc[idx, "MEDICATIONS"])
-                if "MEDICATIONS" in unit_full_df.columns
-                else ""
-            )
-            bullet_item = f"• {now_ts} {add_meds}"
-            unit_full_df.loc[idx, "MEDICATIONS"] = (
-                f"{ex_m}\n{bullet_item}".strip()
-                if ex_m and ex_m != "NAN"
-                else bullet_item
-            )
+        if add_ends:
+          ex_e = (
+              str(unit_full_df.loc[idx, "SPECIAL ENDORSEMENTS"])
+              if "SPECIAL ENDORSEMENTS" in unit_full_df.columns
+              else ""
+          )
+          bullet_item = f"• {now_ts} {add_ends}"
+          unit_full_df.loc[idx, "SPECIAL ENDORSEMENTS"] = (
+              f"{ex_e}\n{bullet_item}".strip()
+              if ex_e and ex_e != "NAN"
+              else bullet_item
+          )
 
-          if add_ends:
-            ex_e = (
-                str(unit_full_df.loc[idx, "SPECIAL ENDORSEMENTS"])
-                if "SPECIAL ENDORSEMENTS" in unit_full_df.columns
-                else ""
-            )
-            bullet_item = f"• {now_ts} {add_ends}"
-            unit_full_df.loc[idx, "SPECIAL ENDORSEMENTS"] = (
-                f"{ex_e}\n{bullet_item}".strip()
-                if ex_e and ex_e != "NAN"
-                else bullet_item
-            )
-
-          if update_google_sheet_from_df(target_sheet, unit_full_df):
-            st.cache_data.clear()
-            st.session_state["df_cache"] = {}
-            st.success(
-                f"Successfully updated inpatient record in `{target_sheet}` with"
-                f" timestamped bullet entries from `{dept_name_label}`!"
-            )
-            st.rerun()
-        else:
-          st.error("Could not locate the specific inpatient record index in target sheet.")
-  else:
-    st.info("No active inpatients currently admitted in GNU or Special Care Complex.")
+        target_sheet_name = dept_name_label if dept_name_label in SHEET_HEADERS else selected_sheet
+        if update_google_sheet_from_df(target_sheet_name, unit_full_df):
+          st.cache_data.clear()
+          st.session_state["df_cache"] = {}
+          st.success(
+              f"Successfully updated patient record in `{target_sheet_name}`!"
+          )
+          st.rerun()
+      else:
+        st.error("Could not locate the specific patient record index.")
 
 
 def render_department_live_roster(dept_sheet_name):
@@ -2166,7 +2123,7 @@ def render_department_live_roster(dept_sheet_name):
         "Include discharged patients in unit view", value=False, key=f"d_disc_{dept_sheet_name}"
     )
     
-    # Strictly filter records to show only patients assigned to this exact unit/department per transfer rule
+    # Strictly isolate: Only display patients belonging exclusively to this unit
     if "ADMITTED TO" in clean_d.columns and dept_sheet_name.startswith("Special Care Complex"):
       unit_code_sub = dept_sheet_name.split("(")[-1].replace(")", "").strip()
       clean_d = clean_d[clean_d["ADMITTED TO"].astype(str).str.strip().str.upper().str.contains(unit_code_sub, case=False, na=False)]
@@ -3134,82 +3091,85 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
             "SEEDED_TRIAL": "NO",
         }
 
-        if append_record_to_google_sheet(
-            "Emergency Care Complex (ECC)", row_data
-        ):
-          target_unit_str = str(admitted_to).strip().upper()
-          target_sheet_to_sync = None
-          
-          if target_unit_str.startswith("GNU "):
-            target_sheet_to_sync = f"General Nursing Unit ({target_unit_str})"
-          elif target_unit_str in ["NICU", "PICU", "NSU", "PCN", "OUTBORN"]:
-            target_sheet_to_sync = "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
+        target_unit_str = str(admitted_to).strip().upper()
+        target_sheet_to_sync = None
+        
+        if target_unit_str.startswith("GNU "):
+          target_sheet_to_sync = f"General Nursing Unit ({target_unit_str})"
+        elif target_unit_str in ["NICU", "PICU", "NSU", "PCN", "OUTBORN"]:
+          target_sheet_to_sync = "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
 
-          if hosp_mode.upper() == "INPATIENT" and target_sheet_to_sync and target_sheet_to_sync in SHEET_HEADERS:
-            if target_sheet_to_sync.startswith("General Nursing Unit"):
-              target_row_data = {
-                  "MONTH": get_month_str(entry_date, "full_month"),
-                  "DATE": curr_date_str,
-                  "TIME": entry_time_str,
-                  "ROOM NO": room_no,
-                  "LAST NAME": sanitize_medical_text(last_name),
-                  "FIRST NAME": sanitize_medical_text(first_name),
-                  "MIDDLE NAME": sanitize_medical_text(middle_name),
-                  "SEX": sex,
-                  "AGE": str(age),
-                  "DIAGNOSIS": sanitize_medical_text(diagnosis_text),
-                  "ATTENDING PHYSICIAN": final_attending,
-                  "ATTENDING SPECIALIZATION": attending_spec,
-                  "CO-MANAGEMENT PHYSICIAN": cm_names_str,
-                  "CO-MANAGEMENT SPECIALIZATION": cm_specs_str,
-                  "HOSPITALIZATION MODE": hosp_mode,
-                  "MODE OF PAYMENT": payment_selected,
-                  "PATIENT STATUS": "ACTIVE",
-                  "PROCEDURES": sanitize_medical_text(ecc_procedures),
-                  "DIAGNOSTIC EXAMINATIONS": sanitize_medical_text(ecc_diagnostic_exams),
-                  "MEDICATIONS": sanitize_medical_text(ecc_medications),
-                  "SPECIAL ENDORSEMENTS": sanitize_medical_text(ecc_special_endorsements),
-                  "CASE COUNT": 1,
-                  "SEEDED_TRIAL": "NO",
-              }
-            else:
-              target_row_data = {
-                  "MONTH": get_month_str(entry_date, "numeric_prefix"),
-                  "DATE": curr_date_str,
-                  "LAST NAME": sanitize_medical_text(last_name),
-                  "FIRST NAME": sanitize_medical_text(first_name),
-                  "MIDDLE NAME": sanitize_medical_text(middle_name),
-                  "SEX": sex,
-                  "AOG": "N/A",
-                  "AGE": str(age),
-                  "DIAGNOSIS": sanitize_medical_text(diagnosis_text),
-                  "DIAGNOSIS CATEGORY": "ECC TRANSFER",
-                  "ADMITTED FROM": "ECC",
-                  "ADMITTED TO": target_unit_str,
-                  "TRANSFERRED TO": "NONE",
-                  "ATTENDING PHYSICIAN": final_attending,
-                  "ATTENDING SPECIALIZATION": attending_spec,
-                  "CO-MANAGEMENT PHYSICIAN": cm_names_str,
-                  "CO-MANAGEMENT SPECIALIZATION": cm_specs_str,
-                  "HOSPITALIZATION MODE": hosp_mode,
-                  "MODE OF PAYMENT": payment_selected,
-                  "PATIENT STATUS": "ACTIVE",
-                  "PROCEDURES": sanitize_medical_text(ecc_procedures),
-                  "DIAGNOSTIC EXAMINATIONS": sanitize_medical_text(ecc_diagnostic_exams),
-                  "MEDICATIONS": sanitize_medical_text(ecc_medications),
-                  "SPECIAL ENDORSEMENTS": sanitize_medical_text(ecc_special_endorsements),
-                  "CASE COUNT": 1,
-                  "SEEDED_TRIAL": "NO",
-              }
-            
-            append_record_to_google_sheet(target_sheet_to_sync, target_row_data)
-            st.success(f"Saved instantly! Cross-registered into `{target_sheet_to_sync}`.")
+        # RE-ORGANIZED ISOLATION LOGIC:
+        # If ECC tags a specific receiving department/unit, the patient is created EXCLUSIVELY in that receiving unit's database/sheet.
+        # They are NOT retained in the ECC roster (hence inaccessible to ECC post-submit), 
+        # and other departments cannot access them.
+        destination_sheet = target_sheet_to_sync if (hosp_mode.upper() == "INPATIENT" and target_sheet_to_sync and target_sheet_to_sync in SHEET_HEADERS) else "Emergency Care Complex (ECC)"
+
+        if destination_sheet != "Emergency Care Complex (ECC)":
+          if destination_sheet.startswith("General Nursing Unit"):
+            target_row_data = {
+                "MONTH": get_month_str(entry_date, "full_month"),
+                "DATE": curr_date_str,
+                "TIME": entry_time_str,
+                "ROOM NO": room_no,
+                "LAST NAME": sanitize_medical_text(last_name),
+                "FIRST NAME": sanitize_medical_text(first_name),
+                "MIDDLE NAME": sanitize_medical_text(middle_name),
+                "SEX": sex,
+                "AGE": str(age),
+                "DIAGNOSIS": sanitize_medical_text(diagnosis_text),
+                "ATTENDING PHYSICIAN": final_attending,
+                "ATTENDING SPECIALIZATION": attending_spec,
+                "CO-MANAGEMENT PHYSICIAN": cm_names_str,
+                "CO-MANAGEMENT SPECIALIZATION": cm_specs_str,
+                "HOSPITALIZATION MODE": hosp_mode,
+                "MODE OF PAYMENT": payment_selected,
+                "PATIENT STATUS": "ACTIVE",
+                "PROCEDURES": sanitize_medical_text(ecc_procedures),
+                "DIAGNOSTIC EXAMINATIONS": sanitize_medical_text(ecc_diagnostic_exams),
+                "MEDICATIONS": sanitize_medical_text(ecc_medications),
+                "SPECIAL ENDORSEMENTS": sanitize_medical_text(ecc_special_endorsements),
+                "CASE COUNT": 1,
+                "SEEDED_TRIAL": "NO",
+            }
           else:
-            st.success("Saved instantly to ECC register!")
+            target_row_data = {
+                "MONTH": get_month_str(entry_date, "numeric_prefix"),
+                "DATE": curr_date_str,
+                "LAST NAME": sanitize_medical_text(last_name),
+                "FIRST NAME": sanitize_medical_text(first_name),
+                "MIDDLE NAME": sanitize_medical_text(middle_name),
+                "SEX": sex,
+                "AOG": "N/A",
+                "AGE": str(age),
+                "DIAGNOSIS": sanitize_medical_text(diagnosis_text),
+                "DIAGNOSIS CATEGORY": "ECC TRANSFER",
+                "ADMITTED FROM": "ECC",
+                "ADMITTED TO": target_unit_str,
+                "TRANSFERRED TO": "NONE",
+                "ATTENDING PHYSICIAN": final_attending,
+                "ATTENDING SPECIALIZATION": attending_spec,
+                "CO-MANAGEMENT PHYSICIAN": cm_names_str,
+                "CO-MANAGEMENT SPECIALIZATION": cm_specs_str,
+                "HOSPITALIZATION MODE": hosp_mode,
+                "MODE OF PAYMENT": payment_selected,
+                "PATIENT STATUS": "ACTIVE",
+                "PROCEDURES": sanitize_medical_text(ecc_procedures),
+                "DIAGNOSTIC EXAMINATIONS": sanitize_medical_text(ecc_diagnostic_exams),
+                "MEDICATIONS": sanitize_medical_text(ecc_medications),
+                "SPECIAL ENDORSEMENTS": sanitize_medical_text(ecc_special_endorsements),
+                "CASE COUNT": 1,
+                "SEEDED_TRIAL": "NO",
+            }
+          append_record_to_google_sheet(destination_sheet, target_row_data)
+          st.success(f"⚡ Patient successfully routed and transferred exclusively to `{destination_sheet}`! (ECC record closed/isolated).")
+        else:
+          append_record_to_google_sheet("Emergency Care Complex (ECC)", row_data)
+          st.success("Successfully saved to ECC register!")
 
-          st.cache_data.clear()
-          st.session_state["df_cache"] = {}
-          st.session_state["cm_list_ecc"] = []
+        st.cache_data.clear()
+        st.session_state["df_cache"] = {}
+        st.session_state["cm_list_ecc"] = []
 
   with tab_update_inpatient:
     render_inpatient_order_updater_form("ECC")
@@ -3627,147 +3587,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
           st.session_state[cm_list_key] = []
 
   with tab_update:
-    st.markdown(
-        "##### 🔄 Update Admitted Patient Orders (`Hemodialysis Unit (HDU)`)"
-    )
-    hdu_df_up = read_google_sheet("Hemodialysis Unit (HDU)")
-    if not hdu_df_up.empty and "LAST NAME" in hdu_df_up.columns:
-      hdu_active = hdu_df_up[
-          ~hdu_df_up.get(
-              "PATIENT STATUS", pd.Series(["ACTIVE"] * len(hdu_df_up))
-          )
-          .astype(str)
-          .str.upper()
-          .isin(["DISCHARGED"])
-      ]
-      if not hdu_active.empty:
-        hdu_active["DISPLAY_NAME"] = (
-            hdu_active["LAST NAME"]
-            + ", "
-            + hdu_active["FIRST NAME"]
-            + " (Slot: "
-            + hdu_active.get("DIALYSIS SHIFT SLOT", "N/A")
-            + ")"
-        )
-        selected_hdu_display = st.selectbox(
-            "Select Patient in HDU",
-            sorted(hdu_active["DISPLAY_NAME"].tolist()),
-            key="sel_hdu_up",
-        )
-
-        matched_hdu_row = hdu_active[
-            hdu_active["DISPLAY_NAME"] == selected_hdu_display
-        ].iloc[0]
-        matched_hdu_idx = hdu_active[
-            hdu_active["DISPLAY_NAME"] == selected_hdu_display
-        ].index[0]
-
-        with st.form("update_form_hdu"):
-          st.markdown(
-              f"**Patient:** `{selected_hdu_display}` | **Current"
-              f" Diagnosis:** `{matched_hdu_row.get('DIAGNOSIS', '')}`"
-          )
-
-          up_procs_hdu = st.text_area(
-              "New / Additional Procedures",
-              value="",
-              key="up_p_hdu",
-          ).strip().upper()
-          up_diags_hdu = st.text_area(
-              "New / Additional Diagnostic Examinations",
-              value="",
-              key="up_d_hdu",
-          ).strip().upper()
-          up_meds_hdu = st.text_area(
-              "New / Additional Medications", value="", key="up_m_hdu"
-          ).strip().upper()
-          up_ends_hdu = st.text_area(
-              "Special Endorsements / Notes", value="", key="up_e_hdu"
-          ).strip().upper()
-
-          st.markdown("---")
-          confirm_password_hdu = st.text_input(
-              "🔒 Re-enter Your Account Password to Authorize Update",
-              type="password",
-              key="reauth_pwd_hdu_form",
-          )
-
-          submit_update_hdu = st.form_submit_button(
-              "💾 Save HDU Patient Orders Update"
-          )
-          if submit_update_hdu:
-            current_username = st.session_state.get("username", "").strip().lower()
-            user_record = USER_DATABASE.get(current_username, {})
-            stored_hash = user_record.get("password", "")
-
-            if not confirm_password_hdu or hash_password(confirm_password_hdu) != stored_hash:
-              st.error(
-                  "🚨 Authorization Error: Incorrect account password. Update"
-                  " aborted."
-              )
-              st.stop()
-
-            now_ts = get_ph_time().strftime(
-                f"[%m/%d/%Y %I:%M %p - {st.session_state['name']}]"
-            )
-            if up_procs_hdu:
-              ex_p = (
-                  str(hdu_df_up.loc[matched_hdu_idx, "PROCEDURES"])
-                  if "PROCEDURES" in hdu_df_up.columns
-                  else ""
-              )
-              bullet_item = f"• {now_ts} {up_procs_hdu}"
-              hdu_df_up.loc[matched_hdu_idx, "PROCEDURES"] = (
-                  f"{ex_p}\n{bullet_item}".strip()
-                  if ex_p and ex_p != "NAN"
-                  else bullet_item
-              )
-            if up_diags_hdu:
-              ex_d = (
-                  str(hdu_df_up.loc[matched_hdu_idx, "DIAGNOSTIC EXAMINATIONS"])
-                  if "DIAGNOSTIC EXAMINATIONS" in hdu_df_up.columns
-                  else ""
-              )
-              bullet_item = f"• {now_ts} {up_diags_hdu}"
-              hdu_df_up.loc[matched_hdu_idx, "DIAGNOSTIC EXAMINATIONS"] = (
-                  f"{ex_d}\n{bullet_item}".strip()
-                  if ex_d and ex_d != "NAN"
-                  else bullet_item
-              )
-            if up_meds_hdu:
-              ex_m = (
-                  str(hdu_df_up.loc[matched_hdu_idx, "MEDICATIONS"])
-                  if "MEDICATIONS" in hdu_df_up.columns
-                  else ""
-              )
-              bullet_item = f"• {now_ts} {up_meds_hdu}"
-              hdu_df_up.loc[matched_hdu_idx, "MEDICATIONS"] = (
-                  f"{ex_m}\n{bullet_item}".strip()
-                  if ex_m and ex_m != "NAN"
-                  else bullet_item
-              )
-            if up_ends:
-              ex_e = (
-                  str(hdu_df_up.loc[matched_hdu_idx, "SPECIAL ENDORSEMENTS"])
-                  if "SPECIAL ENDORSEMENTS" in hdu_df_up.columns
-                  else ""
-              )
-              bullet_item = f"• {now_ts} {up_ends}"
-              hdu_df_up.loc[matched_hdu_idx, "SPECIAL ENDORSEMENTS"] = (
-                  f"{ex_e}\n{bullet_item}".strip()
-                  if ex_e and ex_e != "NAN"
-                  else bullet_item
-              )
-
-            if update_google_sheet_from_df("Hemodialysis Unit (HDU)", hdu_df_up):
-              st.cache_data.clear()
-              st.session_state["df_cache"] = {}
-              st.success("Successfully updated HDU patient orders with timestamped bullet entries!")
-              st.rerun()
-      else:
-        st.info("No active patient records found in HDU.")
-    else:
-      st.info("No records in HDU yet.")
+    render_inpatient_order_updater_form("Hemodialysis Unit (HDU)")
 
   with tab_roster:
     render_department_live_roster("Hemodialysis Unit (HDU)")
@@ -4012,7 +3832,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
           st.session_state[cm_list_key] = []
 
   with tab_update_inpatient:
-    render_inpatient_order_updater_form("OBGYNE")
+    render_inpatient_order_updater_form("OBGYNE Care Complex (LRDR-OB Surgery)")
 
   with tab_roster:
     render_department_live_roster("OBGYNE Care Complex (LRDR-OB Surgery)")
@@ -4250,7 +4070,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
           st.session_state[cm_list_key] = []
 
   with tab_update_inpatient:
-    render_inpatient_order_updater_form("SCC")
+    render_inpatient_order_updater_form("Surgical Care Complex (OR Main)")
 
   with tab_roster:
     render_department_live_roster("Surgical Care Complex (OR Main)")
@@ -4272,21 +4092,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
   ])
 
   with tab_scu_reg:
-    st.warning("🚨 **Transfer Rule Notice:** If registered in ECC as an inpatient transfer to this Special Care unit, **re-registration is blocked**. Please use the **Update Inpatient Orders** tab or check the **Active Live Roster**.")
-
-    ecc_df_guard = read_google_sheet("Emergency Care Complex (ECC)")
-    today_date_str = ph_now.strftime("%m/%d/%Y")
-    ecc_transfer_patients_scu = []
-    if not ecc_df_guard.empty and "ADMITTED TO" in ecc_df_guard.columns:
-      transfers = ecc_df_guard[
-          (ecc_df_guard["HOSPITALIZATION MODE"].astype(str).str.strip().str.upper() == "INPATIENT")
-          & (ecc_df_guard["ADMITTED TO"].astype(str).str.strip().str.upper().str.contains("NICU|PICU|NSU|PCN|OUTBORN", case=False, na=False))
-      ]
-      if not transfers.empty:
-        ecc_transfer_patients_scu = (transfers["LAST NAME"] + ", " + transfers["FIRST NAME"]).tolist()
-
-    if ecc_transfer_patients_scu:
-      st.error(f"⚠️ Active Inpatient Transfer(s) detected from ECC: `{', '.join(ecc_transfer_patients_scu)}`. Standard registration is disabled per transfer rules.")
+    st.info("ℹ️ **Rule Notice:** Patients transferred from ECC to Special Care Complex are automatically routed directly into this unit's database.")
 
     with st.form("scu_form", clear_on_submit=True):
       st.subheader("1. Patient Demographics")
@@ -4402,11 +4208,6 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
           st.error(
               "⚠️ Validation Error: Last Name and First Name are required fields."
           )
-          st.stop()
-
-        full_name_check_scu = f"{sanitize_medical_text(last_name)}, {sanitize_medical_text(first_name)}"
-        if full_name_check_scu in ecc_transfer_patients_scu:
-          st.error(f"🚨 Transfer Rule Block: Patient `{full_name_check_scu}` was registered as an Inpatient in ECC for transfer. Standard re-registration is prohibited.")
           st.stop()
 
         existing_record = check_existing_patient_ai(
