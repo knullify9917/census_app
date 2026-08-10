@@ -433,7 +433,7 @@ for field in sorted(SPECIALTIES_BY_FIELD.keys()):
     spec_list.append(spec)
 SPECIALTY_DROPDOWN_OPTIONS = ["None"] + sorted(list(set(spec_list) - {"OTHERS", "Others"})) + ["Others"]
 
-# Complete 110-Page Annex B Master Procedure Database (Verbatim as written in PDF)
+# Complete 110-Page Master Annex B Database
 ANNEX_B_CATEGORIZED_PROCEDURES = {
     "SKIN & SUBCUTANEOUS TISSUES": [
         "10060 - INCISION AND DRAINAGE OF ABSCESS (E.G., CARBUNCLE SUPPURATIVE HIDRADENITIS, CUTANEOUS OR SUBCUTANEOUS ABSCESS, CYST, FURUNCLE, OR PARONYCHIA) [₱7,098.00]",
@@ -702,8 +702,7 @@ SHEET_HEADERS = {
         "SURGEON SPECIALIZATION",
         "ANESTHESIOLOGIST",
         "ANESTHESIOLOGIST SPECIALIZATION",
-        "COMPLEXITY TIER",
-        "PROCEDURE NATURE",
+        "PROCEDURE COMPLEXITY",
         "HOSPITALIZATION MODE",
         "MODE OF PAYMENT",
         "PATIENT STATUS",
@@ -745,7 +744,7 @@ SHEET_HEADERS = {
         "SURGEON SPECIALIZATION",
         "ANESTHESIOLOGIST",
         "ANESTHESIOLOGIST SPECIALIZATION",
-        "COMPLEXITY TIER",
+        "PROCEDURE COMPLEXITY",
         "HOSPITALIZATION MODE",
         "MODE OF PAYMENT",
         "PATIENT STATUS",
@@ -777,7 +776,7 @@ SHEET_HEADERS = {
         "SURGEON SPECIALIZATION",
         "ANESTHESIOLOGIST",
         "ANESTHESIOLOGIST SPECIALIZATION",
-        "COMPLEXITY TIER",
+        "PROCEDURE COMPLEXITY",
         "HOSPITALIZATION MODE",
         "MODE OF PAYMENT",
         "PATIENT STATUS",
@@ -1570,7 +1569,7 @@ if st.session_state["role"] == "Administrator":
             row_data["ANESTHESIOLOGIST SPECIALIZATION"] = (
                 "GENERAL ANAESTHESIOLOGY"
             )
-            row_data["COMPLEXITY TIER"] = "MAJOR"
+            row_data["PROCEDURE COMPLEXITY"] = "MAJOR"
             row_data["HOSPITALIZATION MODE"] = "INPATIENT"
             row_data["PATIENT STATUS"] = stat
 
@@ -1598,7 +1597,7 @@ if st.session_state["role"] == "Administrator":
             row_data["ANESTHESIOLOGIST SPECIALIZATION"] = (
                 "GENERAL ANAESTHESIOLOGY"
             )
-            row_data["COMPLEXITY TIER"] = "MAJOR"
+            row_data["PROCEDURE COMPLEXITY"] = "MAJOR"
             row_data["HOSPITALIZATION MODE"] = "INPATIENT"
             row_data["PATIENT STATUS"] = stat
 
@@ -1623,8 +1622,7 @@ if st.session_state["role"] == "Administrator":
             row_data["SURGEON SPECIALIZATION"] = "GASTROENTEROLOGY"
             row_data["ANESTHESIOLOGIST"] = "N/A"
             row_data["ANESTHESIOLOGIST SPECIALIZATION"] = "NONE"
-            row_data["COMPLEXITY TIER"] = "MINOR"
-            row_data["PROCEDURE NATURE"] = "DIAGNOSTICS & THERAPEUTICS"
+            row_data["PROCEDURE COMPLEXITY"] = "DIAGNOSTICS"
             row_data["HOSPITALIZATION MODE"] = "OUTPATIENT"
             row_data["PATIENT STATUS"] = stat
 
@@ -3346,7 +3344,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
       with cd2:
         procedure_text = st.text_input("Procedure Name", value="").strip().upper()
 
-      # 5. Diagnostics Procedures and Treatment Plans (Directly under No. 5)
+      # 5. Diagnostics Procedures and Treatment Plans
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
       
       endo_pkg_bundle = st.selectbox(
@@ -3377,11 +3375,11 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
       with col_rvs1:
         search_rvs_endo = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key="search_rvs_endo_input").strip().upper()
       with col_rvs2:
-        complexity = st.selectbox(
-            "Complexity Tier",
-            ["Select Complexity", "DIAGNOSTICS", "MAJOR", "MEDIUM", "MINOR"],
+        procedure_complexity = st.selectbox(
+            "Procedure Complexity",
+            ["Select Complexity", "Diagnostics", "Therapeutics", "Diagnostics & Therapeutics", "Major", "Medium", "Minor"],
             index=0,
-            key="endo_comp_tier"
+            key="endo_proc_complexity"
         )
 
       endo_selected_proc = ""
@@ -3411,21 +3409,6 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
               ["Select Procedure"] + sub_endo,
               key=f"endo_proc_sel_{chosen_cat_endo}"
           )
-
-      ca, cb = st.columns(2)
-      with ca:
-        proc_type = st.selectbox(
-            "Procedure Classification",
-            [
-                "Select Classification",
-                "DIAGNOSTICS",
-                "DIAGNOSTICS & THERAPEUTICS",
-                "THERAPEUTICS",
-            ],
-            index=0,
-        )
-      with cb:
-        pass
 
       submitted = st.form_submit_button("Submit Record")
       if submitted:
@@ -3476,8 +3459,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
             "ANESTHESIOLOGIST SPECIALIZATION": (
                 anes_spec if anesthesiologist else "N/A"
             ),
-            "COMPLEXITY TIER": complexity,
-            "PROCEDURE NATURE": proc_type,
+            "PROCEDURE COMPLEXITY": procedure_complexity,
             "HOSPITALIZATION MODE": hosp_mode,
             "MODE OF PAYMENT": payment_selected,
             "PATIENT STATUS": patient_status,
@@ -3843,62 +3825,6 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
   ])
 
   with tab_reg:
-    # 5. Diagnostics Procedures and Treatment Plans (Directly under No. 5)
-    st.markdown("##### 5. Diagnostics Procedures and Treatment Plans")
-    
-    search_rvs_ob = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key="search_rvs_ob_input").strip().upper()
-    matched_rvs_ob = []
-    if search_rvs_ob:
-      for cat_k, p_list in ANNEX_B_CATEGORIZED_PROCEDURES.items():
-        for p_item in p_list:
-          if search_rvs_ob in p_item:
-            matched_rvs_ob.append(f"[{cat_k}] {p_item}")
-      if matched_rvs_ob:
-        selected_searched_ob = st.selectbox("Matching RVS Codes Found", ["Select Match"] + matched_rvs_ob, key="sel_match_ob")
-        if selected_searched_ob and selected_searched_ob != "Select Match":
-          ob_selected_proc = selected_searched_ob
-      else:
-        st.warning("No RVS code matches found in database. You may enter it in clinical notes.")
-        ob_selected_proc = f"{search_rvs_ob} - CUSTOM RVS ENTRY"
-    else:
-      chosen_cat_ob = st.selectbox(
-          "Select Anatomical / Surgical Category",
-          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
-          key="ob_cat_sel"
-      )
-      ob_selected_proc = ""
-      if chosen_cat_ob and chosen_cat_ob != "Select Category":
-        sub_ob = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_ob])
-        ob_selected_proc = st.selectbox(
-            f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_ob}`",
-            ["Select Procedure"] + sub_ob,
-            key=f"ob_proc_sel_{chosen_cat_ob}"
-        )
-
-    ob_pkg_bundle = st.selectbox(
-        "Hospital Package Bundle",
-        [
-            "Hospital Package (OB Cesarean Section)",
-            "Hospital Package (OB TAHBSO)",
-            "Hospital Package (OB Exploratory Laparotomy)",
-            "Hospital Package (OB D&C/Pregnant)",
-            "Hospital Package (OB D&C/Non-Pregnant)",
-            "Hospital Package (OB Normal Spontaneous Delivery)",
-            "Hospital Package (OB Hysteroscopy)",
-            "Hospital Package (OB Laparoscopic Gynecology)",
-            "Hospital Package Kit (ENDO)",
-            "Hospital Package (GS Laparoscopic Cholecystectomy)",
-            "Hospital Package (GS Laparoscopic Appendectomy)",
-            "Hospital Package (GS Laparoscopic Herniorrhaphy)",
-            "Hospital Package (GS Thyroidectomy)",
-            "Hospital Package (GS Open Cholecystectomy)",
-            "Hospital Package (GS Open Appendectomy)",
-            "Hospital Package (GS Modified Radical Mastectomy)",
-            "Hospital Package (GS Open Herniorrhaphy)",
-        ],
-        key="ob_pkg_bundle"
-    )
-
     with st.form("obgyne_form", clear_on_submit=True):
       # 1. Patient Demographics
       st.subheader("1. Patient Demographics")
@@ -4008,14 +3934,71 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             "Surgical Procedure", value=""
         ).strip().upper()
 
-      # 5. Diagnostics Procedures and Treatment Plans (Continued)
-      st.subheader("5. Diagnostics Procedures and Treatment Plans (Continued)")
-      complexity = st.selectbox(
-          "Complexity Tier",
-          ["Select Complexity", "DIAGNOSTICS", "MAJOR", "MINOR"],
-          index=0,
-          key="ob_comp_tier"
+      # 5. Diagnostics Procedures and Treatment Plans (Directly under No. 5)
+      st.subheader("5. Diagnostics Procedures and Treatment Plans")
+      
+      ob_pkg_bundle = st.selectbox(
+          "Hospital Package Bundle",
+          [
+              "Hospital Package (OB Cesarean Section)",
+              "Hospital Package (OB TAHBSO)",
+              "Hospital Package (OB Exploratory Laparotomy)",
+              "Hospital Package (OB D&C/Pregnant)",
+              "Hospital Package (OB D&C/Non-Pregnant)",
+              "Hospital Package (OB Normal Spontaneous Delivery)",
+              "Hospital Package (OB Hysteroscopy)",
+              "Hospital Package (OB Laparoscopic Gynecology)",
+              "Hospital Package Kit (ENDO)",
+              "Hospital Package (GS Laparoscopic Cholecystectomy)",
+              "Hospital Package (GS Laparoscopic Appendectomy)",
+              "Hospital Package (GS Laparoscopic Herniorrhaphy)",
+              "Hospital Package (GS Thyroidectomy)",
+              "Hospital Package (GS Open Cholecystectomy)",
+              "Hospital Package (GS Open Appendectomy)",
+              "Hospital Package (GS Modified Radical Mastectomy)",
+              "Hospital Package (GS Open Herniorrhaphy)",
+          ],
+          key="ob_pkg_bundle"
       )
+
+      col_rvs1, col_rvs2 = st.columns(2)
+      with col_rvs1:
+        search_rvs_ob = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key="search_rvs_ob_input").strip().upper()
+      with col_rvs2:
+        procedure_complexity = st.selectbox(
+            "Procedure Complexity",
+            ["Select Complexity", "Diagnostics", "Therapeutics", "Diagnostics & Therapeutics", "Major", "Medium", "Minor"],
+            index=0,
+            key="ob_proc_complexity"
+        )
+
+      ob_selected_proc = ""
+      matched_rvs_ob = []
+      if search_rvs_ob:
+        for cat_k, p_list in ANNEX_B_CATEGORIZED_PROCEDURES.items():
+          for p_item in p_list:
+            if search_rvs_ob in p_item:
+              matched_rvs_ob.append(f"[{cat_k}] {p_item}")
+        if matched_rvs_ob:
+          selected_searched_ob = st.selectbox("Matching RVS Codes Found", ["Select Match"] + matched_rvs_ob, key="sel_match_ob")
+          if selected_searched_ob and selected_searched_ob != "Select Match":
+            ob_selected_proc = selected_searched_ob
+        else:
+          st.warning("No RVS code matches found in database. You may enter it in clinical notes.")
+          ob_selected_proc = f"{search_rvs_ob} - CUSTOM RVS ENTRY"
+      else:
+        chosen_cat_ob = st.selectbox(
+            "Select Anatomical / Surgical Category",
+            ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+            key="ob_cat_sel"
+        )
+        if chosen_cat_ob and chosen_cat_ob != "Select Category":
+          sub_ob = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_ob])
+          ob_selected_proc = st.selectbox(
+              f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_ob}`",
+              ["Select Procedure"] + sub_ob,
+              key=f"ob_proc_sel_{chosen_cat_ob}"
+          )
 
       submitted = st.form_submit_button("Submit Record")
       if submitted:
@@ -4068,7 +4051,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             "ANESTHESIOLOGIST SPECIALIZATION": (
                 anes_spec if anesthesiologist else "N/A"
             ),
-            "COMPLEXITY TIER": complexity,
+            "PROCEDURE COMPLEXITY": procedure_complexity,
             "HOSPITALIZATION MODE": hosp_mode,
             "MODE OF PAYMENT": payment_selected,
             "PATIENT STATUS": patient_status,
@@ -4110,62 +4093,6 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
   ])
 
   with tab_reg:
-    # 5. Diagnostics Procedures and Treatment Plans with Direct RVS Code Search Option
-    st.markdown("##### 5. Diagnostics Procedures and Treatment Plans")
-    
-    search_rvs_scc = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key="search_rvs_scc_input").strip().upper()
-    matched_rvs_scc = []
-    if search_rvs_scc:
-      for cat_k, p_list in ANNEX_B_CATEGORIZED_PROCEDURES.items():
-        for p_item in p_list:
-          if search_rvs_scc in p_item:
-            matched_rvs_scc.append(f"[{cat_k}] {p_item}")
-      if matched_rvs_scc:
-        selected_searched_scc = st.selectbox("Matching RVS Codes Found", ["Select Match"] + matched_rvs_scc, key="sel_match_scc")
-        if selected_searched_scc and selected_searched_scc != "Select Match":
-          scc_selected_proc = selected_searched_scc
-      else:
-        st.warning("No RVS code matches found in database. You may enter it in clinical notes.")
-        scc_selected_proc = f"{search_rvs_scc} - CUSTOM RVS ENTRY"
-    else:
-      chosen_cat_scc = st.selectbox(
-          "Select Anatomical / Surgical Category",
-          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
-          key="scc_cat_sel"
-      )
-      scc_selected_proc = ""
-      if chosen_cat_scc and chosen_cat_scc != "Select Category":
-        sub_scc = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_scc])
-        scc_selected_proc = st.selectbox(
-            f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_scc}`",
-            ["Select Procedure"] + sub_scc,
-            key=f"scc_proc_sel_{chosen_cat_scc}"
-        )
-
-    scc_pkg_bundle = st.selectbox(
-        "Hospital Package Bundle",
-        [
-            "Hospital Package (GS Laparoscopic Cholecystectomy)",
-            "Hospital Package (GS Laparoscopic Appendectomy)",
-            "Hospital Package (GS Laparoscopic Herniorrhaphy)",
-            "Hospital Package (GS Thyroidectomy)",
-            "Hospital Package (GS Open Cholecystectomy)",
-            "Hospital Package (GS Open Appendectomy)",
-            "Hospital Package (GS Modified Radical Mastectomy)",
-            "Hospital Package (GS Open Herniorrhaphy)",
-            "Hospital Package Kit (ENDO)",
-            "Hospital Package (OB Hysteroscopy)",
-            "Hospital Package (OB Laparoscopic Gynecology)",
-            "Hospital Package (OB Cesarean Section)",
-            "Hospital Package (OB TAHBSO)",
-            "Hospital Package (OB Exploratory Laparotomy)",
-            "Hospital Package (OB D&C/Pregnant)",
-            "Hospital Package (OB D&C/Non-Pregnant)",
-            "Hospital Package (OB Normal Spontaneous Delivery)",
-        ],
-        key="scc_pkg_bundle"
-    )
-
     with st.form("scc_form", clear_on_submit=True):
       # 1. Patient Demographics
       st.subheader("1. Patient Demographics")
@@ -4269,14 +4196,71 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 
       procedure = st.text_area("Surgical Procedure", value="").strip().upper()
 
-      # 5. Diagnostics Procedures and Treatment Plans (Form actions & Complexity Tier)
-      st.subheader("5. Diagnostics Procedures and Treatment Plans (Continued)")
-      complexity = st.selectbox(
-          "Complexity Tier",
-          ["Select Complexity", "DIAGNOSTICS", "MAJOR", "MEDIUM", "MINOR"],
-          index=0,
-          key="scc_comp_tier"
+      # 5. Diagnostics Procedures and Treatment Plans (Directly under No. 5)
+      st.subheader("5. Diagnostics Procedures and Treatment Plans")
+      
+      scc_pkg_bundle = st.selectbox(
+          "Hospital Package Bundle",
+          [
+              "Hospital Package (GS Laparoscopic Cholecystectomy)",
+              "Hospital Package (GS Laparoscopic Appendectomy)",
+              "Hospital Package (GS Laparoscopic Herniorrhaphy)",
+              "Hospital Package (GS Thyroidectomy)",
+              "Hospital Package (GS Open Cholecystectomy)",
+              "Hospital Package (GS Open Appendectomy)",
+              "Hospital Package (GS Modified Radical Mastectomy)",
+              "Hospital Package (GS Open Herniorrhaphy)",
+              "Hospital Package Kit (ENDO)",
+              "Hospital Package (OB Hysteroscopy)",
+              "Hospital Package (OB Laparoscopic Gynecology)",
+              "Hospital Package (OB Cesarean Section)",
+              "Hospital Package (OB TAHBSO)",
+              "Hospital Package (OB Exploratory Laparotomy)",
+              "Hospital Package (OB D&C/Pregnant)",
+              "Hospital Package (OB D&C/Non-Pregnant)",
+              "Hospital Package (OB Normal Spontaneous Delivery)",
+          ],
+          key="scc_pkg_bundle"
       )
+
+      col_rvs1, col_rvs2 = st.columns(2)
+      with col_rvs1:
+        search_rvs_scc = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key="search_rvs_scc_input").strip().upper()
+      with col_rvs2:
+        procedure_complexity = st.selectbox(
+            "Procedure Complexity",
+            ["Select Complexity", "Diagnostics", "Therapeutics", "Diagnostics & Therapeutics", "Major", "Medium", "Minor"],
+            index=0,
+            key="scc_proc_complexity"
+        )
+
+      scc_selected_proc = ""
+      matched_rvs_scc = []
+      if search_rvs_scc:
+        for cat_k, p_list in ANNEX_B_CATEGORIZED_PROCEDURES.items():
+          for p_item in p_list:
+            if search_rvs_scc in p_item:
+              matched_rvs_scc.append(f"[{cat_k}] {p_item}")
+        if matched_rvs_scc:
+          selected_searched_scc = st.selectbox("Matching RVS Codes Found", ["Select Match"] + matched_rvs_scc, key="sel_match_scc")
+          if selected_searched_scc and selected_searched_scc != "Select Match":
+            scc_selected_proc = selected_searched_scc
+        else:
+          st.warning("No RVS code matches found in database. You may enter it in clinical notes.")
+          scc_selected_proc = f"{search_rvs_scc} - CUSTOM RVS ENTRY"
+      else:
+        chosen_cat_scc = st.selectbox(
+            "Select Anatomical / Surgical Category",
+            ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+            key="scc_cat_sel"
+        )
+        if chosen_cat_scc and chosen_cat_scc != "Select Category":
+          sub_scc = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_scc])
+          scc_selected_proc = st.selectbox(
+              f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_scc}`",
+              ["Select Procedure"] + sub_scc,
+              key=f"scc_proc_sel_{chosen_cat_scc}"
+          )
 
       submitted = st.form_submit_button("Submit Record")
       if submitted:
@@ -4328,7 +4312,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             "ANESTHESIOLOGIST SPECIALIZATION": (
                 anes_spec if anesthesiologist else "N/A"
             ),
-            "COMPLEXITY TIER": complexity,
+            "PROCEDURE COMPLEXITY": procedure_complexity,
             "HOSPITALIZATION MODE": hosp_mode,
             "MODE OF PAYMENT": payment_selected,
             "PATIENT STATUS": patient_status,
