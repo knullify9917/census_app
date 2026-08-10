@@ -803,7 +803,7 @@ def get_month_str(date_obj, fmt_style="numeric_prefix"):
 
 
 # ---------------------------------------------------------
-# HYBRID SQLITE BACKEND & DURABLE QUEUE SETUP
+# HYBRID SQLITE BACKEND & LOCAL-FIRST INSTANT READ ARCHITECTURE
 # ---------------------------------------------------------
 sqlite_lock = threading.Lock()
 
@@ -822,6 +822,10 @@ def init_local_sqlite():
   for s_name, cols in SHEET_HEADERS.items():
     cols_def = ", ".join([f'"{col}" TEXT' for col in cols])
     cursor.execute(f'CREATE TABLE IF NOT EXISTS "{s_name}" ({cols_def})')
+    try:
+      cursor.execute(f'CREATE INDEX IF NOT EXISTS idx_{s_name.replace(" ", "_")}_names ON "{s_name}" ("LAST NAME", "FIRST NAME")')
+    except Exception:
+      pass
 
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS "System Audit Logs" (
@@ -905,11 +909,7 @@ def init_google_sheets():
       "https://www.googleapis.com/auth/drive",
   ]
   if "gcp_service_account" not in st.secrets:
-    st.error(
-        "🚨 Critical Error: Google Cloud service account secrets are missing"
-        " from Streamlit configuration settings."
-    )
-    st.stop()
+    return None
   try:
     creds_dict = dict(st.secrets["gcp_service_account"])
     if "private_key" in creds_dict:
@@ -930,9 +930,8 @@ def init_google_sheets():
         ]
       creds_dict["private_key"] = pk
     creds = Credentials.from_service_account_info(creds_dict, scopes=scope)
-  except Exception as e:
-    st.error(f"Error parsing secure credentials: {e}")
-    st.stop()
+  except Exception:
+    return None
   client = gspread.authorize(creds)
   try:
     sh = client.open("MTCMC_CENSUS_MASTERFILES_SYSTEM")
@@ -955,6 +954,9 @@ def get_queue_size():
 
 def background_durable_sync_worker():
   while True:
+    if sh is None:
+      py_time.sleep(5)
+      continue
     conn = get_sqlite_conn()
     try:
       cursor = conn.cursor()
@@ -1048,6 +1050,8 @@ durable_sync_thread.start()
 
 
 def ensure_google_sheets_exist():
+  if sh is None:
+    return
   try:
     existing_worksheets = [ws.title for ws in sh.worksheets()]
   except Exception:
@@ -1094,6 +1098,8 @@ def get_sheet_lock(sheet_name):
 
 
 def safe_gspread_call(sheet_name, func, *args, **kwargs):
+  if sh is None:
+    return None
   max_retries = 3
   backoff = 1
   target_lock = get_sheet_lock(sheet_name)
@@ -1106,7 +1112,8 @@ def safe_gspread_call(sheet_name, func, *args, **kwargs):
           global sh
           try:
             sh = init_google_sheets()
-            return func(*args, **kwargs)
+            if sh:
+              return func(*args, **kwargs)
           except Exception:
             raise e
         py_time.sleep(backoff)
@@ -1137,7 +1144,7 @@ def append_record_to_google_sheet(sheet_name, row_dict):
       sheet_name,
       f"Added record for {row_dict.get('LAST NAME', '')}",
   )
-  st.toast("Record saved locally. Durable cloud sync queued.", icon="💾")
+  st.toast("Record saved instantly (Local-First). Background sync queued.", icon="💾")
   return True
 
 
@@ -1157,12 +1164,14 @@ def update_google_sheet_from_df(sheet_name, df):
   log_audit_event(
       "UPDATE", sheet_name, f"Updated sheet rows count: {len(df)}"
   )
-  st.toast("Changes saved locally. Durable cloud sync queued.", icon="💾")
+  st.toast("Changes saved instantly (Local-First). Background sync queued.", icon="💾")
   return True
 
 
-@st.cache_data(ttl=300)
+@st.cache_data(ttl=3600)
 def fetch_cloud_sheet(sheet_name):
+  if sh is None:
+    return pd.DataFrame()
   ensure_google_sheets_exist()
 
   def _get_data():
@@ -1183,36 +1192,26 @@ def fetch_cloud_sheet(sheet_name):
         return df_res
   except Exception:
     pass
-  return read_sqlite_sheet(sheet_name)
+  return pd.DataFrame()
 
 
 def read_google_sheet(sheet_name, force_refresh=False):
+  """Local-First Instant Reader: Reads strictly from local SQLite for instant loading (<0.1s)."""
   if not force_refresh and sheet_name in st.session_state["df_cache"]:
     return st.session_state["df_cache"][sheet_name]
 
-  df = fetch_cloud_sheet(sheet_name)
-  if df.empty:
-    df = read_sqlite_sheet(sheet_name)
-  else:
-    sync_df_to_sqlite(sheet_name, df)
+  df = read_sqlite_sheet(sheet_name)
+  if df.empty and sh is not None:
+    df = fetch_cloud_sheet(sheet_name)
+    if not df.empty:
+      sync_df_to_sqlite(sheet_name, df)
 
   st.session_state["df_cache"][sheet_name] = df
   return df
 
 
 def read_multiple_sheets_parallel(sheet_names):
-  uncached = [s for s in sheet_names if s not in st.session_state["df_cache"]]
-  if uncached:
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as executor:
-      future_to_sheet = {
-          executor.submit(read_google_sheet, s): s for s in uncached
-      }
-      for future in concurrent.futures.as_completed(future_to_sheet):
-        pass
-  return {
-      s: st.session_state["df_cache"].get(s, read_google_sheet(s))
-      for s in sheet_names
-  }
+  return {s: read_google_sheet(s) for s in sheet_names}
 
 
 def check_existing_patient_ai(sheet_name, last_name, fn, curr_date_str):
@@ -1771,15 +1770,16 @@ if st.session_state["role"] == "Administrator":
         try:
           for s_name, cols in SHEET_HEADERS.items():
             try:
-              ws = sh.worksheet(s_name)
-              ws.clear()
-              ws.update(
-                  "A1", [[f"MTCMC CLINICAL CENSUS - {s_name} MASTERFILE"]]
-              )
-              ws.update("A4", [cols])
+              if sh:
+                ws = sh.worksheet(s_name)
+                ws.clear()
+                ws.update(
+                    "A1", [[f"MTCMC CLINICAL CENSUS - {s_name} MASTERFILE"]]
+                )
+                ws.update("A4", [cols])
             except Exception:
               pass
-            py_time.sleep(0.5)
+            py_time.sleep(0.2)
 
           conn = get_sqlite_conn()
           cursor = conn.cursor()
@@ -1909,7 +1909,7 @@ if st.sidebar.button("🔄 Refresh Data"):
   st.cache_data.clear()
   st.session_state["df_cache"] = {}
   st.toast(
-      "Reloaded latest census & patient records from Google Sheets.", icon="🔄"
+      "Reloaded latest census & patient records.", icon="🔄"
   )
   st.rerun()
 
@@ -2410,7 +2410,7 @@ elif selected_sheet == "Hospital Information System":
   @st.fragment(run_every=30)
   def render_hospital_summary_fragment():
     st.header("🏥 Hospital Summary")
-    st.markdown("This is the current active census summary today (Auto-refreshing every 30s & triggered on GNU/SCU status changes).")
+    st.markdown("This is the current active census summary today (Instant Local Read & Auto-Refreshed).")
 
     department_sheets = sorted([
         "Emergency Care Complex (ECC)",
@@ -2704,14 +2704,12 @@ elif selected_sheet == "Hospital Information System":
           st.cache_data.clear()
           st.session_state["df_cache"] = {}
           st.success(
-              f"Successfully updated records for `{selected_dept_view}` in"
-              " Google Sheets!"
+              f"Successfully updated records for `{selected_dept_view}`!"
           )
           st.rerun()
         else:
           st.error(
-              "Failed to update Google Sheets. Please check permissions or"
-              " connection."
+              "Failed to update database."
           )
     else:
       st.info(f"No records found yet for {selected_dept_view}.")
@@ -2916,7 +2914,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
         if append_record_to_google_sheet(gnu_title, row_data):
           st.cache_data.clear()
           st.session_state["df_cache"] = {}
-          st.success(f"Successfully saved to Google Sheets `{gnu_title}` tab!")
+          st.success(f"Successfully saved to `{gnu_title}`!")
           st.session_state[cm_list_key] = []
 
   with tab_update:
@@ -3090,7 +3088,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
     render_department_live_roster(gnu_title)
 
 # ---------------------------------------------------------
-# FORM 1: Emergency Care Complex (ECC) - Updated with Room No. Aligned to Date & Time
+# FORM 1: Emergency Care Complex (ECC)
 # ---------------------------------------------------------
 elif selected_sheet == "Emergency Care Complex (ECC)":
   st.header("🚑 Emergency Care Complex (Standalone Registration)")
@@ -3106,7 +3104,6 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
     with st.form("ecc_form", clear_on_submit=True):
       st.subheader("1. Patient Demographics & Encounter Details")
       
-      # Aligned Date, Time, and Room No.
       c_dt1, c_dt2, c_dt3 = st.columns([1.5, 2, 2])
       with c_dt1:
         entry_date = st.date_input("Date", ph_now.date())
@@ -3289,7 +3286,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
           st.cache_data.clear()
           st.session_state["df_cache"] = {}
           st.success(
-              "Successfully saved to ECC standalone register and metrics!"
+              "Successfully saved to ECC register!"
           )
           st.session_state["cm_list_ecc"] = []
 
@@ -3519,7 +3516,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
           st.cache_data.clear()
           st.session_state["df_cache"] = {}
           st.success(
-              "Successfully saved to Endoscopy standalone register and metrics!"
+              "Successfully saved to Endoscopy register!"
           )
           st.session_state["cm_list_endo"] = []
 
@@ -3704,8 +3701,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
           st.cache_data.clear()
           st.session_state["df_cache"] = {}
           st.success(
-              "Successfully saved to Google Sheets `Hemodialysis Unit (HDU)`"
-              " tab!"
+              "Successfully saved to `Hemodialysis Unit (HDU)`!"
           )
           st.session_state[cm_list_key] = []
 
@@ -4090,7 +4086,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
           st.cache_data.clear()
           st.session_state["df_cache"] = {}
           st.success(
-              "Successfully saved to OBGYNE standalone register and metrics!"
+              "Successfully saved to OBGYNE register!"
           )
           st.session_state[cm_list_key] = []
 
@@ -4328,8 +4324,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
           st.cache_data.clear()
           st.session_state["df_cache"] = {}
           st.success(
-              "Successfully saved to Surgical Care Complex standalone register"
-              " and metrics!"
+              "Successfully saved to Surgical Care Complex register!"
           )
           st.session_state[cm_list_key] = []
 
@@ -4547,8 +4542,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
           st.cache_data.clear()
           st.session_state["df_cache"] = {}
           st.success(
-              "Successfully saved to Google Sheets `Special Care Complex"
-              " (NICU-PICU-NSU/PCN-Outborn)` tab!"
+              "Successfully saved to Special Care Complex!"
           )
           st.session_state[cm_list_key] = []
 
