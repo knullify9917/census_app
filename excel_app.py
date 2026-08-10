@@ -27,21 +27,13 @@ st.set_page_config(
 st.markdown(
     """
 <style>
-    /* Global Clean Light Theme */
     .stApp { background-color: #fcfcfd !important; color: #1e293b !important; }
-    
-    /* Sidebar Background & Text Theme Styling */
     section[data-testid="stSidebar"] { background-color: #f8fafc !important; border-right: 1px solid #cbd5e1; }
     section[data-testid="stSidebar"] * { color: #1e3a8a !important; }
     section[data-testid="stSidebar"] p, section[data-testid="stSidebar"] span, section[data-testid="stSidebar"] label { color: #0f766e !important; }
-    
-    /* Headers using Logo Blue (#1e3a8a) */
     h1, h2, h3, h4, h5, h6 { color: #1e3a8a !important; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; }
-    
-    /* Subheaders & Paragraph/Label Typography Accent (Logo Green #0f766e) */
     .stMarkdown p, label, .stRadio label, .stCheckbox label, .stMultiSelect label { color: #0f766e !important; font-weight: 500 !important; }
     
-    /* Unified Button Theme across all forms and actions */
     .stButton > button, form button[type="submit"], .stFormSubmitButton > button {
         background-color: #ffffff !important;
         color: #1e3a8a !important;
@@ -63,32 +55,13 @@ st.markdown(
         border-left: 5px solid #1e3a8a !important;
     }
 
-    /* Form Inputs, Textareas, and Dropdown Controls */
     div[data-baseweb="select"] > div, input[type="text"]:not([type="password"]), input[type="number"], textarea {
         background-color: #ffffff !important; color: #1e3a8a !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; text-transform: uppercase !important;
     }
-    input[type="password"] {
-        text-transform: none !important;
-    }
+    input[type="password"] { text-transform: none !important; }
     div[data-baseweb="select"] span { color: #1e3a8a !important; }
     
-    div[data-baseweb="input"] {
-        background-color: #ffffff !important;
-        border: 1px solid #cbd5e1 !important;
-        border-radius: 6px !important;
-    }
-    div[data-baseweb="input"]:focus-within {
-        border-color: #0f766e !important;
-        box-shadow: 0 0 0 1px #0f766e !important;
-    }
-
-    div[data-baseweb="popover"], div[data-baseweb="menu"], ul[role="listbox"] {
-        background-color: #ffffff !important; color: #1e3a8a !important; border: 1px solid #cbd5e1 !important; z-index: 999999 !important; box-shadow: 0 4px 12px rgba(0,0,0,0.1) !important;
-    }
-    li[role="option"], div[data-baseweb="menu"] div, option { background-color: #ffffff !important; color: #1e3a8a !important; }
-    li[role="option"]:hover, div[data-baseweb="menu"] div:hover { background-color: #f0fdf4 !important; color: #0f766e !important; }
-    
-    [data-testid="stDataFrame"] { background-color: #ffffff !important; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px; }
+    div[data-testid="stDataFrame"] { background-color: #ffffff !important; border: 1px solid #cbd5e1; border-radius: 6px; padding: 4px; }
     [data-testid="stDataFrame"] table { background-color: #ffffff !important; color: #1e293b !important; }
     [data-testid="stDataFrame"] thead tr th { background-color: #e2e8f0 !important; color: #1e3a8a !important; font-weight: bold !important; }
     
@@ -97,7 +70,6 @@ st.markdown(
     }
     div.stMetric label { color: #0f766e !important; font-weight: 600 !important; }
     div.stMetric div[data-testid="stMetricValue"] { color: #1e3a8a !important; font-weight: bold !important; }
-    
     div.stForm { background-color: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 20px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
 </style>
 """,
@@ -900,10 +872,16 @@ def read_sqlite_sheet(sheet_name):
     df = pd.read_sql(f'SELECT * FROM "{sheet_name}"', conn)
     conn.close()
     if not df.empty:
+      expected_cols = SHEET_HEADERS.get(sheet_name, [])
+      for c in expected_cols:
+        if c not in df.columns:
+          df[c] = ""
       return df
   except Exception:
     conn.close()
-  return pd.DataFrame()
+  
+  expected_cols = SHEET_HEADERS.get(sheet_name, [])
+  return pd.DataFrame(columns=expected_cols)
 
 
 @st.cache_resource
@@ -1198,7 +1176,7 @@ def fetch_cloud_sheet(sheet_name):
         return df_res
   except Exception:
     pass
-  return pd.DataFrame()
+  return pd.DataFrame(columns=SHEET_HEADERS.get(sheet_name, []))
 
 
 def read_google_sheet(sheet_name, force_refresh=False):
@@ -1225,7 +1203,7 @@ def read_multiple_sheets_parallel(sheet_names):
       try:
         results[s_name] = future.result()
       except Exception:
-        results[s_name] = pd.DataFrame()
+        results[s_name] = pd.DataFrame(columns=SHEET_HEADERS.get(s_name, []))
   return results
 
 
@@ -1359,226 +1337,6 @@ def display_paginated_dataframe(df, key_prefix="pag", is_historical=True):
   return full_df
 
 
-def get_sheet_name_from_label(label):
-  mapping = {
-      "ECC": "Emergency Care Complex (ECC)",
-      "ENDO": "Endoscopy Unit (ENDO)",
-      "HDU": "Hemodialysis Unit (HDU)",
-      "OBGYNE": "OBGYNE Care Complex (LRDR-OB Surgery)",
-      "SCC": "Surgical Care Complex (OR Main)",
-      "SCU": "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
-  }
-  return mapping.get(label, label if label in SHEET_HEADERS else selected_sheet)
-
-
-def render_inpatient_order_updater_form(dept_name_label):
-  st.markdown(
-      f"##### 🔄 Update Inpatient Orders in `{dept_name_label}`"
-  )
-
-  target_sheet = get_sheet_name_from_label(dept_name_label)
-  unit_full_df = read_google_sheet(target_sheet)
-  if unit_full_df.empty or "LAST NAME" not in unit_full_df.columns:
-    st.info("No active admitted patient records found in this unit.")
-    return
-
-  active_sub = unit_full_df[
-      ~unit_full_df.get("PATIENT STATUS", pd.Series(["ACTIVE"] * len(unit_full_df)))
-      .astype(str)
-      .str.upper()
-      .isin(["DISCHARGED"])
-  ]
-
-  if active_sub.empty:
-    st.info("No active admitted inpatients in this department.")
-    return
-
-  active_sub["DISPLAY_LABEL"] = (
-      active_sub["LAST NAME"].astype(str).str.strip()
-      + ", "
-      + active_sub["FIRST NAME"].astype(str).str.strip()
-      + " (Rm: "
-      + active_sub.get("ROOM NO", "N/A").astype(str)
-      + ")"
-  )
-
-  selected_inpatient_label = st.selectbox(
-      "Select Active Patient in Department",
-      sorted(active_sub["DISPLAY_LABEL"].tolist()),
-      key=f"isolated_inpatient_sel_{dept_name_label}",
-  )
-
-  matched_inpatient_row = active_sub[
-      active_sub["DISPLAY_LABEL"] == selected_inpatient_label
-  ].iloc[0]
-
-  matched_idx = unit_full_df[
-      (unit_full_df["LAST NAME"].astype(str).str.strip().str.upper() == str(matched_inpatient_row["LAST NAME"]).strip().upper())
-      & (unit_full_df["FIRST NAME"].astype(str).str.strip().str.upper() == str(matched_inpatient_row["FIRST NAME"]).strip().upper())
-      & (unit_full_df["DATE"].astype(str).str.strip() == str(matched_inpatient_row["DATE"]).strip())
-  ].index
-
-  st.markdown("##### 5. Diagnostics Procedures and Treatment Plans")
-  search_rvs_cross = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key=f"search_rvs_cross_{dept_name_label}").strip().upper()
-  matched_rvs_cross = []
-  added_cross_procs = ""
-  if search_rvs_cross:
-    for cat_k, p_list in ANNEX_B_CATEGORIZED_PROCEDURES.items():
-      for p_item in p_list:
-        if search_rvs_cross in p_item:
-          matched_rvs_cross.append(f"[{cat_k}] {p_item}")
-    if matched_rvs_cross:
-      sel_m = st.selectbox("Matching RVS Codes Found", ["Select Match"] + matched_rvs_cross, key=f"sel_m_cross_{dept_name_label}")
-      if sel_m and sel_m != "Select Match":
-        added_cross_procs = sel_m
-    else:
-      added_cross_procs = f"{search_rvs_cross} - CUSTOM RVS ENTRY"
-  else:
-    chosen_cat_cross = st.selectbox(
-        "Select Anatomical / Surgical Category",
-        ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
-        key=f"cross_cat_{dept_name_label}"
-    )
-    if chosen_cat_cross and chosen_cat_cross != "Select Category":
-      sub_c = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_cross])
-      added_cross_procs = st.selectbox(
-          f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_cross}`",
-          ["Select Procedure"] + sub_c,
-          key=f"cross_proc_{dept_name_label}_{chosen_cat_cross}"
-      )
-
-  with st.form(f"isolated_dept_form_{dept_name_label}"):
-    st.markdown(
-        f"**Selected Patient:** `{selected_inpatient_label}`"
-    )
-
-    up_status = st.selectbox(
-        "Update Patient Status",
-        ["ACTIVE", "CAB", "DISCHARGED", "MGH"],
-        index=0,
-        key=f"iso_st_{dept_name_label}",
-    )
-    add_meds = st.text_area(
-        "Add Medications / Orders",
-        value="",
-        key=f"iso_med_{dept_name_label}",
-    ).strip().upper()
-    add_ends = st.text_area(
-        "Special Endorsements / Notes",
-        value="",
-        key=f"iso_end_{dept_name_label}",
-    ).strip().upper()
-
-    st.markdown("---")
-    confirm_password = st.text_input(
-        "🔒 Re-enter Your Account Password to Authorize Update",
-        type="password",
-        key=f"iso_pwd_{dept_name_label}",
-    )
-
-    submit_cross = st.form_submit_button(
-        "💾 Push Order Update & Status"
-    )
-    if submit_cross:
-      current_username = st.session_state.get("username", "").strip().lower()
-      user_record = USER_DATABASE.get(current_username, {})
-      stored_hash = user_record.get("password", "")
-
-      if not confirm_password or hash_password(confirm_password) != stored_hash:
-        st.error(
-            "🚨 Authorization Error: Incorrect account password. Update"
-            " aborted."
-        )
-        st.stop()
-
-      if len(matched_idx) > 0:
-        idx = matched_idx[0]
-        now_ts = get_ph_time().strftime(
-            f"[%m/%d/%Y %I:%M %p - {st.session_state['name']}]"
-        )
-
-        if up_status:
-          unit_full_df.loc[idx, "PATIENT STATUS"] = up_status
-
-        if added_cross_procs and added_cross_procs != "Select Procedure":
-          ex_p = (
-              str(unit_full_df.loc[idx, "PROCEDURES"])
-              if "PROCEDURES" in unit_full_df.columns
-              else ""
-          )
-          bullet_item = f"• {now_ts} {added_cross_procs}"
-          unit_full_df.loc[idx, "PROCEDURES"] = (
-              f"{ex_p}\n{bullet_item}".strip()
-              if ex_p and ex_p != "NAN"
-              else bullet_item
-          )
-
-        if add_meds:
-          ex_m = (
-              str(unit_full_df.loc[idx, "MEDICATIONS"])
-              if "MEDICATIONS" in unit_full_df.columns
-              else ""
-          )
-          bullet_item = f"• {now_ts} {add_meds}"
-          unit_full_df.loc[idx, "MEDICATIONS"] = (
-              f"{ex_m}\n{bullet_item}".strip()
-              if ex_m and ex_m != "NAN"
-              else bullet_item
-          )
-
-        if add_ends:
-          ex_e = (
-              str(unit_full_df.loc[idx, "SPECIAL ENDORSEMENTS"])
-              if "SPECIAL ENDORSEMENTS" in unit_full_df.columns
-              else ""
-          )
-          bullet_item = f"• {now_ts} {add_ends}"
-          unit_full_df.loc[idx, "SPECIAL ENDORSEMENTS"] = (
-              f"{ex_e}\n{bullet_item}".strip()
-              if ex_e and ex_e != "NAN"
-              else bullet_item
-          )
-
-        if update_google_sheet_from_df(target_sheet, unit_full_df):
-          st.cache_data.clear()
-          st.session_state["df_cache"] = {}
-          st.success(
-              f"Successfully updated patient record in `{target_sheet}`!"
-          )
-          st.rerun()
-      else:
-        st.error("Could not locate the specific patient record index.")
-
-
-def render_department_live_roster(dept_sheet_name):
-  st.markdown(f"### 📋 Active Live Roster (`{dept_sheet_name}`)")
-  dept_df = read_google_sheet(dept_sheet_name)
-  if not dept_df.empty:
-    clean_d = clean_display_df(dept_df)
-    show_all_dept_patients = st.checkbox(
-        "Include discharged patients in unit view", value=False, key=f"d_disc_{dept_sheet_name}"
-    )
-    
-    if "ADMITTED TO" in clean_d.columns and dept_sheet_name.startswith("Special Care Complex"):
-      unit_code_sub = dept_sheet_name.split("(")[-1].replace(")", "").strip()
-      clean_d = clean_d[clean_d["ADMITTED TO"].astype(str).str.strip().str.upper().str.contains(unit_code_sub, case=False, na=False)]
-
-    if "PATIENT STATUS" in clean_d.columns:
-      clean_d["PATIENT STATUS"] = clean_d["PATIENT STATUS"].fillna("ACTIVE")
-      if not show_all_dept_patients:
-        filtered_d = clean_d[
-            clean_d["PATIENT STATUS"].astype(str).str.strip().str.upper().isin(["ACTIVE", "MGH", "CAB"])
-        ]
-      else:
-        filtered_d = clean_d
-    else:
-      filtered_d = clean_d
-
-    display_paginated_dataframe(filtered_d, key_prefix=f"roster_{dept_sheet_name}", is_historical=True)
-  else:
-    st.info(f"No records found in `{dept_sheet_name}` yet.")
-
-
 # ---------------------------------------------------------
 # UI HEADER & SIDEBAR NAVIGATION
 # ---------------------------------------------------------
@@ -1636,6 +1394,44 @@ st.sidebar.markdown(
     f"**Date & Time:** `{ph_now_display.strftime('%B %d, %Y - %I:%M %p')}`"
 )
 st.sidebar.markdown("---")
+
+# Module navigation list calculation
+logged_user_key = st.session_state["username"]
+user_info = USER_DATABASE.get(logged_user_key, {})
+allowed_modules = user_info.get("modules", "All")
+
+all_department_modules = [
+    "Hospital Information System",
+    "Pareto Tally Sheet",
+] + sorted_departments
+if allowed_modules == "All":
+  MODULES = all_department_modules
+else:
+  allowed_list = (
+      list(allowed_modules)
+      if isinstance(allowed_modules, list)
+      else [allowed_modules]
+  )
+  fixed_front = [
+      m
+      for m in ["Hospital Information System", "Pareto Tally Sheet"]
+      if m in allowed_list or allowed_modules == "All"
+  ]
+  other_allowed = sorted([
+      m
+      for m in allowed_list
+      if m not in ["Hospital Information System", "Pareto Tally Sheet"]
+  ])
+  MODULES = fixed_front + other_allowed
+
+pinned_modules = ["Hospital Information System", "Pareto Tally Sheet"]
+filtered_modules = [m for m in MODULES if m not in pinned_modules]
+MODULES = pinned_modules + sorted(filtered_modules)
+
+st.sidebar.markdown("### 🧭 Department Navigation")
+selected_sheet = st.sidebar.selectbox(
+    "Select Target Google Sheet Module", MODULES, index=0
+)
 
 # ---------------------------------------------------------
 # ADMIN CONTROL CENTER & HEALTH MONITOR DASHBOARD
@@ -2039,44 +1835,6 @@ if st.session_state["role"] == "Administrator":
         st.sidebar.warning("Please check the confirmation box to proceed.")
   st.sidebar.markdown("---")
 
-logged_user_key = st.session_state["username"]
-user_info = USER_DATABASE.get(logged_user_key, {})
-allowed_modules = user_info.get("modules", "All")
-
-all_department_modules = [
-    "Hospital Information System",
-    "Pareto Tally Sheet",
-] + sorted_departments
-if allowed_modules == "All":
-  MODULES = all_department_modules
-else:
-  allowed_list = (
-      list(allowed_modules)
-      if isinstance(allowed_modules, list)
-      else [allowed_modules]
-  )
-  fixed_front = [
-      m
-      for m in ["Hospital Information System", "Pareto Tally Sheet"]
-      if m in allowed_list or allowed_modules == "All"
-  ]
-  other_allowed = sorted([
-      m
-      for m in allowed_list
-      if m not in ["Hospital Information System", "Pareto Tally Sheet"]
-  ])
-  MODULES = fixed_front + other_allowed
-
-pinned_modules = ["Hospital Information System", "Pareto Tally Sheet"]
-filtered_modules = [m for m in MODULES if m not in pinned_modules]
-MODULES = pinned_modules + sorted(filtered_modules)
-
-st.sidebar.markdown("### 🧭 Department Navigation")
-selected_sheet = st.sidebar.selectbox(
-    "Select Target Google Sheet Module", MODULES, index=0
-)
-
-st.sidebar.markdown("---")
 st.sidebar.markdown("### 📥 Export Reports")
 
 active_export_df = (
