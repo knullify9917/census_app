@@ -1944,12 +1944,25 @@ if selected_sheet == "Hospital Information System":
 st.markdown("---")
 
 
+def get_sheet_name_from_label(label):
+  mapping = {
+      "ECC": "Emergency Care Complex (ECC)",
+      "ENDO": "Endoscopy Unit (ENDO)",
+      "HDU": "Hemodialysis Unit (HDU)",
+      "OBGYNE": "OBGYNE Care Complex (LRDR-OB Surgery)",
+      "SCC": "Surgical Care Complex (OR Main)",
+      "SCU": "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
+  }
+  return mapping.get(label, label if label in SHEET_HEADERS else selected_sheet)
+
+
 def render_inpatient_order_updater_form(dept_name_label):
   st.markdown(
       f"##### 🔄 Update Inpatient Orders in `{dept_name_label}`"
   )
 
-  unit_full_df = read_google_sheet(dept_name_label if dept_name_label in SHEET_HEADERS else selected_sheet)
+  target_sheet = get_sheet_name_from_label(dept_name_label)
+  unit_full_df = read_google_sheet(target_sheet)
   if unit_full_df.empty or "LAST NAME" not in unit_full_df.columns:
     st.info("No active admitted patient records found in this unit.")
     return
@@ -1987,6 +2000,7 @@ def render_inpatient_order_updater_form(dept_name_label):
   matched_idx = unit_full_df[
       (unit_full_df["LAST NAME"].astype(str).str.strip().str.upper() == str(matched_inpatient_row["LAST NAME"]).strip().upper())
       & (unit_full_df["FIRST NAME"].astype(str).str.strip().str.upper() == str(matched_inpatient_row["FIRST NAME"]).strip().upper())
+      & (unit_full_df["DATE"].astype(str).str.strip() == str(matched_inpatient_row["DATE"]).strip())
   ].index
 
   st.markdown("##### 5. Diagnostics Procedures and Treatment Plans")
@@ -2110,12 +2124,11 @@ def render_inpatient_order_updater_form(dept_name_label):
               else bullet_item
           )
 
-        target_sheet_name = dept_name_label if dept_name_label in SHEET_HEADERS else selected_sheet
-        if update_google_sheet_from_df(target_sheet_name, unit_full_df):
+        if update_google_sheet_from_df(target_sheet, unit_full_df):
           st.cache_data.clear()
           st.session_state["df_cache"] = {}
           st.success(
-              f"Successfully updated patient record in `{target_sheet_name}`!"
+              f"Successfully updated patient record in `{target_sheet}`!"
           )
           st.rerun()
       else:
