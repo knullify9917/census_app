@@ -433,7 +433,7 @@ for field in sorted(SPECIALTIES_BY_FIELD.keys()):
     spec_list.append(spec)
 SPECIALTY_DROPDOWN_OPTIONS = ["None"] + sorted(list(set(spec_list) - {"OTHERS", "Others"})) + ["Others"]
 
-# Hierarchical Annex B Categorized Procedure Case Rates for Navigational Dropdowns
+# Hierarchical Annex B Categorized Procedure Case Rates with RVS Codes & Case Rates
 ANNEX_B_CATEGORIZED_PROCEDURES = {
     "SKIN & SUBCUTANEOUS TISSUE": [
         "10060 - INCISION AND DRAINAGE OF ABSCESS (CARBUNCLE/CYST) [₱7,098.00]",
@@ -1930,28 +1930,29 @@ def render_inpatient_order_updater_form(dept_name_label):
         )
     ].index
 
+    st.markdown("##### 🏷️ Procedure Selection (Annex B Case Rates)")
+    chosen_cat_cross = st.selectbox(
+        f"Select Anatomical / Surgical Category ({dept_name_label})",
+        ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+        key=f"cross_cat_{dept_name_label}"
+    )
+    added_cross_procs = []
+    if chosen_cat_cross and chosen_cat_cross != "Select Category":
+      sub_c = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_cross])
+      chosen_c = st.selectbox(
+          f"Select Procedure under `{chosen_cat_cross}`",
+          ["Select Procedure"] + sub_c,
+          key=f"cross_proc_{dept_name_label}_{chosen_cat_cross}"
+      )
+      if chosen_c and chosen_c != "Select Procedure":
+        added_cross_procs.append(chosen_c)
+
     with st.form(f"cross_dept_form_{dept_name_label}"):
       st.markdown(
           f"**Selected Inpatient:** `{selected_inpatient_label}` | **Unit:**"
           f" `{target_sheet}`"
       )
       
-      chosen_cat_cross = st.selectbox(
-          f"Select Anatomical / Surgical Category ({dept_name_label})",
-          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
-          key=f"cross_cat_{dept_name_label}"
-      )
-      added_cross_procs = []
-      if chosen_cat_cross and chosen_cat_cross != "Select Category":
-        sub_c = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_cross])
-        chosen_c = st.selectbox(
-            f"Select Procedure under `{chosen_cat_cross}`",
-            ["Select Procedure"] + sub_c,
-            key=f"cross_proc_{dept_name_label}_{chosen_cat_cross}"
-        )
-        if chosen_c and chosen_c != "Select Procedure":
-          added_cross_procs.append(chosen_c)
-
       add_meds = st.text_area(
           f"Add Medications / Orders",
           value="",
@@ -2620,6 +2621,24 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
   )
 
   with tab_reg:
+    # Cascaded Category Selection placed outside the form to allow live UI updates
+    st.subheader("5. Diagnostics Procedures and Treatment Plans")
+    chosen_cat_gnu = st.selectbox(
+        "Select Anatomical / Surgical Category",
+        ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+        key=f"gnu_cat_{form_key_slug}"
+    )
+    gnu_selected_proc = []
+    if chosen_cat_gnu and chosen_cat_gnu != "Select Category":
+      sub_p = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_gnu])
+      chosen_p = st.selectbox(
+          f"Select Procedure under `{chosen_cat_gnu}`",
+          ["Select Procedure"] + sub_p,
+          key=f"gnu_proc_{form_key_slug}_{chosen_cat_gnu}"
+      )
+      if chosen_p and chosen_p != "Select Procedure":
+        gnu_selected_proc.append(chosen_p)
+
     with st.form(f"gnu_form_{form_key_slug}", clear_on_submit=True):
       st.subheader("1. Patient Demographics")
       c1, c2, c3 = st.columns([1.5, 2, 2])
@@ -2699,23 +2718,6 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
 
       st.subheader("4. Clinical and Diagnostic Details")
       diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip().upper()
-
-      st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      chosen_cat_gnu = st.selectbox(
-          "Select Anatomical / Surgical Category",
-          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
-          key=f"gnu_cat_{form_key_slug}"
-      )
-      gnu_selected_proc = []
-      if chosen_cat_gnu and chosen_cat_gnu != "Select Category":
-        sub_p = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_gnu])
-        chosen_p = st.selectbox(
-            f"Select Procedure under `{chosen_cat_gnu}`",
-            ["Select Procedure"] + sub_p,
-            key=f"gnu_proc_{form_key_slug}_{chosen_cat_gnu}"
-        )
-        if chosen_p and chosen_p != "Select Procedure":
-          gnu_selected_proc.append(chosen_p)
 
       diagnostic_exams_text = st.text_area(
           "Diagnostic Examinations", value="", key=f"gnu_{form_key_slug}_diags"
@@ -2834,6 +2836,22 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
             active_patients["DISPLAY_NAME"] == selected_patient_display
         ].index[0]
 
+        chosen_cat_up_g = st.selectbox(
+            "Select Anatomical / Surgical Category for Procedures",
+            ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+            key=f"up_cat_g_{form_key_slug}"
+        )
+        up_procs_g = []
+        if chosen_cat_up_g and chosen_cat_up_g != "Select Category":
+          sub_pg = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_up_g])
+          chosen_pg = st.selectbox(
+              f"Select Procedure under `{chosen_cat_up_g}`",
+              ["Select Procedure"] + sub_pg,
+              key=f"up_proc_g_{form_key_slug}_{chosen_cat_up_g}"
+          )
+          if chosen_pg and chosen_pg != "Select Procedure":
+            up_procs_g.append(chosen_pg)
+
         with st.form(f"update_form_{form_key_slug}"):
           st.markdown(
               f"**Patient:** `{selected_patient_display}` | **Current"
@@ -2847,22 +2865,6 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
               key=f"st_{form_key_slug}",
           )
           
-          chosen_cat_up_g = st.selectbox(
-              "Select Anatomical / Surgical Category for Procedures",
-              ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
-              key=f"up_cat_g_{form_key_slug}"
-          )
-          up_procs_g = []
-          if chosen_cat_up_g and chosen_cat_up_g != "Select Category":
-            sub_pg = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_up_g])
-            chosen_pg = st.selectbox(
-                f"Select Procedure under `{chosen_cat_up_g}`",
-                ["Select Procedure"] + sub_pg,
-                key=f"up_proc_g_{form_key_slug}_{chosen_cat_up_g}"
-            )
-            if chosen_pg and chosen_pg != "Select Procedure":
-              up_procs_g.append(chosen_pg)
-
           up_diags = st.text_area(
               "New / Additional Diagnostic Examinations",
               value="",
@@ -3193,6 +3195,23 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
   ])
 
   with tab_reg:
+    st.subheader("5. Diagnostics Procedures and Treatment Plans")
+    chosen_cat_endo = st.selectbox(
+        "Select Anatomical / Surgical Category",
+        ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+        key="endo_cat_sel"
+    )
+    endo_selected_procs = []
+    if chosen_cat_endo and chosen_cat_endo != "Select Category":
+      sub_endo = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_endo])
+      chosen_endo = st.selectbox(
+          f"Select Procedure under `{chosen_cat_endo}`",
+          ["Select Procedure"] + sub_endo,
+          key=f"endo_proc_sel_{chosen_cat_endo}"
+      )
+      if chosen_endo and chosen_endo != "Select Procedure":
+        endo_selected_procs.append(chosen_endo)
+
     with st.form("endo_form", clear_on_submit=True):
       st.subheader("1. Patient Demographics")
       c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
@@ -3290,23 +3309,6 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
         diagnosis_text = st.text_input("Clinical Diagnosis", value="").strip().upper()
       with cd2:
         procedure_text = st.text_input("Procedure Name", value="").strip().upper()
-
-      st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      chosen_cat_endo = st.selectbox(
-          "Select Anatomical / Surgical Category",
-          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
-          key="endo_cat_sel"
-      )
-      endo_selected_procs = []
-      if chosen_cat_endo and chosen_cat_endo != "Select Category":
-        sub_endo = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_endo])
-        chosen_endo = st.selectbox(
-            f"Select Procedure under `{chosen_cat_endo}`",
-            ["Select Procedure"] + sub_endo,
-            key=f"endo_proc_sel_{chosen_cat_endo}"
-        )
-        if chosen_endo and chosen_endo != "Select Procedure":
-          endo_selected_procs.append(chosen_endo)
 
       ca, cb = st.columns(2)
       with ca:
@@ -3742,6 +3744,23 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
   ])
 
   with tab_reg:
+    st.subheader("5. Diagnostics Procedures and Treatment Plans")
+    chosen_cat_ob = st.selectbox(
+        "Select Anatomical / Surgical Category",
+        ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+        key="ob_cat_sel"
+    )
+    ob_selected_procs = []
+    if chosen_cat_ob and chosen_cat_ob != "Select Category":
+      sub_ob = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_ob])
+      chosen_ob = st.selectbox(
+          f"Select Procedure under `{chosen_cat_ob}`",
+          ["Select Procedure"] + sub_ob,
+          key=f"ob_proc_sel_{chosen_cat_ob}"
+      )
+      if chosen_ob and chosen_ob != "Select Procedure":
+        ob_selected_procs.append(chosen_ob)
+
     with st.form("obgyne_form", clear_on_submit=True):
       st.subheader("1. Patient Demographics")
       c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
@@ -3846,23 +3865,6 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         surgical_procedure = st.text_area(
             "Surgical Procedure", value=""
         ).strip().upper()
-
-      st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      chosen_cat_ob = st.selectbox(
-          "Select Anatomical / Surgical Category",
-          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
-          key="ob_cat_sel"
-      )
-      ob_selected_procs = []
-      if chosen_cat_ob and chosen_cat_ob != "Select Category":
-        sub_ob = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_ob])
-        chosen_ob = st.selectbox(
-            f"Select Procedure under `{chosen_cat_ob}`",
-            ["Select Procedure"] + sub_ob,
-            key=f"ob_proc_sel_{chosen_cat_ob}"
-        )
-        if chosen_ob and chosen_ob != "Select Procedure":
-          ob_selected_procs.append(chosen_ob)
 
       ca, cb, cc = st.columns(3)
       with ca:
@@ -3970,6 +3972,23 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
   ])
 
   with tab_reg:
+    st.subheader("5. Diagnostics Procedures and Treatment Plans")
+    chosen_cat_scc = st.selectbox(
+        "Select Anatomical / Surgical Category",
+        ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+        key="scc_cat_sel"
+    )
+    scc_selected_procs = []
+    if chosen_cat_scc and chosen_cat_scc != "Select Category":
+      sub_scc = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_scc])
+      chosen_scc = st.selectbox(
+          f"Select Procedure under `{chosen_cat_scc}`",
+          ["Select Procedure"] + sub_scc,
+          key=f"scc_proc_sel_{chosen_cat_scc}"
+      )
+      if chosen_scc and chosen_scc != "Select Procedure":
+        scc_selected_procs.append(chosen_scc)
+
     with st.form("scc_form", clear_on_submit=True):
       st.subheader("1. Patient Demographics")
       c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
@@ -4068,23 +4087,6 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         ).strip().upper()
 
       procedure = st.text_area("Surgical Procedure", value="").strip().upper()
-
-      st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      chosen_cat_scc = st.selectbox(
-          "Select Anatomical / Surgical Category",
-          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
-          key="scc_cat_sel"
-      )
-      scc_selected_procs = []
-      if chosen_cat_scc and chosen_cat_scc != "Select Category":
-        sub_scc = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_scc])
-        chosen_scc = st.selectbox(
-            f"Select Procedure under `{chosen_cat_scc}`",
-            ["Select Procedure"] + sub_scc,
-            key=f"scc_proc_sel_{chosen_cat_scc}"
-        )
-        if chosen_scc and chosen_scc != "Select Procedure":
-          scc_selected_procs.append(chosen_scc)
 
       ca, cb, cc = st.columns(3)
       with ca:
