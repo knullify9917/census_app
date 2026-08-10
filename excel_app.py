@@ -1150,7 +1150,7 @@ def append_record_to_google_sheet(sheet_name, row_dict):
   log_audit_event(
       "INSERT",
       sheet_name,
-      f"Added record for {row_dict.get('LAST NAME', '')}",
+      f"Added record for {row_dict.get('LAST NAME', '')} {row_dict.get('FIRST NAME', '')}",
   )
   return True
 
