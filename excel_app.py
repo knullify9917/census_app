@@ -433,6 +433,63 @@ for field in sorted(SPECIALTIES_BY_FIELD.keys()):
     spec_list.append(spec)
 SPECIALTY_DROPDOWN_OPTIONS = ["None"] + sorted(list(set(spec_list) - {"OTHERS", "Others"})) + ["Others"]
 
+# Simplified ANNEX B Procedures Case Rates List for Diagnostic Procedures & Treatment Plans
+ANNEX_B_PROCEDURES = [
+    "INCISION AND DRAINAGE OF ABSCESS (CARBUNCLE/ABSCESS/CYST)",
+    "INCISION AND DRAINAGE OF PILONIDAL CYST",
+    "DEBRIDEMENT INCLUDING REMOVAL OF FOREIGN MATERIAL (FRACTURE/WOUND)",
+    "EXCISION, BENIGN LESION / SKIN TAG",
+    "EXCISION, MALIGNANT LESION",
+    "DEBRIDEMENT OF NAIL(S) / AVULSION",
+    "SIMPLE REPAIR OF SUPERFICIAL WOUNDS",
+    "LAYER CLOSURE OF WOUNDS",
+    "ADJACENT TISSUE TRANSFER OR REARRANGEMENT / FLAPS",
+    "SPLIT GRAFT / FULL THICKNESS GRAFT",
+    "BLEPHAROPLASTY (LOWER/UPPER EYELID)",
+    "EXCISION OF PRESSURE ULCER (SACRAL/ISCHIAL/TROCHANTERIC)",
+    "DESTRUCTION OF BENIGN OR MALIGNANT LESIONS",
+    "MASTECTOMY (PARTIAL/SIMPLE/RADICAL/MODIFIED RADICAL)",
+    "BREAST RECONSTRUCTION / PROSTHESIS INSERTION",
+    "MUSCLE / BONE BIOPSY",
+    "ARTHROCENTESIS / JOINT ASPIRATION & INJECTION",
+    "REMOVAL OF SUPERFICIAL OR DEEP IMPLANT / HARDWARE",
+    "REPLANTATION (ARM/FOREARM/HAND/DIGIT)",
+    "BONE GRAFT (MINOR/MAJOR/SPINE)",
+    "TREATMENT OF TMJ DISORDERS & MANDIBULAR/MAXILLARY FRACTURES",
+    "OPEN/CLOSED TREATMENT OF NASAL & FACIAL FRACTURES",
+    "SPINAL FUSION / ARTHRODESIS & INSTRUMENTATION",
+    "ARTHROTOMY & SYNOVECTOMY (SHOULDER/ELBOW/KNEE/ANKLE)",
+    "ROTATOR CUFF REPAIR / SHOULDER STABILIZATION",
+    "TOTAL OR PARTIAL JOINT REPLACEMENT (HIP/KNEE/ELBOW/ANKLE)",
+    "OSTEOTOMY & FIXATION (HUMERUS/RADIUS/ULNA/FEMUR/TIBIA)",
+    "AMPUTATION (ARM/FOREARM/THIGH/LEG/TOE/FINGER)",
+    "CARPAL TUNNEL RELEASE / TARSAL TUNNEL RELEASE",
+    "FLEXOR & EXTENSOR TENDON REPAIR / TENOLYSIS",
+    "ARTHROSCOPY (DIAGNOSTIC & SURGICAL - SHOULDER/KNEE/ANKLE)",
+    "RHINOPLASTY / SEPTOPLASTY / TURBINATE SURGERY",
+    "SINUSOTOMY / ENDOSCOPIC SINUS SURGERY (FESS)",
+    "LARYNGECTOMY / LARYNGOPLASTY / BRONCHOSCOPY",
+    "THORACOTOMY / THORACOSTOMY / LUNG RESECTION (LOBECTOMY)",
+    "CARDIAC SURGERY / CABG / VALVE REPLACEMENT",
+    "PACEMAKER / DEFIBRILLATOR INSERTION & REPLACEMENT",
+    "VASCULAR SURGERY / EMBOLECTOMY / BYPASS GRAFTING",
+    "SPLENECTOMY / LIVER RESECTION / HEPATECTOMY",
+    "CHOLECYSTECTOMY / CHOLEDOCHOTOMY / ERCP",
+    "PANCREATIC RESECTION (WHIPPLE PROCEDURE)",
+    "EXPLORATORY LAPAROTOMY / HERNIA REPAIR (INGUINAL/INCISIONAL/UMBILICAL)",
+    "COLECTOMY / PARTIAL OR TOTAL COLECTOMY / COLOSTOMY",
+    "APPENDECTOMY (OPEN OR LAPAROSCOPIC)",
+    "PROCTECTOMY / HEMORRHOIDECTOMY / FISTULECTOMY",
+    "NEPHRECTOMY / NEPHROLITHOTOMY / PYELOPLASTY",
+    "RENAL ALLOTRANSPLANTATION / KIDNEY TRANSPLANT",
+    "CYSTECTOMY / TURP / PROSTATECTOMY",
+    "HYSTERECTOMY (ABDOMINAL OR VAGINAL) / MYOMECTOMY",
+    "DILATION AND CURETTAGE (D&C) / HYSTEROSCOPY",
+    "TUBAL LIGATION / SALPINGECTOMY / OOPHORECTOMY",
+    "OTHERS"
+]
+ANNEX_B_PROCEDURES = sorted([x for x in ANNEX_B_PROCEDURES if x != "OTHERS"]) + ["OTHERS"]
+
 GNU_SHEET_HEADER = [
     "MONTH",
     "DATE",
@@ -1143,11 +1200,11 @@ def get_editor_column_config(columns, is_historical=True):
       )
     elif col_upper == "SEX":
       config[col] = st.column_config.SelectboxColumn(
-          col, options=["MALE", "FEMALE", "OTHERS"], width="small"
+          col, options=["FEMALE", "MALE", "OTHERS"], width="small"
       )
     elif col_upper == "MODE OF PAYMENT":
       config[col] = st.column_config.SelectboxColumn(
-          col, options=["PHIC", "HMO", "SELF-PAY"], width="medium"
+          col, options=["HMO", "PHIC", "SELF-PAY"], width="medium"
       )
     elif col_upper == "HOSPITALIZATION MODE":
       config[col] = st.column_config.SelectboxColumn(
@@ -1355,10 +1412,10 @@ if st.session_state["role"] == "Administrator":
           sex = (
               "FEMALE"
               if target_dept == "OBGYNE Care Complex (LRDR-OB Surgery)"
-              else random.choice(["MALE", "FEMALE", "OTHERS"])
+              else random.choice(["FEMALE", "MALE", "OTHERS"])
           )
           age = str(random.randint(1, 88))
-          pay_mode = random.choice(["PHIC", "HMO", "SELF-PAY"])
+          pay_mode = random.choice(["HMO", "PHIC", "SELF-PAY"])
           stat = random.choice(["ACTIVE", "MGH", "DISCHARGED", "CAB"])
           date_str = ph_now_display.strftime("%m/%d/%Y")
 
@@ -2619,9 +2676,9 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
       diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip().upper()
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      procedures_text = st.text_area(
-          "Procedures", value="", key=f"gnu_{form_key_slug}_procs"
-      ).strip().upper()
+      procedures_text = st.multiselect(
+          "Procedures (Annex B Case Rates)", ANNEX_B_PROCEDURES, key=f"gnu_{form_key_slug}_procs"
+      )
       diagnostic_exams_text = st.text_area(
           "Diagnostic Examinations", value="", key=f"gnu_{form_key_slug}_diags"
       ).strip().upper()
@@ -2687,7 +2744,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
             "HOSPITALIZATION MODE": hosp_mode,
             "MODE OF PAYMENT": payment_selected,
             "PATIENT STATUS": patient_status,
-            "PROCEDURES": sanitize_medical_text(procedures_text),
+            "PROCEDURES": sanitize_medical_text(", ".join(procedures_text)),
             "DIAGNOSTIC EXAMINATIONS": sanitize_medical_text(
                 diagnostic_exams_text
             ),
@@ -2751,12 +2808,11 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
               index=0,
               key=f"st_{form_key_slug}",
           )
-          up_procs = st.text_area(
-              "New / Additional Procedures",
-              value="",
-              placeholder="Enter new procedures to append...",
+          up_procs = st.multiselect(
+              "New / Additional Procedures (Annex B Case Rates)",
+              ANNEX_B_PROCEDURES,
               key=f"pr_{form_key_slug}",
-          ).strip().upper()
+          )
           up_diags = st.text_area(
               "New / Additional Diagnostic Examinations",
               value="",
@@ -2807,7 +2863,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
                   if "PROCEDURES" in dept_df_up.columns
                   else ""
               )
-              bullet_item = f"• {now_ts} {up_procs}"
+              bullet_item = f"• {now_ts} {', '.join(up_procs)}"
               dept_df_up.loc[matched_idx, "PROCEDURES"] = (
                   f"{existing_p}\n{bullet_item}".strip()
                   if existing_p and existing_p != "NAN"
@@ -2981,13 +3037,12 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
           "FRACTURE",
           "OTHERS",
       ])
-      # Ensure Others is last
       disease_options = sorted([x for x in disease_options if x != "OTHERS"]) + ["OTHERS"]
       selected_diseases = st.multiselect("Disease Category", disease_options)
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
       kit_package = st.checkbox("Hospital Kit Package", value=False, key="ecc_kit")
-      ecc_procedures = st.text_area("Procedures", value="", key="ecc_procs").strip().upper()
+      ecc_procedures = st.multiselect("Procedures (Annex B Case Rates)", ANNEX_B_PROCEDURES, key="ecc_procs")
       ecc_diagnostic_exams = st.text_area(
           "Diagnostic Examinations", value="", key="ecc_diags"
       ).strip().upper()
@@ -3046,7 +3101,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
             "HOSPITAL KIT PACKAGE": "YES" if kit_package else "NO",
             "MODE OF PAYMENT": payment_selected,
             "ADMITTED TO": admitted_to,
-            "PROCEDURES": sanitize_medical_text(ecc_procedures),
+            "PROCEDURES": sanitize_medical_text(", ".join(ecc_procedures)),
             "DIAGNOSTIC EXAMINATIONS": sanitize_medical_text(
                 ecc_diagnostic_exams
             ),
@@ -3335,7 +3390,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
       c8, c9, c10, c11 = st.columns(4)
       with c8:
         hosp_mode = st.selectbox(
-            "Hospitalization Mode", ["Select Mode", "Outpatient", "Inpatient"], index=0
+            "Hospitalization Mode", ["Select Mode", "Inpatient", "Outpatient"], index=0
         )
       with c9:
         payment_options = ["Select Payment", "HMO", "PHIC", "SELF-PAY"]
@@ -3368,25 +3423,26 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         )
 
       tag_as_cm = st.form_submit_button("Tag as Co-Management")
+      cm_list_key = "cm_list_hdu"
       if tag_as_cm and attending_physician:
         doc_name_up = attending_physician.strip().upper()
-        existing_cms = st.session_state.setdefault("cm_list_hdu", [])
+        existing_cms = st.session_state.setdefault(cm_list_key, [])
         if not any(
             cm["name"] == doc_name_up and cm["spec"] == attending_spec
             for cm in existing_cms
         ):
           existing_cms.append({"name": doc_name_up, "spec": attending_spec})
 
-      if st.session_state.get("cm_list_hdu"):
+      if st.session_state.get(cm_list_key):
         st.markdown("**Current Co-Management Doctors Added:**")
-        for cm in st.session_state["cm_list_hdu"]:
+        for cm in st.session_state[cm_list_key]:
           st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
       st.subheader("4. Clinical and Diagnostic Details")
       diagnosis = st.text_input("Diagnosis", value="").strip().upper()
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      hdu_procedures = st.text_area("Procedures", value="", key="hdu_procs").strip().upper()
+      hdu_procedures = st.multiselect("Procedures (Annex B Case Rates)", ANNEX_B_PROCEDURES, key="hdu_procs")
       hdu_diagnostic_exams = st.text_area(
           "Diagnostic Examinations", value="", key="hdu_diags"
       ).strip().upper()
@@ -3418,7 +3474,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
         final_attending = (
             attending_physician if attending_physician else "N/A"
         )
-        valid_cm = st.session_state.get("cm_list_hdu", [])
+        valid_cm = st.session_state.get(cm_list_key, [])
         cm_names_str = (
             "; ".join([item["name"] for item in valid_cm])
             if valid_cm
@@ -3449,7 +3505,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
             "HOSPITAL KIT PACKAGE": "YES" if kit_package_hdu else "NO",
             "MODE OF PAYMENT": payment_selected,
             "PATIENT STATUS": patient_status,
-            "PROCEDURES": sanitize_medical_text(hdu_procedures),
+            "PROCEDURES": sanitize_medical_text(", ".join(hdu_procedures)),
             "DIAGNOSTIC EXAMINATIONS": sanitize_medical_text(
                 hdu_diagnostic_exams
             ),
@@ -3468,7 +3524,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
               "Successfully saved to Google Sheets `Hemodialysis Unit (HDU)`"
               " tab!"
           )
-          st.session_state["cm_list_hdu"] = []
+          st.session_state[cm_list_key] = []
 
   with tab_update:
     st.markdown(
@@ -3512,9 +3568,11 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
               f" Diagnosis:** `{matched_hdu_row.get('DIAGNOSIS', '')}`"
           )
 
-          up_procs_hdu = st.text_area(
-              "New / Additional Procedures", value="", key="up_p_hdu"
-          ).strip().upper()
+          up_procs_hdu = st.multiselect(
+              "New / Additional Procedures (Annex B Case Rates)",
+              ANNEX_B_PROCEDURES,
+              key="up_p_hdu",
+          )
           up_diags_hdu = st.text_area(
               "New / Additional Diagnostic Examinations",
               value="",
@@ -3558,7 +3616,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
                   if "PROCEDURES" in hdu_df_up.columns
                   else ""
               )
-              bullet_item = f"• {now_ts} {up_procs_hdu}"
+              bullet_item = f"• {now_ts} {', '.join(up_procs_hdu)}"
               hdu_df_up.loc[matched_hdu_idx, "PROCEDURES"] = (
                   f"{ex_p}\n{bullet_item}".strip()
                   if ex_p and ex_p != "NAN"
@@ -3694,18 +3752,19 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
         )
 
       tag_as_cm = st.form_submit_button("Tag as Co-Management")
+      cm_list_key = "cm_list_ob"
       if tag_as_cm and attending_physician:
         doc_name_up = attending_physician.strip().upper()
-        existing_cms = st.session_state.setdefault("cm_list_ob", [])
+        existing_cms = st.session_state.setdefault(cm_list_key, [])
         if not any(
             cm["name"] == doc_name_up and cm["spec"] == attending_spec
             for cm in existing_cms
         ):
           existing_cms.append({"name": doc_name_up, "spec": attending_spec})
 
-      if st.session_state.get("cm_list_ob"):
+      if st.session_state.get(cm_list_key):
         st.markdown("**Current Co-Management Doctors Added:**")
-        for cm in st.session_state["cm_list_ob"]:
+        for cm in st.session_state[cm_list_key]:
           st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
       surgeon = st.text_input(
@@ -3774,7 +3833,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
           st.stop()
 
         final_attending = attending_physician if attending_physician else "N/A"
-        valid_cm = st.session_state.get("cm_list_ob", [])
+        valid_cm = st.session_state.get(cm_list_key, [])
         cm_names_str = (
             "; ".join([item["name"] for item in valid_cm]) if valid_cm else "N/A"
         )
@@ -3828,7 +3887,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
           st.success(
               "Successfully saved to OBGYNE standalone register and metrics!"
           )
-          st.session_state["cm_list_ob"] = []
+          st.session_state[cm_list_key] = []
 
   with tab_update_inpatient:
     render_inpatient_order_updater_form("OBGYNE")
@@ -3916,18 +3975,19 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         )
 
       tag_as_cm = st.form_submit_button("Tag as Co-Management")
+      cm_list_key = "cm_list_scc"
       if tag_as_cm and attending_physician:
         doc_name_up = attending_physician.strip().upper()
-        existing_cms = st.session_state.setdefault("cm_list_scc", [])
+        existing_cms = st.session_state.setdefault(cm_list_key, [])
         if not any(
             cm["name"] == doc_name_up and cm["spec"] == attending_spec
             for cm in existing_cms
         ):
           existing_cms.append({"name": doc_name_up, "spec": attending_spec})
 
-      if st.session_state.get("cm_list_scc"):
+      if st.session_state.get(cm_list_key):
         st.markdown("**Current Co-Management Doctors Added:**")
-        for cm in st.session_state["cm_list_scc"]:
+        for cm in st.session_state[cm_list_key]:
           st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
       surgeon = st.text_input("Primary Surgeon", value="").strip().upper()
@@ -4020,7 +4080,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
           st.stop()
 
         final_attending = attending_physician if attending_physician else "N/A"
-        valid_cm = st.session_state.get("cm_list_scc", [])
+        valid_cm = st.session_state.get(cm_list_key, [])
         cm_names_str = (
             "; ".join([item["name"] for item in valid_cm]) if valid_cm else "N/A"
         )
@@ -4074,7 +4134,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
               "Successfully saved to Surgical Care Complex standalone register"
               " and metrics!"
           )
-          st.session_state["cm_list_scc"] = []
+          st.session_state[cm_list_key] = []
 
   with tab_update_inpatient:
     render_inpatient_order_updater_form("SCC")
@@ -4131,7 +4191,8 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
       with c10:
         admitted_from = st.selectbox("Admitted From", HOSPITAL_UNIT_AREAS, index=0)
       with c11:
-        scu_areas = ["Select Area", "NICU", "OUTBORN", "PCN", "PICU", "ROOM-IN", "NSU"]
+        scu_areas = ["NICU", "OUTBORN", "PCN", "PICU", "ROOM-IN", "NSU"]
+        scu_areas = ["Select Area"] + sorted([x for x in scu_areas if x != "Select Area"])
         admitted_to = st.selectbox(
             "Admitted To",
             scu_areas,
@@ -4170,18 +4231,19 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         )
 
       tag_as_cm = st.form_submit_button("Tag as Co-Management")
+      cm_list_key = "cm_list_scu"
       if tag_as_cm and attending_physician:
         doc_name_up = attending_physician.strip().upper()
-        existing_cms = st.session_state.setdefault("cm_list_scu", [])
+        existing_cms = st.session_state.setdefault(cm_list_key, [])
         if not any(
             cm["name"] == doc_name_up and cm["spec"] == attending_spec
             for cm in existing_cms
         ):
           existing_cms.append({"name": doc_name_up, "spec": attending_spec})
 
-      if st.session_state.get("cm_list_scu"):
+      if st.session_state.get(cm_list_key):
         st.markdown("**Current Co-Management Doctors Added:**")
-        for cm in st.session_state["cm_list_scu"]:
+        for cm in st.session_state[cm_list_key]:
           st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
       st.subheader("4. Clinical and Diagnostic Details")
@@ -4237,7 +4299,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         )
 
         final_attending = attending_physician if attending_physician else "N/A"
-        valid_cm = st.session_state.get("cm_list_scu", [])
+        valid_cm = st.session_state.get(cm_list_key, [])
         cm_names_str = (
             "; ".join([item["name"] for item in valid_cm]) if valid_cm else "N/A"
         )
@@ -4289,7 +4351,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
               "Successfully saved to Google Sheets `Special Care Complex"
               " (NICU-PICU-NSU/PCN-Outborn)` tab!"
           )
-          st.session_state["cm_list_scu"] = []
+          st.session_state[cm_list_key] = []
 
   with tab_scu_roster:
     render_department_live_roster("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)")
