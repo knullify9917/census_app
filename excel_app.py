@@ -683,7 +683,6 @@ def init_local_sqlite():
     cols_def = ", ".join([f'"{col}" TEXT' for col in cols])
     cursor.execute(f'CREATE TABLE IF NOT EXISTS "{s_name}" ({cols_def})')
 
-  # Create Audit Trail Table
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS "System Audit Logs" (
             TIMESTAMP TEXT,
@@ -695,7 +694,6 @@ def init_local_sqlite():
         )
     """)
 
-  # Create Durable Sync Queue Table
   cursor.execute("""
         CREATE TABLE IF NOT EXISTS "Sync_Queue" (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -799,8 +797,6 @@ def init_google_sheets():
 
 sh = init_google_sheets()
 
-# Durable Background Worker Queue (Persisted in SQLite)
-
 
 def get_queue_size():
   conn = get_sqlite_conn()
@@ -814,57 +810,59 @@ def get_queue_size():
 def background_durable_sync_worker():
   while True:
     conn = get_sqlite_conn()
-    cursor = conn.cursor()
-    cursor.execute(
-        'SELECT id, sheet_name, row_json, is_update, df_pickle FROM "Sync_Queue"'
-        " ORDER BY id ASC LIMIT 1"
-    )
-    row = cursor.fetchone()
-    if not row:
-      conn.close()
-      py_time.sleep(2)
-      continue
-
-    task_id, sheet_name, row_json, is_update, df_pickle = row
-    conn.close()
-
     try:
-      ws = sh.worksheet(sheet_name)
-      if is_update:
-        df = pickle.loads(df_pickle) if df_pickle else pd.DataFrame()
-        ws.clear()
-        headers = SHEET_HEADERS.get(sheet_name, df.columns.tolist())
-        ws.update("A1", [[f"MTCMC CLINICAL CENSUS - {sheet_name} MASTERFILE"]])
-        ws.update("A4", [headers])
-        rows_to_update = []
-        for _, r_val in df.iterrows():
-          mapped_vals = []
-          for h in headers:
-            if h in r_val:
-              v = r_val[h]
-              mapped_vals.append(
-                  "" if (v is None or pd.isna(v)) else str(v).upper()
-              )
-            else:
-              mapped_vals.append("")
-          rows_to_update.append(mapped_vals)
-        if rows_to_update:
-          ws.update("A5", rows_to_update)
-      else:
-        row_dict = json.loads(row_json) if row_json else {}
-        headers = ws.row_values(4)
-        if not headers:
-          headers = SHEET_HEADERS.get(sheet_name, [])
-          ws.update("A4", [headers])
-        row_values = []
-        for h in headers:
-          val = row_dict.get(h, "")
-          row_values.append(
-              "" if (val is None or pd.isna(val)) else str(val).upper()
-          )
-        ws.append_row(row_values)
+      cursor = conn.cursor()
+      cursor.execute(
+          'SELECT id, sheet_name, row_json, is_update, df_pickle FROM "Sync_Queue"'
+          " ORDER BY id ASC LIMIT 1"
+      )
+      row = cursor.fetchone()
+      if not row:
+        conn.close()
+        py_time.sleep(2)
+        continue
 
-      # Remove task from SQLite queue upon successful sync
+      task_id, sheet_name, row_json, is_update, df_pickle = row
+      conn.close()
+
+      def _do_sync():
+        ws = sh.worksheet(sheet_name)
+        if is_update:
+          df = pickle.loads(df_pickle) if df_pickle else pd.DataFrame()
+          ws.clear()
+          headers = SHEET_HEADERS.get(sheet_name, df.columns.tolist())
+          ws.update("A1", [[f"MTCMC CLINICAL CENSUS - {sheet_name} MASTERFILE"]])
+          ws.update("A4", [headers])
+          rows_to_update = []
+          for _, r_val in df.iterrows():
+            mapped_vals = []
+            for h in headers:
+              if h in r_val:
+                v = r_val[h]
+                mapped_vals.append(
+                    "" if (v is None or pd.isna(v)) else str(v).upper()
+                )
+              else:
+                mapped_vals.append("")
+            rows_to_update.append(mapped_vals)
+          if rows_to_update:
+            ws.update("A5", rows_to_update)
+        else:
+          row_dict = json.loads(row_json) if row_json else {}
+          headers = ws.row_values(4)
+          if not headers:
+            headers = SHEET_HEADERS.get(sheet_name, [])
+            ws.update("A4", [headers])
+          row_values = []
+          for h in headers:
+            val = row_dict.get(h, "")
+            row_values.append(
+                "" if (val is None or pd.isna(val)) else str(val).upper()
+            )
+          ws.append_row(row_values)
+
+      safe_gspread_call(sheet_name, _do_sync)
+
       conn_del = get_sqlite_conn()
       conn_del.execute('DELETE FROM "Sync_Queue" WHERE id = ?', (task_id,))
       conn_del.commit()
@@ -874,11 +872,14 @@ def background_durable_sync_worker():
           f"Healthy (Last synced: {get_ph_time().strftime('%I:%M:%S %p')})"
       )
     except Exception as e:
+      try:
+        conn.close()
+      except:
+        pass
       st.session_state["sync_health_status"] = f"Sync Error: {str(e)}"
-      py_time.sleep(5)  # Back off on failure before retrying
+      py_time.sleep(5)
 
 
-# Start durable background daemon thread
 durable_sync_thread = threading.Thread(
     target=background_durable_sync_worker, daemon=True
 )
@@ -954,7 +955,6 @@ def safe_gspread_call(sheet_name, func, *args, **kwargs):
 
 def append_record_to_google_sheet(sheet_name, row_dict):
   ensure_google_sheets_exist()
-  # Immediate local SQLite write
   conn = get_sqlite_conn()
   df_curr = read_sqlite_sheet(sheet_name)
   df_new = pd.DataFrame([row_dict])
@@ -962,7 +962,6 @@ def append_record_to_google_sheet(sheet_name, row_dict):
   sync_df_to_sqlite(sheet_name, df_combined)
   conn.close()
 
-  # Insert into durable SQLite queue
   conn_q = get_sqlite_conn()
   conn_q.execute(
       'INSERT INTO "Sync_Queue" (sheet_name, row_json, is_update, df_pickle)'
@@ -983,10 +982,8 @@ def append_record_to_google_sheet(sheet_name, row_dict):
 
 def update_google_sheet_from_df(sheet_name, df):
   ensure_google_sheets_exist()
-  # Immediate local write
   sync_df_to_sqlite(sheet_name, df)
 
-  # Insert update task into durable SQLite queue
   conn_q = get_sqlite_conn()
   conn_q.execute(
       'INSERT INTO "Sync_Queue" (sheet_name, row_json, is_update, df_pickle)'
@@ -3970,4 +3967,3 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
             " (NICU-PICU-NSU/PCN-Outborn)` tab!"
         )
         st.session_state["cm_list_scu"] = []
-```[cite: 1]
