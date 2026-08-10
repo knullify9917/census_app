@@ -1964,41 +1964,41 @@ def render_inpatient_order_updater_form(dept_name_label):
         )
     ].index
 
-    st.markdown(f"##### 5. Diagnostics Procedures and Treatment Plans")
-    search_rvs_cross = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key=f"search_rvs_cross_{dept_name_label}").strip().upper()
-    matched_rvs_cross = []
-    added_cross_procs = ""
-    if search_rvs_cross:
-      for cat_k, p_list in ANNEX_B_CATEGORIZED_PROCEDURES.items():
-        for p_item in p_list:
-          if search_rvs_cross in p_item:
-            matched_rvs_cross.append(f"[{cat_k}] {p_item}")
-      if matched_rvs_cross:
-        sel_m = st.selectbox("Matching RVS Codes Found", ["Select Match"] + matched_rvs_cross, key=f"sel_m_cross_{dept_name_label}")
-        if sel_m and sel_m != "Select Match":
-          added_cross_procs = sel_m
-      else:
-        added_cross_procs = f"{search_rvs_cross} - CUSTOM RVS ENTRY"
-    else:
-      chosen_cat_cross = st.selectbox(
-          f"Select Anatomical / Surgical Category",
-          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
-          key=f"cross_cat_{dept_name_label}"
-      )
-      if chosen_cat_cross and chosen_cat_cross != "Select Category":
-        sub_c = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_cross])
-        added_cross_procs = st.selectbox(
-            f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_cross}`",
-            ["Select Procedure"] + sub_c,
-            key=f"cross_proc_{dept_name_label}_{chosen_cat_cross}"
-        )
-
     with st.form(f"cross_dept_form_{dept_name_label}"):
       st.markdown(
           f"**Selected Inpatient:** `{selected_inpatient_label}` | **Unit:**"
           f" `{target_sheet}`"
       )
       
+      st.markdown("##### 5. Diagnostics Procedures and Treatment Plans")
+      search_rvs_cross = st.text_input("🔍 Search / Enter Specific RVS Code Directly", value="", key=f"search_rvs_cross_{dept_name_label}").strip().upper()
+      matched_rvs_cross = []
+      added_cross_procs = ""
+      if search_rvs_cross:
+        for cat_k, p_list in ANNEX_B_CATEGORIZED_PROCEDURES.items():
+          for p_item in p_list:
+            if search_rvs_cross in p_item:
+              matched_rvs_cross.append(f"[{cat_k}] {p_item}")
+        if matched_rvs_cross:
+          sel_m = st.selectbox("Matching RVS Codes Found", ["Select Match"] + matched_rvs_cross, key=f"sel_m_cross_{dept_name_label}")
+          if sel_m and sel_m != "Select Match":
+            added_cross_procs = sel_m
+        else:
+          added_cross_procs = f"{search_rvs_cross} - CUSTOM RVS ENTRY"
+      else:
+        chosen_cat_cross = st.selectbox(
+            f"Select Anatomical / Surgical Category",
+            ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+            key=f"cross_cat_{dept_name_label}"
+        )
+        if chosen_cat_cross and chosen_cat_cross != "Select Category":
+          sub_c = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_cross])
+          added_cross_procs = st.selectbox(
+              f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_cross}`",
+              ["Select Procedure"] + sub_c,
+              key=f"cross_proc_{dept_name_label}_{chosen_cat_cross}"
+          )
+
       add_meds = st.text_area(
           f"Add Medications / Orders",
           value="",
@@ -3336,7 +3336,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
       with cd2:
         procedure_text = st.text_input("Procedure Name", value="").strip().upper()
 
-      # 5. Diagnostics Procedures and Treatment Plans (Fully functional inside form)
+      # 5. Diagnostics Procedures and Treatment Plans
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
       
       endo_pkg_bundle = st.selectbox(
@@ -3922,7 +3922,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             "Surgical Procedure", value=""
         ).strip().upper()
 
-      # 5. Diagnostics Procedures and Treatment Plans (Directly under No. 5)
+      # 5. Diagnostics Procedures and Treatment Plans (Fully functional inside form)
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
       
       ob_pkg_bundle = st.selectbox(
@@ -4180,7 +4180,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 
       procedure = st.text_area("Surgical Procedure", value="").strip().upper()
 
-      # 5. Diagnostics Procedures and Treatment Plans (Directly under No. 5)
+      # 5. Diagnostics Procedures and Treatment Plans (Fully functional inside form)
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
       
       scc_pkg_bundle = st.selectbox(
