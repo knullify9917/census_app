@@ -1943,11 +1943,234 @@ if selected_sheet == "Hospital Information System":
 
 st.markdown("---")
 
+# ---------------------------------------------------------
+# MODULE: PARETO TALLY SHEET
+# ---------------------------------------------------------
+if selected_sheet == "Pareto Tally Sheet":
+  st.header("📊 Pareto Tally Sheet & Department Analytics")
+  st.markdown(
+      "Organized per department with dynamic patient census categorization,"
+      " specialization breakdowns, doctor census tables, and separate Daily &"
+      " Monthly Tally tables displayed in table format."
+  )
+
+  all_dept_options = sorted([
+      "Emergency Care Complex (ECC)",
+      "Surgical Care Complex (OR Main)",
+      "OBGYNE Care Complex (LRDR-OB Surgery)",
+      "Hemodialysis Unit (HDU)",
+      "Endoscopy Unit (ENDO)",
+      "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
+  ]) + sorted([
+      d
+      for d in sorted_departments
+      if d.startswith("General Nursing Unit")
+  ])
+
+  selected_tally_dept = st.selectbox(
+      "🏥 Choose Department / Unit for Pareto Tally & Census Analysis",
+      all_dept_options,
+  )
+
+  sheet_target_map = {
+      "Emergency Care Complex (ECC)": "Emergency Care Complex (ECC)",
+      "Surgical Care Complex (OR Main)": "Surgical Care Complex (OR Main)",
+      "OBGYNE Care Complex (LRDR-OB Surgery)": (
+          "OBGYNE Care Complex (LRDR-OB Surgery)"
+      ),
+      "Hemodialysis Unit (HDU)": "Hemodialysis Unit (HDU)",
+      "Endoscopy Unit (ENDO)": "Endoscopy Unit (ENDO)",
+      "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)": (
+          "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
+      ),
+  }
+  for gnu in [
+      d for d in sorted_departments if d.startswith("General Nursing Unit")
+  ]:
+    sheet_target_map[gnu] = gnu
+
+  target_sheet_name = sheet_target_map.get(
+      selected_tally_dept, selected_tally_dept
+  )
+  dept_df = read_google_sheet(target_sheet_name)
+
+  if not dept_df.empty:
+    st.markdown(
+        f"### 📋 Patient Census & Category Breakdown for `{selected_tally_dept}`"
+    )
+    clean_dept_df = clean_display_df(dept_df)
+
+    cat_col = None
+    spec_col = None
+    doc_col = None
+    hosp_mode_col = None
+    case_type_col = None
+    payment_col = None
+    shift_col = None
+
+    for col in clean_dept_df.columns:
+      c_upper = str(col).upper()
+      if "CATEGORY" in c_upper or "PROCEDURE" in c_upper or "DISEASE" in c_upper:
+        if not cat_col:
+          cat_col = col
+      if "SPECIALIZATION" in c_upper:
+        if not spec_col:
+          spec_col = col
+      if (
+          "PHYSICIAN" in c_upper
+          or "SURGEON" in c_upper
+          or "ATTENDING" in c_upper
+      ):
+        if not doc_col:
+          doc_col = col
+      if "HOSPITALIZATION MODE" in c_upper:
+        hosp_mode_col = col
+      if "CASE TYPE" in c_upper:
+        case_type_col = col
+      if "MODE OF PAYMENT" in c_upper or "PAYMENT" in c_upper:
+        payment_col = col
+      if "SHIFT" in c_upper or "SLOT" in c_upper or "SET" in c_upper:
+        shift_col = col
+
+    st.markdown("---")
+    st.markdown(
+        f"### 📅 Daily & Monthly Census Tallies (`{selected_tally_dept}`)"
+    )
+    dt_col1, dt_col2 = st.columns(2)
+    with dt_col1:
+      st.markdown("##### 📆 Daily Tally (By Date)")
+      if "DATE" in clean_dept_df.columns:
+        daily_tally = clean_dept_df["DATE"].value_counts().reset_index()
+        daily_tally.columns = ["Date", "Total Cases"]
+        st.dataframe(daily_tally, use_container_width=True)
+      else:
+        st.info("No Date column found for daily tally.")
+    with dt_col2:
+      st.markdown("##### 🗓️ Monthly Tally (By Month)")
+      if "MONTH" in clean_dept_df.columns:
+        monthly_tally = clean_dept_df["MONTH"].value_counts().reset_index()
+        monthly_tally.columns = ["Month", "Total Cases"]
+        st.dataframe(monthly_tally, use_container_width=True)
+      else:
+        st.info("No Month column found for monthly tally.")
+
+    st.markdown("---")
+    col_p1, col_p2 = st.columns(2)
+    with col_p1:
+      st.markdown("##### 🏷️ Patient Census by Category / Procedure")
+      if cat_col and cat_col in clean_dept_df.columns:
+        cat_counts = (
+            clean_dept_df[cat_col].value_counts().reset_index()
+        )
+        cat_counts.columns = [cat_col, "Total Cases"]
+        st.dataframe(cat_counts, use_container_width=True)
+      else:
+        st.info("No categorical breakdown column found for this department.")
+
+    with col_p2:
+      st.markdown("##### 🩺 Patient Census by Specialization")
+      if spec_col and spec_col in clean_dept_df.columns:
+        spec_counts = (
+            clean_dept_df[spec_col].value_counts().reset_index()
+        )
+        spec_counts.columns = [spec_col, "Total Cases"]
+        st.dataframe(spec_counts, use_container_width=True)
+      else:
+        st.info("No specialization column found for this department.")
+
+    st.markdown("---")
+    st.markdown(f"### 🔀 Cross-Tabulation Tallies (`{selected_tally_dept}`)")
+
+    cross_col1, cross_col2 = st.columns(2)
+    with cross_col1:
+      if (
+          hosp_mode_col
+          and hosp_mode_col in clean_dept_df.columns
+          and case_type_col
+          and case_type_col in clean_dept_df.columns
+      ):
+        st.markdown("##### 🏥 Hospitalization Mode vs. Case Type")
+        ctable_mode_case = pd.crosstab(
+            clean_dept_df[hosp_mode_col].fillna("UNKNOWN"),
+            clean_dept_df[case_type_col].fillna("UNKNOWN"),
+            margins=True,
+            margins_name="Total Cases",
+        ).reset_index()
+        st.dataframe(ctable_mode_case, use_container_width=True)
+      elif hosp_mode_col and hosp_mode_col in clean_dept_df.columns:
+        st.markdown("##### 🏥 Hospitalization Mode Tally")
+        hm_counts = (
+            clean_dept_df[hosp_mode_col].value_counts().reset_index()
+        )
+        hm_counts.columns = ["Hospitalization Mode", "Total Cases"]
+        st.dataframe(hm_counts, use_container_width=True)
+
+    with cross_col2:
+      if (
+          hosp_mode_col
+          and hosp_mode_col in clean_dept_df.columns
+          and payment_col
+          and payment_col in clean_dept_df.columns
+      ):
+        st.markdown("##### 💳 Hospitalization Mode vs. Mode of Payment")
+        ctable_mode_pay = pd.crosstab(
+            clean_dept_df[hosp_mode_col].fillna("UNKNOWN"),
+            clean_dept_df[payment_col].fillna("UNKNOWN"),
+            margins=True,
+            margins_name="Total Cases",
+        ).reset_index()
+        st.dataframe(ctable_mode_pay, use_container_width=True)
+      elif payment_col and payment_col in clean_dept_df.columns:
+        st.markdown("##### 💳 Mode of Payment Tally")
+        pay_counts = (
+            clean_dept_df[payment_col].value_counts().reset_index()
+        )
+        pay_counts.columns = ["Mode of Payment", "Total Cases"]
+        st.dataframe(pay_counts, use_container_width=True)
+
+    if shift_col and shift_col in clean_dept_df.columns:
+      st.markdown("##### ⏱️ Shift Slot / Schedule Tally")
+      sh_counts = clean_dept_df[shift_col].value_counts().reset_index()
+      sh_counts.columns = ["Shift Slot", "Total Cases"]
+      st.dataframe(sh_counts, use_container_width=True)
+
+    st.markdown("---")
+    st.markdown(f"### 👨‍⚕️ Doctors Census per Specialization (`{selected_tally_dept}`)")
+
+    if (
+        spec_col
+        and spec_col in clean_dept_df.columns
+        and doc_col
+        and doc_col in clean_dept_df.columns
+    ):
+      unique_specs = clean_dept_df[spec_col].dropna().unique()
+      if len(unique_specs) > 0:
+        spec_tabs = st.tabs([str(s) for s in unique_specs])
+        for idx, spec in enumerate(unique_specs):
+          with spec_tabs[idx]:
+            st.markdown(f"**Specialization:** `{spec}`")
+            sub_df = clean_dept_df[clean_dept_df[spec_col] == spec]
+            if not sub_df.empty and doc_col in sub_df.columns:
+              doc_counts = (
+                  sub_df[doc_col].value_counts().reset_index()
+              )
+              doc_counts.columns = ["Name of Physician", "Total Cases"]
+              st.dataframe(doc_counts, use_container_width=True)
+            else:
+              st.info(
+                  f"No physician records found for specialization {spec}."
+              )
+      else:
+        st.info("No specializations recorded yet.")
+    else:
+      st.info("No doctor specialization breakdown available for this department yet.")
+  else:
+    st.info(f"No records found in live database for `{selected_tally_dept}`.")
 
 # ---------------------------------------------------------
 # MODULE: HOSPITAL INFORMATION SYSTEM (LANDING PAGE)
 # ---------------------------------------------------------
-if selected_sheet == "Hospital Information System":
+elif selected_sheet == "Hospital Information System":
 
   @st.fragment(run_every=30)
   def render_hospital_summary_fragment():
@@ -2469,285 +2692,3 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
 
   with tab_roster:
     render_department_live_roster(gnu_title)
-
-# ---------------------------------------------------------
-# EMERGENCY CARE COMPLEX (ECC)
-# ---------------------------------------------------------
-elif selected_sheet == "Emergency Care Complex (ECC)":
-  st.header("🚑 Emergency Care Complex (Standalone Registration)")
-  ph_now = get_ph_time()
-
-  tab_reg, tab_update_inpatient, tab_roster = st.tabs([
-      "📝 New ECC Procedure/Visit Registration",
-      "🔄 Update Inpatient Orders (GNU / SCU)",
-      "📋 Active Live Roster",
-  ])
-
-  with tab_reg:
-    with st.form("ecc_form", clear_on_submit=True):
-      st.subheader("1. Patient Demographics & Encounter Details")
-      
-      c_dt1, c_dt2, c_dt3 = st.columns([1.5, 2, 2])
-      with c_dt1:
-        entry_date = st.date_input("Date", ph_now.date())
-      with c_dt2:
-        entry_time_str = civilian_time_input_field("Time", key_suffix="ecc_time")
-      with c_dt3:
-        room_no = st.text_input("Room No.", value="").strip().upper()
-
-      c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
-      with c1:
-        last_name = st.text_input("Last Name", value="").strip().upper()
-      with c2:
-        first_name = st.text_input("First Name", value="").strip().upper()
-      with c3:
-        middle_name = st.text_input("Middle Name", value="").strip().upper()
-      with c4:
-        age = st.number_input("Age", min_value=0, max_value=120, value=0)
-      with c5:
-        sex_options = ["Select Sex", "FEMALE", "MALE", "OTHERS"]
-        sex = st.selectbox("Sex", sex_options, index=0)
-
-      st.subheader("2. Hospitalization Plan")
-      c_h1, c_h2, c_h3, c_h4 = st.columns(4)
-      with c_h1:
-        hosp_mode = st.selectbox(
-            "Hospitalization Mode", ["Select Mode", "INPATIENT", "OUTPATIENT"], index=0
-        )
-      with c_h2:
-        case_type = st.selectbox(
-            "Case Type",
-            [
-                "Select Type",
-                "HOUSE CASE (WALK-IN)",
-                "PRIVATE CASE",
-            ],
-            index=0,
-        )
-      with c_h3:
-        payment_options = ["Select Payment", "HMO", "PHIC", "SELF-PAY"]
-        payment_selected = st.selectbox(
-            "Mode of Payment",
-            payment_options,
-            index=st.session_state["fast_payment"] if st.session_state["fast_payment"] < len(payment_options) else 0,
-        )
-      with c_h4:
-        admitted_to = st.selectbox("Admitted To", HOSPITAL_UNIT_AREAS, index=0)
-
-      curr_date_str = entry_date.strftime("%m/%d/%Y")
-
-      st.subheader("3. Medical / Surgical Care Team")
-      c_doc1, c_doc2 = st.columns([2, 2])
-      with c_doc1:
-        attending_physician = st.text_input(
-            "Attending Physician Name", value=st.session_state["fast_attending"], key="ecc_att_input"
-        ).strip().upper()
-      with c_doc2:
-        attending_spec = st.selectbox(
-            "Specialization",
-            SPECIALTY_DROPDOWN_OPTIONS,
-            index=st.session_state["fast_spec"] if st.session_state["fast_spec"] < len(SPECIALTY_DROPDOWN_OPTIONS) else 0,
-            key="ecc_spec_input",
-        )
-
-      tag_as_cm = st.form_submit_button("Tag as Co-Management")
-      if tag_as_cm and attending_physician:
-        doc_name_up = attending_physician.strip().upper()
-        existing_cms = st.session_state.setdefault("cm_list_ecc", [])
-        if not any(
-            cm["name"] == doc_name_up and cm["spec"] == attending_spec
-            for cm in existing_cms
-        ):
-          existing_cms.append({"name": doc_name_up, "spec": attending_spec})
-
-      if st.session_state.get("cm_list_ecc"):
-        st.markdown("**Current Co-Management Doctors Added:**")
-        for idx, cm in enumerate(st.session_state["cm_list_ecc"]):
-          st.write(f"- Dr. {cm['name']} ({cm['spec']})")
-
-      st.subheader("4. Clinical and Diagnostic Details")
-      diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip().upper()
-
-      disease_options = sorted([
-          "ACUTE GASTROENTERITIS",
-          "DENGUE FEVER",
-          "HYPERTENSION",
-          "GASTROESOPHAGEAL REFLUX DISEASE",
-          "URINARY TRACT INFECTION",
-          "BRONCHIAL ASTHMA",
-          "DIABETES MELLITUS",
-          "RESPIRATORY TRACT INECTION",
-          "ELECTROLYTE IMBALANCE",
-          "ACUTE TONSILLOPHARYNGITIS",
-          "ANIMAL BITE",
-          "VERTIGO",
-          "HYPERSENSITIVITY REACTION",
-          "INFECTED WOUND",
-          "ACUTE CORONARY SYNDROME",
-          "SYSTEMIC VIRAL ILLNESS",
-          "FRACTURE",
-          "OTHERS",
-      ])
-      disease_options = sorted([x for x in disease_options if x != "OTHERS"]) + ["OTHERS"]
-      selected_diseases = st.multiselect("Disease Category", disease_options)
-
-      st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      ecc_procedures = st.text_area("Procedures Performed", value="", key="ecc_procs").strip().upper()
-      ecc_diagnostic_exams = st.text_area(
-          "Diagnostic Examinations", value="", key="ecc_diags"
-      ).strip().upper()
-      ecc_medications = st.text_area("Medications", value="", key="ecc_meds").strip().upper()
-      ecc_special_endorsements = st.text_area(
-          "Special Endorsements", value="", key="ecc_ends"
-      ).strip().upper()
-
-      submitted = st.form_submit_button("Submit Record (Fast-Entry)")
-      if submitted:
-        if (
-            not last_name
-            or not first_name
-            or str(last_name).strip() == ""
-            or str(first_name).strip() == ""
-        ):
-          st.error(
-              "⚠️ Validation Error: Last Name and First Name are required fields."
-          )
-          st.stop()
-
-        st.session_state["fast_attending"] = attending_physician
-        st.session_state["fast_spec"] = max(0, SPECIALTY_DROPDOWN_OPTIONS.index(attending_spec)) if attending_spec in SPECIALTY_DROPDOWN_OPTIONS else 0
-        st.session_state["fast_payment"] = max(0, payment_options.index(payment_selected)) if payment_selected in payment_options else 0
-
-        final_attending = (
-            attending_physician if attending_physician else "N/A"
-        )
-        valid_cm = st.session_state.get("cm_list_ecc", [])
-        cm_names_str = (
-            "; ".join([item["name"] for item in valid_cm])
-            if valid_cm
-            else "N/A"
-        )
-        cm_specs_str = (
-            "; ".join([item["spec"] for item in valid_cm])
-            if valid_cm
-            else "N/A"
-        )
-
-        row_data = {
-            "MONTH": get_month_str(entry_date, "full_month"),
-            "DATE": curr_date_str,
-            "TIME": entry_time_str,
-            "ROOM NO": room_no,
-            "LAST NAME": sanitize_medical_text(last_name),
-            "FIRST NAME": sanitize_medical_text(first_name),
-            "MIDDLE NAME": sanitize_medical_text(middle_name),
-            "SEX": sex,
-            "AGE": str(age),
-            "DIAGNOSIS": sanitize_medical_text(diagnosis_text),
-            "DISEASE CATEGORY": (
-                ", ".join(selected_diseases) if selected_diseases else "NONE"
-            ),
-            "ATTENDING PHYSICIAN": final_attending,
-            "ATTENDING SPECIALIZATION": attending_spec,
-            "CO-MANAGEMENT PHYSICIAN": cm_names_str,
-            "CO-MANAGEMENT SPECIALIZATION": cm_specs_str,
-            "HOSPITALIZATION MODE": hosp_mode,
-            "CASE TYPE": case_type,
-            "MODE OF PAYMENT": payment_selected,
-            "ADMITTED TO": admitted_to,
-            "PROCEDURES": sanitize_medical_text(ecc_procedures),
-            "DIAGNOSTIC EXAMINATIONS": sanitize_medical_text(
-                ecc_diagnostic_exams
-            ),
-            "MEDICATIONS": sanitize_medical_text(ecc_medications),
-            "SPECIAL ENDORSEMENTS": sanitize_medical_text(
-                ecc_special_endorsements
-            ),
-            "CASE COUNT": 1,
-            "SEEDED_TRIAL": "NO",
-        }
-
-        target_unit_str = str(admitted_to).strip().upper()
-        target_sheet_to_sync = None
-        
-        if "GNU " in target_unit_str:
-          for gnu_part in ["GNU 1C", "GNU 2A", "GNU 2B", "GNU 2C", "GNU 2D", "GNU 3A", "GNU 3B", "GNU 3C", "GNU 4A"]:
-            if gnu_part in target_unit_str:
-              target_sheet_to_sync = f"General Nursing Unit ({gnu_part})"
-              break
-        elif any(scu_key in target_unit_str for scu_key in ["NICU", "PICU", "NSU", "PCN", "OUTBORN"]):
-          target_sheet_to_sync = "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
-
-        destination_sheet = target_sheet_to_sync if (hosp_mode.upper() == "INPATIENT" and target_sheet_to_sync and target_sheet_to_sync in SHEET_HEADERS) else "Emergency Care Complex (ECC)"
-
-        if destination_sheet != "Emergency Care Complex (ECC)":
-          if destination_sheet.startswith("General Nursing Unit"):
-            target_row_data = {
-                "MONTH": get_month_str(entry_date, "full_month"),
-                "DATE": curr_date_str,
-                "TIME": entry_time_str,
-                "ROOM NO": room_no,
-                "LAST NAME": sanitize_medical_text(last_name),
-                "FIRST NAME": sanitize_medical_text(first_name),
-                "MIDDLE NAME": sanitize_medical_text(middle_name),
-                "SEX": sex,
-                "AGE": str(age),
-                "DIAGNOSIS": sanitize_medical_text(diagnosis_text),
-                "ATTENDING PHYSICIAN": final_attending,
-                "ATTENDING SPECIALIZATION": attending_spec,
-                "CO-MANAGEMENT PHYSICIAN": cm_names_str,
-                "CO-MANAGEMENT SPECIALIZATION": cm_specs_str,
-                "HOSPITALIZATION MODE": hosp_mode,
-                "MODE OF PAYMENT": payment_selected,
-                "PATIENT STATUS": "ACTIVE",
-                "PROCEDURES": sanitize_medical_text(ecc_procedures),
-                "DIAGNOSTIC EXAMINATIONS": sanitize_medical_text(ecc_diagnostic_exams),
-                "MEDICATIONS": sanitize_medical_text(ecc_medications),
-                "SPECIAL ENDORSEMENTS": sanitize_medical_text(ecc_special_endorsements),
-                "CASE COUNT": 1,
-                "SEEDED_TRIAL": "NO",
-            }
-          else:
-            target_row_data = {
-                "MONTH": get_month_str(entry_date, "numeric_prefix"),
-                "DATE": curr_date_str,
-                "LAST NAME": sanitize_medical_text(last_name),
-                "FIRST NAME": sanitize_medical_text(first_name),
-                "MIDDLE NAME": sanitize_medical_text(middle_name),
-                "SEX": sex,
-                "AOG": "N/A",
-                "AGE": str(age),
-                "DIAGNOSIS": sanitize_medical_text(diagnosis_text),
-                "DIAGNOSIS CATEGORY": "ECC TRANSFER",
-                "ADMITTED FROM": "ECC",
-                "ADMITTED TO": target_unit_str,
-                "TRANSFERRED TO": "NONE",
-                "ATTENDING PHYSICIAN": final_attending,
-                "ATTENDING SPECIALIZATION": attending_spec,
-                "CO-MANAGEMENT PHYSICIAN": cm_names_str,
-                "CO-MANAGEMENT SPECIALIZATION": cm_specs_str,
-                "HOSPITALIZATION MODE": hosp_mode,
-                "MODE OF PAYMENT": payment_selected,
-                "PATIENT STATUS": "ACTIVE",
-                "PROCEDURES": sanitize_medical_text(ecc_procedures),
-                "DIAGNOSTIC EXAMINATIONS": sanitize_medical_text(ecc_diagnostic_exams),
-                "MEDICATIONS": sanitize_medical_text(ecc_medications),
-                "SPECIAL ENDORSEMENTS": sanitize_medical_text(ecc_special_endorsements),
-                "CASE COUNT": 1,
-                "SEEDED_TRIAL": "NO",
-            }
-          append_record_to_google_sheet(destination_sheet, target_row_data)
-          st.success(f"⚡ Patient successfully routed and transferred exclusively to `{destination_sheet}`! (ECC record closed/isolated).")
-        else:
-          append_record_to_google_sheet("Emergency Care Complex (ECC)", row_data)
-          st.success("Successfully saved to ECC register!")
-
-        st.cache_data.clear()
-        st.session_state["df_cache"] = {}
-        st.session_state["cm_list_ecc"] = []
-
-  with tab_update_inpatient:
-    render_inpatient_order_updater_form("Emergency Care Complex (ECC)")
-
-  with tab_roster:
-    render_department_live_roster("Emergency Care Complex (ECC)")
