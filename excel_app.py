@@ -704,7 +704,6 @@ def init_local_sqlite():
             retries INTEGER DEFAULT 0
         )
     """)
-  # Safe migration check for existing sqlite databases missing retries column
   try:
     cursor.execute('ALTER TABLE "Sync_Queue" ADD COLUMN retries INTEGER DEFAULT 0')
   except Exception:
@@ -1753,7 +1752,7 @@ if selected_sheet == "Hospital Information System":
 st.markdown("---")
 
 
-# Helper function with smart department-aware filtering, timestamped bullet points, and password re-authentication
+# Helper function with department-aware filtering, bullet points, and password re-auth
 def render_inpatient_order_updater_form(dept_name_label):
   st.markdown(
       f"##### 🔄 Update Inpatient Orders from `{dept_name_label}` to GNU / SCU"
@@ -1953,6 +1952,31 @@ def render_inpatient_order_updater_form(dept_name_label):
           st.error("Could not locate the specific inpatient record index.")
   else:
     st.info("No active inpatients currently admitted in GNU or Special Care Complex.")
+
+
+# Helper function to render an Active Live Roster tab for individual departments
+def render_department_live_roster(dept_sheet_name):
+  st.markdown(f"### 📋 Active Live Roster (`{dept_sheet_name}`)")
+  dept_df = read_google_sheet(dept_sheet_name)
+  if not dept_df.empty:
+    clean_d = clean_display_df(dept_df)
+    show_all_dept_patients = st.checkbox(
+        "Include discharged patients in unit view", value=False, key=f"d_disc_{dept_sheet_name}"
+    )
+    if "PATIENT STATUS" in clean_d.columns:
+      clean_d["PATIENT STATUS"] = clean_d["PATIENT STATUS"].fillna("ACTIVE")
+      if not show_all_dept_patients:
+        filtered_d = clean_d[
+            clean_d["PATIENT STATUS"].astype(str).str.strip().str.upper().isin(["ACTIVE", "MGH", "CAB"])
+        ]
+      else:
+        filtered_d = clean_d
+    else:
+      filtered_d = clean_d
+
+    display_paginated_dataframe(filtered_d, key_prefix=f"roster_{dept_sheet_name}", is_historical=True)
+  else:
+    st.info(f"No records found in `{dept_sheet_name}` yet.")
 
 
 # ---------------------------------------------------------
@@ -2501,8 +2525,8 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
       .lower()
   )
 
-  tab_reg, tab_update = st.tabs(
-      ["📝 New Admission Registration", "🔄 Update Admitted Patient Orders"]
+  tab_reg, tab_update, tab_roster = st.tabs(
+      ["📝 New Admission Registration", "🔄 Update Admitted Patient Orders", "📋 Active Live Roster"]
   )
 
   with tab_reg:
@@ -2831,6 +2855,9 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
     else:
       st.info("No patient records available in this department yet.")
 
+  with tab_roster:
+    render_department_live_roster(gnu_title)
+
 # ---------------------------------------------------------
 # FORM 1: Emergency Care Complex (ECC)
 # ---------------------------------------------------------
@@ -2838,9 +2865,10 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
   st.header("🚑 Emergency Care Complex (Standalone Registration)")
   ph_now = get_ph_time()
 
-  tab_reg, tab_update_inpatient = st.tabs([
+  tab_reg, tab_update_inpatient, tab_roster = st.tabs([
       "📝 New ECC Procedure/Visit Registration",
       "🔄 Update Inpatient Orders (GNU / SCU)",
+      "📋 Active Live Roster",
   ])
 
   with tab_reg:
@@ -3034,6 +3062,9 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
   with tab_update_inpatient:
     render_inpatient_order_updater_form("ECC")
 
+  with tab_roster:
+    render_department_live_roster("Emergency Care Complex (ECC)")
+
 # ---------------------------------------------------------
 # FORM 2: Endoscopy Unit (ENDO)
 # ---------------------------------------------------------
@@ -3041,9 +3072,10 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
   st.header("🔬 Endoscopy Unit (Standalone Registration)")
   ph_now = get_ph_time()
 
-  tab_reg, tab_update_inpatient = st.tabs([
+  tab_reg, tab_update_inpatient, tab_roster = st.tabs([
       "📝 New Endoscopy Procedure Registration",
       "🔄 Update Inpatient Orders (GNU / SCU)",
+      "📋 Active Live Roster",
   ])
 
   with tab_reg:
@@ -3243,6 +3275,9 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
   with tab_update_inpatient:
     render_inpatient_order_updater_form("ENDO")
 
+  with tab_roster:
+    render_department_live_roster("Endoscopy Unit (ENDO)")
+
 # ---------------------------------------------------------
 # FORM 3: Hemodialysis Unit (HDU)
 # ---------------------------------------------------------
@@ -3254,8 +3289,8 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
   )
   ph_now = get_ph_time()
 
-  tab_reg, tab_update = st.tabs(
-      ["📝 New Session Registration", "🔄 Update Admitted Patient Orders"]
+  tab_reg, tab_update, tab_roster = st.tabs(
+      ["📝 New Session Registration", "🔄 Update Admitted Patient Orders", "📋 Active Live Roster"]
   )
 
   with tab_reg:
@@ -3566,6 +3601,9 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
     else:
       st.info("No records in HDU yet.")
 
+  with tab_roster:
+    render_department_live_roster("Hemodialysis Unit (HDU)")
+
 # ---------------------------------------------------------
 # FORM 4: OBGYNE Care Complex (LRDR-OB Surgery)
 # ---------------------------------------------------------
@@ -3577,9 +3615,10 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
   )
   ph_now = get_ph_time()
 
-  tab_reg, tab_update_inpatient = st.tabs([
+  tab_reg, tab_update_inpatient, tab_roster = st.tabs([
       "📝 New OBGYNE Procedure/Surgery Registration",
       "🔄 Update Inpatient Orders (GNU / SCU)",
+      "📋 Active Live Roster",
   ])
 
   with tab_reg:
@@ -3783,6 +3822,9 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
   with tab_update_inpatient:
     render_inpatient_order_updater_form("OBGYNE")
 
+  with tab_roster:
+    render_department_live_roster("OBGYNE Care Complex (LRDR-OB Surgery)")
+
 # ---------------------------------------------------------
 # FORM 5: Surgical Care Complex (OR Main)
 # ---------------------------------------------------------
@@ -3794,9 +3836,10 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
   )
   ph_now = get_ph_time()
 
-  tab_reg, tab_update_inpatient = st.tabs([
+  tab_reg, tab_update_inpatient, tab_roster = st.tabs([
       "📝 New Surgical Procedure/OR Registration",
       "🔄 Update Inpatient Orders (GNU / SCU)",
+      "📋 Active Live Roster",
   ])
 
   with tab_reg:
@@ -4024,6 +4067,9 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
   with tab_update_inpatient:
     render_inpatient_order_updater_form("SCC")
 
+  with tab_roster:
+    render_department_live_roster("Surgical Care Complex (OR Main)")
+
 # ---------------------------------------------------------
 # FORM 6: Special Care Complex (NICU-PICU-NSU/PCN-Outborn)
 # ---------------------------------------------------------
@@ -4035,193 +4081,202 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
   )
   ph_now = get_ph_time()
 
-  with st.form("scu_form", clear_on_submit=True):
-    st.subheader("1. Patient Demographics")
-    c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
-    with c1:
-      last_name = st.text_input("Last Name", value="").strip().upper()
-    with c2:
-      first_name = st.text_input("First Name", value="").strip().upper()
-    with c3:
-      middle_name = st.text_input("Middle Name", value="").strip().upper()
-    with c4:
-      sex = st.selectbox(
-          "Sex", ["Select Sex", "Male", "Female", "Others"], index=0
-      )
-    with c5:
-      aog = st.text_input("Age of Gestation (AOG)", value="").strip().upper()
+  tab_scu_reg, tab_scu_roster = st.tabs([
+      "📝 New Admission Registration",
+      "📋 Active Live Roster",
+  ])
 
-    c5_d, c6, c7, c8 = st.columns(4)
-    with c5_d:
-      entry_date = st.date_input("Date", ph_now.date())
-    with c6:
-      age_y = st.number_input("Age (Years)", min_value=0, max_value=18, value=0)
-    with c7:
-      age_m = st.number_input("Age (Months)", min_value=0, max_value=11, value=0)
-    with c8:
-      age_d = st.number_input("Age (Days)", min_value=0, max_value=31, value=0)
+  with tab_scu_reg:
+    with st.form("scu_form", clear_on_submit=True):
+      st.subheader("1. Patient Demographics")
+      c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
+      with c1:
+        last_name = st.text_input("Last Name", value="").strip().upper()
+      with c2:
+        first_name = st.text_input("First Name", value="").strip().upper()
+      with c3:
+        middle_name = st.text_input("Middle Name", value="").strip().upper()
+      with c4:
+        sex = st.selectbox(
+            "Sex", ["Select Sex", "Male", "Female", "Others"], index=0
+        )
+      with c5:
+        aog = st.text_input("Age of Gestation (AOG)", value="").strip().upper()
 
-    curr_date_str = entry_date.strftime("%m/%d/%Y")
+      c5_d, c6, c7, c8 = st.columns(4)
+      with c5_d:
+        entry_date = st.date_input("Date", ph_now.date())
+      with c6:
+        age_y = st.number_input("Age (Years)", min_value=0, max_value=18, value=0)
+      with c7:
+        age_m = st.number_input("Age (Months)", min_value=0, max_value=11, value=0)
+      with c8:
+        age_d = st.number_input("Age (Days)", min_value=0, max_value=31, value=0)
 
-    st.subheader("2. Hospitalization Plan")
-    c10, c11, c12, c13, c14, c15 = st.columns(6)
-    with c10:
-      admitted_from = st.selectbox("Admitted From", HOSPITAL_UNIT_AREAS, index=0)
-    with c11:
-      admitted_to = st.selectbox(
-          "Admitted To",
-          ["Select Area", "NICU", "PICU", "NSU", "PCN", "OUTBORN", "ROOM-IN"],
-          index=0,
-      )
-    with c12:
-      transferred_to = st.selectbox("Transferred To", HOSPITAL_UNIT_AREAS, index=0)
-    with c13:
-      hosp_mode = st.selectbox(
-          "Hospitalization Mode", ["Select Mode", "Outpatient", "Inpatient"], index=0
-      )
-    with c14:
-      payment_selected = st.selectbox(
-          "Mode of Payment",
-          ["Select Payment", "PHIC", "HMO", "SELF-PAY"],
-          index=0,
-      )
-    with c15:
-      patient_status = st.selectbox(
-          "Patient Status", ["ACTIVE", "MGH", "DISCHARGED", "CAB"], index=0
+      curr_date_str = entry_date.strftime("%m/%d/%Y")
+
+      st.subheader("2. Hospitalization Plan")
+      c10, c11, c12, c13, c14, c15 = st.columns(6)
+      with c10:
+        admitted_from = st.selectbox("Admitted From", HOSPITAL_UNIT_AREAS, index=0)
+      with c11:
+        admitted_to = st.selectbox(
+            "Admitted To",
+            ["Select Area", "NICU", "PICU", "NSU", "PCN", "OUTBORN", "ROOM-IN"],
+            index=0,
+        )
+      with c12:
+        transferred_to = st.selectbox("Transferred To", HOSPITAL_UNIT_AREAS, index=0)
+      with c13:
+        hosp_mode = st.selectbox(
+            "Hospitalization Mode", ["Select Mode", "Outpatient", "Inpatient"], index=0
+        )
+      with c14:
+        payment_selected = st.selectbox(
+            "Mode of Payment",
+            ["Select Payment", "PHIC", "HMO", "SELF-PAY"],
+            index=0,
+        )
+      with c15:
+        patient_status = st.selectbox(
+            "Patient Status", ["ACTIVE", "MGH", "DISCHARGED", "CAB"], index=0
+        )
+
+      st.subheader("3. Medical Care Team")
+      c_doc1, c_doc2 = st.columns([2, 2])
+      with c_doc1:
+        attending_physician = st.text_input(
+            "Attending Physician Name", value="", key="scu_att_input"
+        ).strip().upper()
+      with c_doc2:
+        attending_spec = st.selectbox(
+            "Specialization",
+            SPECIALTY_DROPDOWN_OPTIONS,
+            index=0,
+            key="scu_spec_input",
+        )
+
+      tag_as_cm = st.form_submit_button("Tag as Co-Management")
+      if tag_as_cm and attending_physician:
+        doc_name_up = attending_physician.strip().upper()
+        existing_cms = st.session_state.setdefault("cm_list_scu", [])
+        if not any(
+            cm["name"] == doc_name_up and cm["spec"] == attending_spec
+            for cm in existing_cms
+        ):
+          existing_cms.append({"name": doc_name_up, "spec": attending_spec})
+
+      if st.session_state.get("cm_list_scu"):
+        st.markdown("**Current Co-Management Doctors Added:**")
+        for cm in st.session_state["cm_list_scu"]:
+          st.write(f"- Dr. {cm['name']} ({cm['spec']})")
+
+      st.subheader("4. Clinical and Diagnostic Details")
+      diagnosis = st.text_area("Diagnosis Text", value="").strip().upper()
+      diag_flags = st.multiselect(
+          "Diagnosis Category", ["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY"]
       )
 
-    st.subheader("3. Medical Care Team")
-    c_doc1, c_doc2 = st.columns([2, 2])
-    with c_doc1:
-      attending_physician = st.text_input(
-          "Attending Physician Name", value="", key="scu_att_input"
+      st.subheader("5. Diagnostics Procedures and Treatment Plans")
+      scu_procedures = st.text_area("Procedures", value="", key="scu_procs").strip().upper()
+      scu_diagnostic_exams = st.text_area(
+          "Diagnostic Examinations", value="", key="scu_diags"
       ).strip().upper()
-    with c_doc2:
-      attending_spec = st.selectbox(
-          "Specialization",
-          SPECIALTY_DROPDOWN_OPTIONS,
-          index=0,
-          key="scu_spec_input",
-      )
+      scu_medications = st.text_area("Medications", value="", key="scu_meds").strip().upper()
+      scu_special_endorsements = st.text_area(
+          "Special Endorsements", value="", key="scu_ends"
+      ).strip().upper()
 
-    tag_as_cm = st.form_submit_button("Tag as Co-Management")
-    if tag_as_cm and attending_physician:
-      doc_name_up = attending_physician.strip().upper()
-      existing_cms = st.session_state.setdefault("cm_list_scu", [])
-      if not any(
-          cm["name"] == doc_name_up and cm["spec"] == attending_spec
-          for cm in existing_cms
-      ):
-        existing_cms.append({"name": doc_name_up, "spec": attending_spec})
-
-    if st.session_state.get("cm_list_scu"):
-      st.markdown("**Current Co-Management Doctors Added:**")
-      for cm in st.session_state["cm_list_scu"]:
-        st.write(f"- Dr. {cm['name']} ({cm['spec']})")
-
-    st.subheader("4. Clinical and Diagnostic Details")
-    diagnosis = st.text_area("Diagnosis Text", value="").strip().upper()
-    diag_flags = st.multiselect(
-        "Diagnosis Category", ["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY"]
-    )
-
-    st.subheader("5. Diagnostics Procedures and Treatment Plans")
-    scu_procedures = st.text_area("Procedures", value="", key="scu_procs").strip().upper()
-    scu_diagnostic_exams = st.text_area(
-        "Diagnostic Examinations", value="", key="scu_diags"
-    ).strip().upper()
-    scu_medications = st.text_area("Medications", value="", key="scu_meds").strip().upper()
-    scu_special_endorsements = st.text_area(
-        "Special Endorsements", value="", key="scu_ends"
-    ).strip().upper()
-
-    submitted = st.form_submit_button("Submit Record")
-    if submitted:
-      if (
-          not last_name
-          or not first_name
-          or str(last_name).strip() == ""
-          or str(first_name).strip() == ""
-      ):
-        st.error(
-            "⚠️ Validation Error: Last Name and First Name are required fields."
+      submitted = st.form_submit_button("Submit Record")
+      if submitted:
+        if (
+            not last_name
+            or not first_name
+            or str(last_name).strip() == ""
+            or str(first_name).strip() == ""
+        ):
+          st.error(
+              "⚠️ Validation Error: Last Name and First Name are required fields."
+          )
+          st.stop()
+        existing_record = check_existing_patient_ai(
+            "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
+            last_name,
+            first_name,
+            curr_date_str,
         )
-        st.stop()
-      existing_record = check_existing_patient_ai(
-          "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
-          last_name,
-          first_name,
-          curr_date_str,
-      )
-      if existing_record:
-        st.info(
-            f"🤖 AI Checker: Patient {last_name}, {first_name} already exists"
-            f" on {curr_date_str}. Additional department info has been merged"
-            " into their record."
+        if existing_record:
+          st.info(
+              f"🤖 AI Checker: Patient {last_name}, {first_name} already exists"
+              f" on {curr_date_str}. Additional department info has been merged"
+              " into their record."
+          )
+
+        age_str_parts = []
+        if age_y > 0:
+          age_str_parts.append(f"{age_y} Yrs")
+        if age_m > 0:
+          age_str_parts.append(f"{age_m} Mos")
+        if age_d > 0:
+          age_str_parts.append(f"{age_d} Days")
+        age_formatted = (
+            ", ".join(age_str_parts) if age_str_parts else "Neonate / Infant"
         )
 
-      age_str_parts = []
-      if age_y > 0:
-        age_str_parts.append(f"{age_y} Yrs")
-      if age_m > 0:
-        age_str_parts.append(f"{age_m} Mos")
-      if age_d > 0:
-        age_str_parts.append(f"{age_d} Days")
-      age_formatted = (
-          ", ".join(age_str_parts) if age_str_parts else "Neonate / Infant"
-      )
-
-      final_attending = attending_physician if attending_physician else "N/A"
-      valid_cm = st.session_state.get("cm_list_scu", [])
-      cm_names_str = (
-          "; ".join([item["name"] for item in valid_cm]) if valid_cm else "N/A"
-      )
-      cm_specs_str = (
-          "; ".join([item["spec"] for item in valid_cm]) if valid_cm else "N/A"
-      )
-
-      row_data = {
-          "MONTH": get_month_str(entry_date, "numeric_prefix"),
-          "DATE": curr_date_str,
-          "LAST NAME": sanitize_medical_text(last_name),
-          "FIRST NAME": sanitize_medical_text(first_name),
-          "MIDDLE NAME": sanitize_medical_text(middle_name),
-          "SEX": sex,
-          "AOG": aog if aog else "N/A",
-          "AGE": age_formatted,
-          "DIAGNOSIS": sanitize_medical_text(diagnosis),
-          "DIAGNOSIS CATEGORY": (
-              ", ".join(diag_flags) if diag_flags else "None"
-          ),
-          "ADMITTED FROM": admitted_from,
-          "ADMITTED TO": admitted_to,
-          "TRANSFERRED TO": transferred_to,
-          "ATTENDING PHYSICIAN": final_attending,
-          "ATTENDING SPECIALIZATION": attending_spec,
-          "CO-MANAGEMENT PHYSICIAN": cm_names_str,
-          "CO-MANAGEMENT SPECIALIZATION": cm_specs_str,
-          "HOSPITALIZATION MODE": hosp_mode,
-          "MODE OF PAYMENT": payment_selected,
-          "PATIENT STATUS": patient_status,
-          "PROCEDURES": sanitize_medical_text(scu_procedures),
-          "DIAGNOSTIC EXAMINATIONS": sanitize_medical_text(
-              scu_diagnostic_exams
-          ),
-          "MEDICATIONS": sanitize_medical_text(scu_medications),
-          "SPECIAL ENDORSEMENTS": sanitize_medical_text(
-              scu_special_endorsements
-          ),
-          "CASE COUNT": 1,
-          "SEEDED_TRIAL": "NO",
-      }
-
-      if append_record_to_google_sheet(
-          "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", row_data
-      ):
-        st.cache_data.clear()
-        st.session_state["df_cache"] = {}
-        st.success(
-            "Successfully saved to Google Sheets `Special Care Complex"
-            " (NICU-PICU-NSU/PCN-Outborn)` tab!"
+        final_attending = attending_physician if attending_physician else "N/A"
+        valid_cm = st.session_state.get("cm_list_scu", [])
+        cm_names_str = (
+            "; ".join([item["name"] for item in valid_cm]) if valid_cm else "N/A"
         )
-        st.session_state["cm_list_scu"] = []
+        cm_specs_str = (
+            "; ".join([item["spec"] for item in valid_cm]) if valid_cm else "N/A"
+        )
+
+        row_data = {
+            "MONTH": get_month_str(entry_date, "numeric_prefix"),
+            "DATE": curr_date_str,
+            "LAST NAME": sanitize_medical_text(last_name),
+            "FIRST NAME": sanitize_medical_text(first_name),
+            "MIDDLE NAME": sanitize_medical_text(middle_name),
+            "SEX": sex,
+            "AOG": aog if aog else "N/A",
+            "AGE": age_formatted,
+            "DIAGNOSIS": sanitize_medical_text(diagnosis),
+            "DIAGNOSIS CATEGORY": (
+                ", ".join(diag_flags) if diag_flags else "None"
+            ),
+            "ADMITTED FROM": admitted_from,
+            "ADMITTED TO": admitted_to,
+            "TRANSFERRED TO": transferred_to,
+            "ATTENDING PHYSICIAN": final_attending,
+            "ATTENDING SPECIALIZATION": attending_spec,
+            "CO-MANAGEMENT PHYSICIAN": cm_names_str,
+            "CO-MANAGEMENT SPECIALIZATION": cm_specs_str,
+            "HOSPITALIZATION MODE": hosp_mode,
+            "MODE OF PAYMENT": payment_selected,
+            "PATIENT STATUS": patient_status,
+            "PROCEDURES": sanitize_medical_text(scu_procedures),
+            "DIAGNOSTIC EXAMINATIONS": sanitize_medical_text(
+                scu_diagnostic_exams
+            ),
+            "MEDICATIONS": sanitize_medical_text(scu_medications),
+            "SPECIAL ENDORSEMENTS": sanitize_medical_text(
+                scu_special_endorsements
+            ),
+            "CASE COUNT": 1,
+            "SEEDED_TRIAL": "NO",
+        }
+
+        if append_record_to_google_sheet(
+            "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", row_data
+        ):
+          st.cache_data.clear()
+          st.session_state["df_cache"] = {}
+          st.success(
+              "Successfully saved to Google Sheets `Special Care Complex"
+              " (NICU-PICU-NSU/PCN-Outborn)` tab!"
+          )
+          st.session_state["cm_list_scu"] = []
+
+  with tab_scu_roster:
+    render_department_live_roster("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)")
