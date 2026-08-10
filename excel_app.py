@@ -3,8 +3,9 @@ import concurrent.futures
 from datetime import datetime
 import hashlib
 import io
+import json
 import os
-import queue
+import pickle
 import random
 import sqlite3
 import threading
@@ -108,7 +109,6 @@ def hash_password(password):
   return hashlib.sha256(password.encode()).hexdigest()
 
 
-# Fix 1: Secure Credentials Fallback to st.secrets
 DEFAULT_USER_DATABASE = {
     "admin": {
         "password": hash_password("894413"),
@@ -663,7 +663,7 @@ def get_month_str(date_obj, fmt_style="numeric_prefix"):
 
 
 # ---------------------------------------------------------
-# HYBRID SQLITE BACKEND & FIX 4: AUDIT LOGGING SETUP
+# HYBRID SQLITE BACKEND & DURABLE QUEUE SETUP
 # ---------------------------------------------------------
 sqlite_lock = threading.Lock()
 
@@ -692,6 +692,17 @@ def init_local_sqlite():
             ACTION TEXT,
             DEPARTMENT TEXT,
             DETAILS TEXT
+        )
+    """)
+
+  # Create Durable Sync Queue Table
+  cursor.execute("""
+        CREATE TABLE IF NOT EXISTS "Sync_Queue" (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sheet_name TEXT,
+            row_json TEXT,
+            is_update INTEGER,
+            df_pickle BLOB
         )
     """)
   conn.commit()
@@ -788,29 +799,49 @@ def init_google_sheets():
 
 sh = init_google_sheets()
 
-# Fix 2: Background Worker Queue for Concurrency
-sync_queue = queue.Queue()
+# Durable Background Worker Queue (Persisted in SQLite)
 
 
-def background_sync_worker():
+def get_queue_size():
+  conn = get_sqlite_conn()
+  cursor = conn.cursor()
+  cursor.execute('SELECT COUNT(*) FROM "Sync_Queue"')
+  count = cursor.fetchone()[0]
+  conn.close()
+  return count
+
+
+def background_durable_sync_worker():
   while True:
-    task = sync_queue.get()
-    if task is None:
-      break
-    sheet_name, row_dict, is_update, df = task
+    conn = get_sqlite_conn()
+    cursor = conn.cursor()
+    cursor.execute(
+        'SELECT id, sheet_name, row_json, is_update, df_pickle FROM "Sync_Queue"'
+        " ORDER BY id ASC LIMIT 1"
+    )
+    row = cursor.fetchone()
+    if not row:
+      conn.close()
+      py_time.sleep(2)
+      continue
+
+    task_id, sheet_name, row_json, is_update, df_pickle = row
+    conn.close()
+
     try:
       ws = sh.worksheet(sheet_name)
       if is_update:
+        df = pickle.loads(df_pickle) if df_pickle else pd.DataFrame()
         ws.clear()
         headers = SHEET_HEADERS.get(sheet_name, df.columns.tolist())
         ws.update("A1", [[f"MTCMC CLINICAL CENSUS - {sheet_name} MASTERFILE"]])
         ws.update("A4", [headers])
         rows_to_update = []
-        for _, row in df.iterrows():
+        for _, r_val in df.iterrows():
           mapped_vals = []
           for h in headers:
-            if h in row:
-              v = row[h]
+            if h in r_val:
+              v = r_val[h]
               mapped_vals.append(
                   "" if (v is None or pd.isna(v)) else str(v).upper()
               )
@@ -820,6 +851,7 @@ def background_sync_worker():
         if rows_to_update:
           ws.update("A5", rows_to_update)
       else:
+        row_dict = json.loads(row_json) if row_json else {}
         headers = ws.row_values(4)
         if not headers:
           headers = SHEET_HEADERS.get(sheet_name, [])
@@ -831,18 +863,26 @@ def background_sync_worker():
               "" if (val is None or pd.isna(val)) else str(val).upper()
           )
         ws.append_row(row_values)
+
+      # Remove task from SQLite queue upon successful sync
+      conn_del = get_sqlite_conn()
+      conn_del.execute('DELETE FROM "Sync_Queue" WHERE id = ?', (task_id,))
+      conn_del.commit()
+      conn_del.close()
+
       st.session_state["sync_health_status"] = (
           f"Healthy (Last synced: {get_ph_time().strftime('%I:%M:%S %p')})"
       )
     except Exception as e:
       st.session_state["sync_health_status"] = f"Sync Error: {str(e)}"
-    finally:
-      sync_queue.task_done()
+      py_time.sleep(5)  # Back off on failure before retrying
 
 
-# Start background daemon thread
-sync_thread = threading.Thread(target=background_sync_worker, daemon=True)
-sync_thread.start()
+# Start durable background daemon thread
+durable_sync_thread = threading.Thread(
+    target=background_durable_sync_worker, daemon=True
+)
+durable_sync_thread.start()
 
 
 def ensure_google_sheets_exist():
@@ -914,7 +954,7 @@ def safe_gspread_call(sheet_name, func, *args, **kwargs):
 
 def append_record_to_google_sheet(sheet_name, row_dict):
   ensure_google_sheets_exist()
-  # Immediate local SQLite write for zero-lag UI response
+  # Immediate local SQLite write
   conn = get_sqlite_conn()
   df_curr = read_sqlite_sheet(sheet_name)
   df_new = pd.DataFrame([row_dict])
@@ -922,10 +962,22 @@ def append_record_to_google_sheet(sheet_name, row_dict):
   sync_df_to_sqlite(sheet_name, df_combined)
   conn.close()
 
-  # Queue background sync to Google Sheets
-  sync_queue.put((sheet_name, row_dict, False, None))
-  log_audit_event("INSERT", sheet_name, f"Added record for {row_dict.get('LAST NAME', '')}")
-  st.toast("Record saved successfully. Cloud sync queued.", icon="💾")
+  # Insert into durable SQLite queue
+  conn_q = get_sqlite_conn()
+  conn_q.execute(
+      'INSERT INTO "Sync_Queue" (sheet_name, row_json, is_update, df_pickle)'
+      " VALUES (?, ?, ?, ?)",
+      (sheet_name, json.dumps(row_dict), 0, None),
+  )
+  conn_q.commit()
+  conn_q.close()
+
+  log_audit_event(
+      "INSERT",
+      sheet_name,
+      f"Added record for {row_dict.get('LAST NAME', '')}",
+  )
+  st.toast("Record saved locally. Durable cloud sync queued.", icon="💾")
   return True
 
 
@@ -933,10 +985,21 @@ def update_google_sheet_from_df(sheet_name, df):
   ensure_google_sheets_exist()
   # Immediate local write
   sync_df_to_sqlite(sheet_name, df)
-  # Queue background update
-  sync_queue.put((sheet_name, None, True, df))
-  log_audit_event("UPDATE", sheet_name, f"Updated sheet rows count: {len(df)}")
-  st.toast("Changes saved locally. Cloud sync queued.", icon="💾")
+
+  # Insert update task into durable SQLite queue
+  conn_q = get_sqlite_conn()
+  conn_q.execute(
+      'INSERT INTO "Sync_Queue" (sheet_name, row_json, is_update, df_pickle)'
+      " VALUES (?, ?, ?, ?)",
+      (sheet_name, None, 1, pickle.dumps(df)),
+  )
+  conn_q.commit()
+  conn_q.close()
+
+  log_audit_event(
+      "UPDATE", sheet_name, f"Updated sheet rows count: {len(df)}"
+  )
+  st.toast("Changes saved locally. Durable cloud sync queued.", icon="💾")
   return True
 
 
@@ -1180,17 +1243,21 @@ st.sidebar.markdown(
 st.sidebar.markdown("---")
 
 # ---------------------------------------------------------
-# ADMIN CONTROL CENTER & FIX 3: HEALTH MONITOR DASHBOARD
+# ADMIN CONTROL CENTER & HEALTH MONITOR DASHBOARD
 # ---------------------------------------------------------
 if st.session_state["role"] == "Administrator":
   st.sidebar.markdown("### 🛠️ Admin Control Center")
 
   with st.sidebar.expander("🩺 System Health & Sync Status"):
-    st.markdown(f"**Status:** `{st.session_state.get('sync_health_status', 'Idle')}`")
-    st.markdown(f"**Queue Pending Tasks:** `{sync_queue.qsize()}`")
+    st.markdown(
+        f"**Status:** `{st.session_state.get('sync_health_status', 'Idle')}`"
+    )
+    st.markdown(f"**Durable Queue Pending Tasks:** `{get_queue_size()}`")
     if st.button("View Audit Logs"):
       conn = get_sqlite_conn()
-      audit_df = pd.read_sql('SELECT * FROM "System Audit Logs" ORDER BY ROWID DESC LIMIT 50', conn)
+      audit_df = pd.read_sql(
+          'SELECT * FROM "System Audit Logs" ORDER BY ROWID DESC LIMIT 50', conn
+      )
       conn.close()
       st.dataframe(audit_df, use_container_width=True)
 
@@ -3903,3 +3970,4 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
             " (NICU-PICU-NSU/PCN-Outborn)` tab!"
         )
         st.session_state["cm_list_scu"] = []
+```[cite: 1]
