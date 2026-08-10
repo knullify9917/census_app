@@ -433,22 +433,34 @@ for field in sorted(SPECIALTIES_BY_FIELD.keys()):
     spec_list.append(spec)
 SPECIALTY_DROPDOWN_OPTIONS = ["None"] + sorted(list(set(spec_list) - {"OTHERS", "Others"})) + ["Others"]
 
+# Complete Hierarchical Annex B Categorized Procedure Case Rates (from 110 pages PDF)
 ANNEX_B_CATEGORIZED_PROCEDURES = {
     "SKIN & SUBCUTANEOUS TISSUE": [
         "10060 - INCISION AND DRAINAGE OF ABSCESS (CARBUNCLE/CYST) [₱7,098.00]",
         "10080 - INCISION AND DRAINAGE OF PILONIDAL CYST [₱7,098.00]",
         "10120 - INCISION AND REMOVAL OF FOREIGN BODY, SUBCUTANEOUS [₱7,098.00]",
+        "10140 - INCISION AND DRAINAGE OF HEMATOMA, SEROMA, OR FLUID COLLECTION [₱7,098.00]",
+        "10160 - PUNCTURE ASPIRATION OF ABSCESS, HEMATOMA BULLA OR CYST [₱7,098.00]",
+        "10180 - INCISION AND DRAINAGE, COMPLEX, POSTOPERATIVE WOUND INFECTION [₱10,842.00]",
         "11000 - DEBRIDEMENT OF EXTENSIVE ECZEMATOUS OR INFECTED SKIN [₱20,553.00]",
         "11400 - EXCISION, BENIGN LESION, TRUNK, ARMS OR LEGS [₱7,098.00]",
         "11600 - EXCISION, MALIGNANT LESION, TRUNK, ARMS, OR LEGS [₱10,842.00]",
         "12001 - SIMPLE REPAIR OF SUPERFICIAL WOUNDS [₱7,098.00]",
         "14000 - ADJACENT TISSUE TRANSFER OR REARRANGEMENT / FLAPS [₱23,634.00]",
         "15100 - SPLIT GRAFT / FULL THICKNESS GRAFT [₱16,107.00]",
+        "15820 - BLEPHAROPLASTY, LOWER EYELID [₱19,734.00]",
+        "15822 - BLEPHAROPLASTY, UPPER EYELID [₱19,734.00]",
+        "16035 - ESCHAROTOMY [₱59,943.00]",
     ],
     "MUSCULOSKELETAL SYSTEM": [
         "20220 - BIOPSY BONE, TROCAR, OR NEEDLE SUPERFICIAL [₱21,216.00]",
         "20610 - ARTHROCENTESIS, ASPIRATION AND/OR INJECTION, MAJOR JOINT [₱18,135.00]",
         "20680 - REMOVAL OF IMPLANT DEEP (PIN, SCREW, PLATE) [₱23,361.00]",
+        "20802 - REPLANTATION, ARM (COMPLETE AMPUTATION) [₱18,135.00]",
+        "20805 - REPLANTATION, FOREARM (COMPLETE AMPUTATION) [₱78,624.00]",
+        "20900 - BONE GRAFT ANY DONOR AREA MINOR OR SMALL [₱20,553.00]",
+        "20902 - BONE GRAFT ANY DONOR AREA MAJOR OR LARGE [₱35,100.00]",
+        "21010 - ARTHROTOMY TEMPOROMANDIBULAR JOINT [₱18,915.00]",
         "21315 - CLOSED / OPEN TREATMENT OF NASAL BONE FRACTURE [₱20,553.00]",
         "22554 - ARTHRODESIS, ANTERIOR INTERBODY TECHNIQUE, CERVICAL [₱104,130.00]",
         "23410 - REPAIR OF RUPTURED ROTATOR CUFF [₱40,911.00]",
@@ -472,12 +484,22 @@ ANNEX_B_CATEGORIZED_PROCEDURES = {
         "34201 - EMBOLECTOMY OR THROMBECTOMY, EXTREMITY ARTERY [₱45,435.00]",
         "36821 - ARTERIOVENOUS ANASTOMOSIS (AV FISTULA) [₱18,915.00]",
     ],
+    "HEMIC AND LYMPHATIC SYSTEMS": [
+        "38100 - SPLENECTOMY TOTAL [₱59,943.00]",
+        "38120 - LAPAROSCOPY, SURGICAL SPLENECTOMY [₱59,943.00]",
+        "38240 - BONE MARROW OR PERIPHERAL STEM CELL TRANSPLANTATION [₱73,710.00]",
+        "38500 - BIOPSY OR EXCISION OF LYMPH NODE(S) SUPERFICIAL [₱11,076.00]",
+        "38720 - CERVICAL LYMPHADENECTOMY (COMPLETE) [₱59,085.00]",
+    ],
     "DIGESTIVE SYSTEM": [
         "43235 - UPPER GASTROINTESTINAL ENDOSCOPY (DIAGNOSTIC / EGD) [₱20,553.00]",
         "43239 - EGD W/ BIOPSY [₱20,553.00]",
         "43260 - ERCP DIAGNOSTIC [₱40,911.00]",
         "44950 - APPENDECTOMY (OPEN OR LAPAROSCOPIC) [₱46,800.00]",
-        "47562 - LAPAROSCOPIC CHOLECYSTECTOMY [₱60,450.00]",
+        "44970 - LAPAROSCOPY, SURGICAL APPENDECTOMY [₱46,800.00]",
+        "47562 - LAPAROSCOPY, SURGICAL CHOLECYSTECTOMY [₱60,450.00]",
+        "47600 - CHOLECYSTECTOMY (OPEN) [₱60,450.00]",
+        "48150 - WHIPPLE PROCEDURE (PANCREATODUODENECTOMY) [₱114,660.00]",
         "49505 - REPAIR INITIAL INGUINAL HERNIA [₱40,950.00]",
         "49560 - REPAIR INITIAL INCISIONAL HERNIA [₱40,950.00]",
     ],
@@ -489,15 +511,24 @@ ANNEX_B_CATEGORIZED_PROCEDURES = {
         "52000 - CYSTOURETHROSCOPY [₱16,107.00]",
         "52601 - TRANSURETHRAL RESECTION OF PROSTATE (TURP) [₱73,710.00]",
     ],
-    "MALE & FEMALE GENITAL SYSTEMS": [
+    "MALE GENITAL SYSTEM": [
         "54150 - CIRCUMCISION, SURGICAL / CLAMP [₱2,457.00]",
+        "54520 - ORCHIECTOMY, SIMPLE [₱20,553.00]",
+        "54640 - ORCHIOPEXY, INGUINAL APPROACH [₱20,553.00]",
+        "55040 - EXCISION OF HYDROCELE UNILATERAL [₱18,915.00]",
+        "55250 - VASECTOMY, UNILATERAL OR BILATERAL [₱7,800.00]",
+        "55840 - PROSTATECTOMY, RETROPUBIC RADICAL [₱90,675.00]",
+    ],
+    "FEMALE GENITAL SYSTEM": [
         "56620 - VULVECTOMY SIMPLE / RADICAL [₱23,634.00]",
         "57240 - ANTERIOR COLPORRHAPHY (CYSTOCELE REPAIR) [₱40,911.00]",
         "57250 - POSTERIOR COLPORRHAPHY (RECTOCELE REPAIR) [₱40,911.00]",
         "58120 - DILATION AND CURETTAGE (D&C) [₱21,450.00]",
         "58150 - TOTAL ABDOMINAL HYSTERECTOMY (TAHBSO) [₱58,500.00]",
+        "58260 - VAGINAL HYSTERECTOMY [₱59,085.00]",
         "58558 - HYSTEROSCOPY W/ ENDOMETRIAL SAMPLING / POLYPECTOMY [₱25,155.00]",
         "58600 - LIGATION OR TRANSECTION OF FALLOPIAN TUBES [₱7,800.00]",
+        "59100 - HYSTEROTOMY, ABDOMINAL [₱45,435.00]",
         "59510 - CESAREAN SECTION PROCEDURES [₱19,734.00]",
     ],
 }
@@ -629,6 +660,8 @@ SHEET_HEADERS = {
         "DIAGNOSIS",
         "PROCEDURE",
         "PROCEDURE CATEGORY",
+        "HOSPITAL PACKAGE BUNDLE",
+        "PHILHEALTH CASE RATE (RVS CODE)",
         "ATTENDING PHYSICIAN",
         "ATTENDING SPECIALIZATION",
         "CO-MANAGEMENT PHYSICIAN",
@@ -670,6 +703,8 @@ SHEET_HEADERS = {
         "PROCEDURE NAME",
         "SURGICAL PROCEDURE",
         "PROCEDURE CATEGORY",
+        "HOSPITAL PACKAGE BUNDLE",
+        "PHILHEALTH CASE RATE (RVS CODE)",
         "ATTENDING PHYSICIAN",
         "ATTENDING SPECIALIZATION",
         "CO-MANAGEMENT PHYSICIAN",
@@ -701,6 +736,8 @@ SHEET_HEADERS = {
         "POST-OP DIAGNOSIS",
         "PROCEDURE",
         "PROCEDURE CATEGORY",
+        "HOSPITAL PACKAGE BUNDLE",
+        "PHILHEALTH CASE RATE (RVS CODE)",
         "ATTENDING PHYSICIAN",
         "ATTENDING SPECIALIZATION",
         "CO-MANAGEMENT PHYSICIAN",
@@ -1490,12 +1527,10 @@ if st.session_state["role"] == "Administrator":
                 "INGUINAL HERNIA",
             ])
             row_data["POST-OP DIAGNOSIS"] = row_data["PRE-OP DIAGNOSIS"]
-            row_data["PROCEDURE"] = random.choice([
-                "LAPAROSCOPIC APPENDECTOMY",
-                "LAPAROSCOPIC CHOLECYSTECTOMY",
-                "HERNIORRHAPHY",
-            ])
-            row_data["PROCEDURE CATEGORY"] = "27130 - TOTAL HIP REPLACEMENT [₱104,130.00]"
+            row_data["PROCEDURE"] = "TOTAL HIP REPLACEMENT"
+            row_data["PROCEDURE CATEGORY"] = "MUSCULOSKELETAL SYSTEM"
+            row_data["HOSPITAL PACKAGE BUNDLE"] = "HOSPITAL PACKAGE (GS LAPAROSCOPIC CHOLECYSTECTOMY)"
+            row_data["PHILHEALTH CASE RATE (RVS CODE)"] = "27130 - TOTAL HIP REPLACEMENT [₱104,130.00]"
             row_data["ATTENDING PHYSICIAN"] = "DR. M. REYES"
             row_data["ATTENDING SPECIALIZATION"] = "GENERAL SURGERY"
             row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
@@ -1522,7 +1557,9 @@ if st.session_state["role"] == "Administrator":
             )
             row_data["PROCEDURE NAME"] = "LOWER SEGMENT CESAREAN SECTION"
             row_data["SURGICAL PROCEDURE"] = "PRIMARY LSCS DUE TO CPD"
-            row_data["PROCEDURE CATEGORY"] = "59510 - CESAREAN SECTION PROCEDURES [₱19,734.00]"
+            row_data["PROCEDURE CATEGORY"] = "FEMALE GENITAL SYSTEM"
+            row_data["HOSPITAL PACKAGE BUNDLE"] = "HOSPITAL PACKAGE (OB CESAREAN SECTION)"
+            row_data["PHILHEALTH CASE RATE (RVS CODE)"] = "59510 - CESAREAN SECTION PROCEDURES [₱19,734.00]"
             row_data["ATTENDING PHYSICIAN"] = "DR. R. OCAMPO"
             row_data["ATTENDING SPECIALIZATION"] = "OBSTETRICS & GYNAECOLOGY"
             row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
@@ -1547,11 +1584,10 @@ if st.session_state["role"] == "Administrator":
                 "CHRONIC GASTRITIS",
                 "COLONIC POLYP",
             ])
-            row_data["PROCEDURE"] = random.choice([
-                "DIAGNOSTIC GASTROSCOPY",
-                "COLONOSCOPY WITH BIOPSY",
-            ])
-            row_data["PROCEDURE CATEGORY"] = "43235 - UPPER GASTROINTESTINAL ENDOSCOPY (DIAGNOSTIC / EGD) [₱20,553.00]"
+            row_data["PROCEDURE"] = "UPPER GASTROINTESTINAL ENDOSCOPY (DIAGNOSTIC / EGD)"
+            row_data["PROCEDURE CATEGORY"] = "DIGESTIVE SYSTEM"
+            row_data["HOSPITAL PACKAGE BUNDLE"] = "HOSPITAL PACKAGE KIT (ENDO)"
+            row_data["PHILHEALTH CASE RATE (RVS CODE)"] = "43235 - UPPER GASTROINTESTINAL ENDOSCOPY (DIAGNOSTIC / EGD) [₱20,553.00]"
             row_data["ATTENDING PHYSICIAN"] = "DR. M. REYES"
             row_data["ATTENDING SPECIALIZATION"] = "GASTROENTEROLOGY"
             row_data["CO-MANAGEMENT PHYSICIAN"] = "N/A"
@@ -1729,7 +1765,6 @@ else:
   ])
   MODULES = fixed_front + other_allowed
 
-# Ensure "Hospital Information System" and "Pareto Tally Sheet" are always first, sort the rest
 pinned_modules = ["Hospital Information System", "Pareto Tally Sheet"]
 filtered_modules = [m for m in MODULES if m not in pinned_modules]
 MODULES = pinned_modules + sorted(filtered_modules)
@@ -1929,22 +1964,20 @@ def render_inpatient_order_updater_form(dept_name_label):
         )
     ].index
 
-    st.markdown(f"##### 🏷️ Procedure Selection ({dept_name_label})")
+    st.markdown("##### 5. Diagnostics Procedures and Treatment Plans")
     chosen_cat_cross = st.selectbox(
         f"Select Anatomical / Surgical Category",
         ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
         key=f"cross_cat_{dept_name_label}"
     )
-    added_cross_procs = []
+    added_cross_procs = ""
     if chosen_cat_cross and chosen_cat_cross != "Select Category":
       sub_c = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_cross])
-      chosen_c = st.selectbox(
-          f"Select Procedure under `{chosen_cat_cross}`",
+      added_cross_procs = st.selectbox(
+          f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_cross}`",
           ["Select Procedure"] + sub_c,
           key=f"cross_proc_{dept_name_label}_{chosen_cat_cross}"
       )
-      if chosen_c and chosen_c != "Select Procedure":
-        added_cross_procs.append(chosen_c)
 
     with st.form(f"cross_dept_form_{dept_name_label}"):
       st.markdown(
@@ -1991,13 +2024,13 @@ def render_inpatient_order_updater_form(dept_name_label):
               f"[%m/%d/%Y %I:%M %p - {st.session_state['name']}]"
           )
           
-          if added_cross_procs:
+          if added_cross_procs and added_cross_procs != "Select Procedure":
             ex_p = (
                 str(unit_full_df.loc[idx, "PROCEDURES"])
                 if "PROCEDURES" in unit_full_df.columns
                 else ""
             )
-            bullet_item = f"• {now_ts} {', '.join(added_cross_procs)}"
+            bullet_item = f"• {now_ts} {added_cross_procs}"
             unit_full_df.loc[idx, "PROCEDURES"] = (
                 f"{ex_p}\n{bullet_item}".strip()
                 if ex_p and ex_p != "NAN"
@@ -2620,6 +2653,20 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
   )
 
   with tab_reg:
+    chosen_cat_gnu = st.selectbox(
+        "Select Anatomical / Surgical Category",
+        ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
+        key=f"gnu_cat_{form_key_slug}"
+    )
+    gnu_selected_proc = ""
+    if chosen_cat_gnu and chosen_cat_gnu != "Select Category":
+      sub_p = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_gnu])
+      gnu_selected_proc = st.selectbox(
+          f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_gnu}`",
+          ["Select Procedure"] + sub_p,
+          key=f"gnu_proc_{form_key_slug}_{chosen_cat_gnu}"
+      )
+
     with st.form(f"gnu_form_{form_key_slug}", clear_on_submit=True):
       st.subheader("1. Patient Demographics")
       c1, c2, c3 = st.columns([1.5, 2, 2])
@@ -2701,22 +2748,6 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
       diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip().upper()
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      chosen_cat_gnu = st.selectbox(
-          "Select Anatomical / Surgical Category",
-          ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
-          key=f"gnu_cat_{form_key_slug}"
-      )
-      gnu_selected_proc = []
-      if chosen_cat_gnu and chosen_cat_gnu != "Select Category":
-        sub_p = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_gnu])
-        chosen_p = st.selectbox(
-            f"Select Procedure under `{chosen_cat_gnu}`",
-            ["Select Procedure"] + sub_p,
-            key=f"gnu_proc_{form_key_slug}_{chosen_cat_gnu}"
-        )
-        if chosen_p and chosen_p != "Select Procedure":
-          gnu_selected_proc.append(chosen_p)
-
       diagnostic_exams_text = st.text_area(
           "Diagnostic Examinations", value="", key=f"gnu_{form_key_slug}_diags"
       ).strip().upper()
@@ -2782,7 +2813,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
             "HOSPITALIZATION MODE": hosp_mode,
             "MODE OF PAYMENT": payment_selected,
             "PATIENT STATUS": patient_status,
-            "PROCEDURES": sanitize_medical_text(", ".join(gnu_selected_proc)),
+            "PROCEDURES": sanitize_medical_text(gnu_selected_proc if gnu_selected_proc != "Select Procedure" else ""),
             "DIAGNOSTIC EXAMINATIONS": sanitize_medical_text(
                 diagnostic_exams_text
             ),
@@ -2839,16 +2870,14 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
             ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
             key=f"up_cat_g_{form_key_slug}"
         )
-        up_procs_g = []
+        up_procs_g = ""
         if chosen_cat_up_g and chosen_cat_up_g != "Select Category":
           sub_pg = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_up_g])
-          chosen_pg = st.selectbox(
+          up_procs_g = st.selectbox(
               f"Select Procedure under `{chosen_cat_up_g}`",
               ["Select Procedure"] + sub_pg,
               key=f"up_proc_g_{form_key_slug}_{chosen_cat_up_g}"
           )
-          if chosen_pg and chosen_pg != "Select Procedure":
-            up_procs_g.append(chosen_pg)
 
         with st.form(f"update_form_{form_key_slug}"):
           st.markdown(
@@ -2907,13 +2936,13 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
             )
             if up_status:
               dept_df_up.loc[matched_idx, "PATIENT STATUS"] = up_status
-            if up_procs_g:
+            if up_procs_g and up_procs_g != "Select Procedure":
               existing_p = (
                   str(dept_df_up.loc[matched_idx, "PROCEDURES"])
                   if "PROCEDURES" in dept_df_up.columns
                   else ""
               )
-              bullet_item = f"• {now_ts} {', '.join(up_procs_g)}"
+              bullet_item = f"• {now_ts} {up_procs_g}"
               dept_df_up.loc[matched_idx, "PROCEDURES"] = (
                   f"{existing_p}\n{bullet_item}".strip()
                   if existing_p and existing_p != "NAN"
@@ -3193,23 +3222,47 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
   ])
 
   with tab_reg:
+    # 5. Diagnostics Procedures and Treatment Plans (Outlined specifically for ENDO)
     chosen_cat_endo = st.selectbox(
         "Select Anatomical / Surgical Category",
         ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
         key="endo_cat_sel"
     )
-    endo_selected_procs = []
+    endo_selected_proc = ""
     if chosen_cat_endo and chosen_cat_endo != "Select Category":
       sub_endo = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_endo])
-      chosen_endo = st.selectbox(
-          f"Select Procedure under `{chosen_cat_endo}`",
+      endo_selected_proc = st.selectbox(
+          f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_endo}`",
           ["Select Procedure"] + sub_endo,
           key=f"endo_proc_sel_{chosen_cat_endo}"
       )
-      if chosen_endo and chosen_endo != "Select Procedure":
-        endo_selected_procs.append(chosen_endo)
+
+    endo_pkg_bundle = st.selectbox(
+        "Hospital Package Bundle",
+        [
+            "Hospital Package Kit (ENDO)",
+            "Hospital Package (GS Laparoscopic Cholecystectomy)",
+            "Hospital Package (GS Laparoscopic Appendectomy)",
+            "Hospital Package (GS Laparoscopic Herniorrhaphy)",
+            "Hospital Package (GS Thyroidectomy)",
+            "Hospital Package (GS Open Cholecystectomy)",
+            "Hospital Package (GS Open Appendectomy)",
+            "Hospital Package (GS Modified Radical Mastectomy)",
+            "Hospital Package (GS Open Herniorrhaphy)",
+            "Hospital Package (OB Hysteroscopy)",
+            "Hospital Package (OB Laparoscopic Gynecology)",
+            "Hospital Package (OB Cesarean Section)",
+            "Hospital Package (OB TAHBSO)",
+            "Hospital Package (OB Exploratory Laparotomy)",
+            "Hospital Package (OB D&C/Pregnant)",
+            "Hospital Package (OB D&C/Non-Pregnant)",
+            "Hospital Package (OB Normal Spontaneous Delivery)",
+        ],
+        key="endo_pkg_bundle"
+    )
 
     with st.form("endo_form", clear_on_submit=True):
+      # 1. Patient Demographics
       st.subheader("1. Patient Demographics")
       c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
       with c1:
@@ -3236,6 +3289,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
             "Actual Time", key_suffix="endo_actual"
         )
 
+      # 2. Hospitalization Plan
       st.subheader("2. Hospitalization Plan")
       ch1, ch2, ch3 = st.columns(3)
       with ch1:
@@ -3256,7 +3310,8 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 
       curr_date_str = entry_date.strftime("%m/%d/%Y")
 
-      st.subheader("3. Medical Care Team")
+      # 3. Medical / Surgical Care Team
+      st.subheader("3. Medical / Surgical Care Team")
       c_doc1, c_doc2 = st.columns([2, 2])
       with c_doc1:
         attending_physician = st.text_input(
@@ -3300,6 +3355,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
           index=0,
       )
 
+      # 4. Clinical and Diagnostic Details
       st.subheader("4. Clinical and Diagnostic Details")
       cd1, cd2 = st.columns(2)
       with cd1:
@@ -3307,6 +3363,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
       with cd2:
         procedure_text = st.text_input("Procedure Name", value="").strip().upper()
 
+      # 5. Diagnostics Procedures and Treatment Plans
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
       ca, cb = st.columns(2)
       with ca:
@@ -3357,9 +3414,9 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
             "AGE": age,
             "DIAGNOSIS": sanitize_medical_text(diagnosis_text),
             "PROCEDURE": sanitize_medical_text(procedure_text),
-            "PROCEDURE CATEGORY": (
-                ", ".join(endo_selected_procs) if endo_selected_procs else "NONE"
-            ),
+            "PROCEDURE CATEGORY": chosen_cat_endo if chosen_cat_endo != "Select Category" else "NONE",
+            "HOSPITAL PACKAGE BUNDLE": endo_pkg_bundle,
+            "PHILHEALTH CASE RATE (RVS CODE)": endo_selected_proc if endo_selected_proc != "Select Procedure" else "NONE",
             "ATTENDING PHYSICIAN": final_attending,
             "ATTENDING SPECIALIZATION": attending_spec,
             "CO-MANAGEMENT PHYSICIAN": cm_names_str,
@@ -3460,7 +3517,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
             "Hospital Kit Package", value=False, key="hdu_kit"
         )
 
-      st.subheader("3. Medical Care Team")
+      st.subheader("3. Medical / Surgical Care Team")
       c_doc1, c_doc2 = st.columns([2, 2])
       with c_doc1:
         attending_physician = st.text_input(
@@ -3742,23 +3799,47 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
   ])
 
   with tab_reg:
+    # 5. Diagnostics Procedures and Treatment Plans (Outlined specifically for OBGYNE)
     chosen_cat_ob = st.selectbox(
         "Select Anatomical / Surgical Category",
         ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
         key="ob_cat_sel"
     )
-    ob_selected_procs = []
+    ob_selected_proc = ""
     if chosen_cat_ob and chosen_cat_ob != "Select Category":
       sub_ob = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_ob])
-      chosen_ob = st.selectbox(
-          f"Select Procedure under `{chosen_cat_ob}`",
+      ob_selected_proc = st.selectbox(
+          f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_ob}`",
           ["Select Procedure"] + sub_ob,
           key=f"ob_proc_sel_{chosen_cat_ob}"
       )
-      if chosen_ob and chosen_ob != "Select Procedure":
-        ob_selected_procs.append(chosen_ob)
+
+    ob_pkg_bundle = st.selectbox(
+        "Hospital Package Bundle",
+        [
+            "Hospital Package (OB Cesarean Section)",
+            "Hospital Package (OB TAHBSO)",
+            "Hospital Package (OB Exploratory Laparotomy)",
+            "Hospital Package (OB D&C/Pregnant)",
+            "Hospital Package (OB D&C/Non-Pregnant)",
+            "Hospital Package (OB Normal Spontaneous Delivery)",
+            "Hospital Package (OB Hysteroscopy)",
+            "Hospital Package (OB Laparoscopic Gynecology)",
+            "Hospital Package Kit (ENDO)",
+            "Hospital Package (GS Laparoscopic Cholecystectomy)",
+            "Hospital Package (GS Laparoscopic Appendectomy)",
+            "Hospital Package (GS Laparoscopic Herniorrhaphy)",
+            "Hospital Package (GS Thyroidectomy)",
+            "Hospital Package (GS Open Cholecystectomy)",
+            "Hospital Package (GS Open Appendectomy)",
+            "Hospital Package (GS Modified Radical Mastectomy)",
+            "Hospital Package (GS Open Herniorrhaphy)",
+        ],
+        key="ob_pkg_bundle"
+    )
 
     with st.form("obgyne_form", clear_on_submit=True):
+      # 1. Patient Demographics
       st.subheader("1. Patient Demographics")
       c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
       with c1:
@@ -3785,6 +3866,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             "Actual Time", key_suffix="ob_actual"
         )
 
+      # 2. Hospitalization Plan
       st.subheader("2. Hospitalization Plan")
       ca_h, cb_h, cc_h = st.columns(3)
       with ca_h:
@@ -3805,7 +3887,8 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 
       curr_date_str = entry_date.strftime("%m/%d/%Y")
 
-      st.subheader("3. Medical Care Team")
+      # 3. Medical / Surgical Care Team
+      st.subheader("3. Medical / Surgical Care Team")
       c_doc1, c_doc2 = st.columns([2, 2])
       with c_doc1:
         attending_physician = st.text_input(
@@ -3848,6 +3931,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
           index=0,
       )
 
+      # 4. Clinical and Diagnostic Details
       st.subheader("4. Clinical and Diagnostic Details")
       cd1, cd2 = st.columns(2)
       with cd1:
@@ -3863,6 +3947,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             "Surgical Procedure", value=""
         ).strip().upper()
 
+      # 5. Diagnostics Procedures and Treatment Plans
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
       ca, cb, cc = st.columns(3)
       with ca:
@@ -3912,9 +3997,9 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
             "POST-OP DIAGNOSIS": sanitize_medical_text(post_op_diagnosis),
             "PROCEDURE NAME": sanitize_medical_text(procedure_name),
             "SURGICAL PROCEDURE": sanitize_medical_text(surgical_procedure),
-            "PROCEDURE CATEGORY": (
-                ", ".join(ob_selected_procs) if ob_selected_procs else "NONE"
-            ),
+            "PROCEDURE CATEGORY": chosen_cat_ob if chosen_cat_ob != "Select Category" else "NONE",
+            "HOSPITAL PACKAGE BUNDLE": ob_pkg_bundle,
+            "PHILHEALTH CASE RATE (RVS CODE)": ob_selected_proc if ob_selected_proc != "Select Procedure" else "NONE",
             "ATTENDING PHYSICIAN": final_attending,
             "ATTENDING SPECIALIZATION": attending_spec,
             "CO-MANAGEMENT PHYSICIAN": cm_names_str,
@@ -3970,23 +4055,47 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
   ])
 
   with tab_reg:
+    # 5. Diagnostics Procedures and Treatment Plans (Outlined specifically for SCC)
     chosen_cat_scc = st.selectbox(
         "Select Anatomical / Surgical Category",
         ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
         key="scc_cat_sel"
     )
-    scc_selected_procs = []
+    scc_selected_proc = ""
     if chosen_cat_scc and chosen_cat_scc != "Select Category":
       sub_scc = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_scc])
-      chosen_scc = st.selectbox(
-          f"Select Procedure under `{chosen_cat_scc}`",
+      scc_selected_proc = st.selectbox(
+          f"PhilHealth Case Rate (RVS Code) under `{chosen_cat_scc}`",
           ["Select Procedure"] + sub_scc,
           key=f"scc_proc_sel_{chosen_cat_scc}"
       )
-      if chosen_scc and chosen_scc != "Select Procedure":
-        scc_selected_procs.append(chosen_scc)
+
+    scc_pkg_bundle = st.selectbox(
+        "Hospital Package Bundle",
+        [
+            "Hospital Package (GS Laparoscopic Cholecystectomy)",
+            "Hospital Package (GS Laparoscopic Appendectomy)",
+            "Hospital Package (GS Laparoscopic Herniorrhaphy)",
+            "Hospital Package (GS Thyroidectomy)",
+            "Hospital Package (GS Open Cholecystectomy)",
+            "Hospital Package (GS Open Appendectomy)",
+            "Hospital Package (GS Modified Radical Mastectomy)",
+            "Hospital Package (GS Open Herniorrhaphy)",
+            "Hospital Package Kit (ENDO)",
+            "Hospital Package (OB Hysteroscopy)",
+            "Hospital Package (OB Laparoscopic Gynecology)",
+            "Hospital Package (OB Cesarean Section)",
+            "Hospital Package (OB TAHBSO)",
+            "Hospital Package (OB Exploratory Laparotomy)",
+            "Hospital Package (OB D&C/Pregnant)",
+            "Hospital Package (OB D&C/Non-Pregnant)",
+            "Hospital Package (OB Normal Spontaneous Delivery)",
+        ],
+        key="scc_pkg_bundle"
+    )
 
     with st.form("scc_form", clear_on_submit=True):
+      # 1. Patient Demographics
       st.subheader("1. Patient Demographics")
       c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
       with c1:
@@ -4013,6 +4122,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             "Actual Time", key_suffix="scc_actual"
         )
 
+      # 2. Hospitalization Plan
       st.subheader("2. Hospitalization Plan")
       ca_h, cb_h, cc_h = st.columns(3)
       with ca_h:
@@ -4033,7 +4143,8 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 
       curr_date_str = entry_date.strftime("%m/%d/%Y")
 
-      st.subheader("3. Medical Care Team")
+      # 3. Medical / Surgical Care Team
+      st.subheader("3. Medical / Surgical Care Team")
       c_doc1, c_doc2 = st.columns([2, 2])
       with c_doc1:
         attending_physician = st.text_input(
@@ -4074,6 +4185,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
           index=0,
       )
 
+      # 4. Clinical and Diagnostic Details
       st.subheader("4. Clinical and Diagnostic Details")
       cd1, cd2 = st.columns(2)
       with cd1:
@@ -4085,6 +4197,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 
       procedure = st.text_area("Surgical Procedure", value="").strip().upper()
 
+      # 5. Diagnostics Procedures and Treatment Plans
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
       ca, cb, cc = st.columns(3)
       with ca:
@@ -4133,9 +4246,9 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
             "PRE-OP DIAGNOSIS": sanitize_medical_text(pre_op_diagnosis),
             "POST-OP DIAGNOSIS": sanitize_medical_text(post_op_diagnosis),
             "PROCEDURE": sanitize_medical_text(procedure),
-            "PROCEDURE CATEGORY": (
-                ", ".join(scc_selected_procs) if scc_selected_procs else "NONE"
-            ),
+            "PROCEDURE CATEGORY": chosen_cat_scc if chosen_cat_scc != "Select Category" else "NONE",
+            "HOSPITAL PACKAGE BUNDLE": scc_pkg_bundle,
+            "PHILHEALTH CASE RATE (RVS CODE)": scc_selected_proc if scc_selected_proc != "Select Procedure" else "NONE",
             "ATTENDING PHYSICIAN": final_attending,
             "ATTENDING SPECIALIZATION": attending_spec,
             "CO-MANAGEMENT PHYSICIAN": cm_names_str,
@@ -4248,7 +4361,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
             "Patient Status", ["ACTIVE", "CAB", "DISCHARGED", "MGH"], index=0
         )
 
-      st.subheader("3. Medical Care Team")
+      st.subheader("3. Medical / Surgical Care Team")
       c_doc1, c_doc2 = st.columns([2, 2])
       with c_doc1:
         attending_physician = st.text_input(
