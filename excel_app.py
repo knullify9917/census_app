@@ -1936,23 +1936,21 @@ def render_inpatient_order_updater_form(dept_name_label):
           f" `{target_sheet}`"
       )
       
-      # Cascaded Annex B Selector for Cross-Dept Updaters
-      st.markdown("##### 🏷️ Procedure Selection (Annex B Case Rates)")
-      chosen_cat_up = st.selectbox(
-          "Select Anatomical / Surgical Category",
+      chosen_cat_cross = st.selectbox(
+          f"Select Anatomical / Surgical Category ({dept_name_label})",
           ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
-          key=f"up_cat_{dept_name_label}"
+          key=f"cross_cat_{dept_name_label}"
       )
       added_cross_procs = []
-      if chosen_cat_up and chosen_cat_up != "Select Category":
-        sub_procs_up = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_up])
-        chosen_proc_up = st.selectbox(
-            f"Select Procedure under `{chosen_cat_up}`",
-            ["Select Procedure"] + sub_procs_up,
-            key=f"up_proc_{dept_name_label}_{chosen_cat_up}"
+      if chosen_cat_cross and chosen_cat_cross != "Select Category":
+        sub_c = sorted(ANNEX_B_CATEGORIZED_PROCEDURES[chosen_cat_cross])
+        chosen_c = st.selectbox(
+            f"Select Procedure under `{chosen_cat_cross}`",
+            ["Select Procedure"] + sub_c,
+            key=f"cross_proc_{dept_name_label}_{chosen_cat_cross}"
         )
-        if chosen_proc_up and chosen_proc_up != "Select Procedure":
-          added_cross_procs.append(chosen_proc_up)
+        if chosen_c and chosen_c != "Select Procedure":
+          added_cross_procs.append(chosen_c)
 
       add_meds = st.text_area(
           f"Add Medications / Orders",
@@ -2703,7 +2701,6 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
       diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip().upper()
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      # Hierarchical Annex B Cascaded Selector for GNU
       chosen_cat_gnu = st.selectbox(
           "Select Anatomical / Surgical Category",
           ["Select Category"] + sorted(list(ANNEX_B_CATEGORIZED_PROCEDURES.keys())),
