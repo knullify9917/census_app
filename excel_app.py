@@ -1982,7 +1982,7 @@ if st.session_state["role"] == "Administrator":
             row_data["CO-MANAGEMENT SPECIALIZATION"] = "INTERNAL MEDICINE"
             row_data["HOSPITALIZATION MODE"] = scenario["hosp"]
             row_data["CASE TYPE"] = scenario["case_type"]
-            row_data["ADMITTED TO"] = random.choice(["GNU 1C", "GNU 2A", "PCN", "NICU"])
+            row_data["ADMITTED TO"] = random.choice(["GNU 1C", "GNU 2A", "PCN", "NICU", "MS-ICU"])
             row_data["PROCEDURES"] = scenario["treatment"]
             row_data["DIAGNOSTIC EXAMINATIONS"] = scenario["diags"]
             row_data["MEDICATIONS"] = scenario["meds"]
@@ -2106,6 +2106,11 @@ if st.session_state["role"] == "Administrator":
             row_data["MEDICATIONS"] = scenario["meds"]
             row_data["SPECIAL ENDORSEMENTS"] = scenario["ends"]
 
+          # If target_dept is ECC, let's also test routing logic explicitly in Seeder
+          if target_dept == "Emergency Care Complex (ECC)" and i % 3 == 0:
+            row_data["HOSPITALIZATION MODE"] = "INPATIENT"
+            row_data["ADMITTED TO"] = "MS-ICU"
+            
           append_record_to_google_sheet(target_dept, row_data)
           completed_count += 1
           progress_bar.progress(completed_count / total_tasks)
@@ -2116,11 +2121,11 @@ if st.session_state["role"] == "Administrator":
       log_audit_event(
           "SEED",
           "ALL",
-          f"Generated balanced multi-scenario batch of {batch_size} records per department",
+          f"Generated balanced multi-scenario batch of {batch_size} records per department including ECC cross-routing",
       )
       st.sidebar.success(
           "Successfully generated advanced multi-scenario trial patient records"
-          " across all units!"
+          " across all units with ECC cross-routing verification!"
       )
       st.rerun()
 
