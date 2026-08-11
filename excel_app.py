@@ -63,9 +63,9 @@ st.markdown(
         border-left: 5px solid #1e3a8a !important;
     }
 
-    /* Form Inputs, Textareas, and Dropdown Controls */
+    /* Form Inputs, Textareas, and Dropdown Controls (Allowing user-defined case) */
     div[data-baseweb="select"] > div, input[type="text"]:not([type="password"]), input[type="number"], textarea {
-        background-color: #ffffff !important; color: #1e3a8a !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important; text-transform: uppercase !important;
+        background-color: #ffffff !important; color: #1e3a8a !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important;
     }
     input[type="password"] {
         text-transform: none !important;
@@ -292,7 +292,8 @@ def civilian_time_input_field(label, key_suffix=""):
 def sanitize_medical_text(text):
   if not text or pd.isna(text):
     return ""
-  return " ".join(str(text).strip().upper().split())
+  # Preserves user-defined casing locally while cleaning extra whitespaces
+  return " ".join(str(text).strip().split())
 
 
 def get_custom_icon_html(filename, width=32):
@@ -1329,7 +1330,7 @@ def display_paginated_dataframe(df, key_prefix="pag", is_historical=True):
 
   clean_df = clean_display_df(df)
   for c in clean_df.columns:
-    clean_df[c] = clean_df[c].astype(str).str.upper().replace("NAN", "")
+    clean_df[c] = clean_df[c].astype(str).replace("NAN", "")
 
   total_rows = len(clean_df)
   editor_config = get_editor_column_config(
@@ -1482,12 +1483,12 @@ def render_inpatient_order_updater_form(dept_name_label):
         "Add Medications / Orders",
         value="",
         key=f"iso_med_{dept_name_label}",
-    ).strip().upper()
+    ).strip()
     add_ends = st.text_area(
         "Special Endorsements / Notes",
         value="",
         key=f"iso_end_{dept_name_label}",
-    ).strip().upper()
+    ).strip()
 
     st.markdown("---")
     confirm_password = st.text_input(
@@ -2588,7 +2589,6 @@ elif selected_sheet == "Hospital Information System":
         gnu_filtered = master_gnu_df
 
       if not gnu_filtered.empty:
-        # Normalize types securely to prevent concat attribute errors
         gnu_filtered["LAST NAME"] = gnu_filtered.get("LAST NAME", "").astype(str).str.strip()
         gnu_filtered["FIRST NAME"] = gnu_filtered.get("FIRST NAME", "").astype(str).str.strip()
         gnu_filtered["MIDDLE NAME"] = gnu_filtered.get("MIDDLE NAME", "").astype(str).str.strip()
@@ -2758,15 +2758,15 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
             "Time", key_suffix=f"gnu_{form_key_slug}_time"
         )
       with c3:
-        room_no = st.text_input("Room No.", value="").strip().upper()
+        room_no = st.text_input("Room No.", value="").strip()
 
       c_n1, c_n2, c_n3, c_n4, c_n5 = st.columns([2, 2, 2, 1, 1.5])
       with c_n1:
-        last_name = st.text_input("Last Name", value="").strip().upper()
+        last_name = st.text_input("Last Name", value="").strip()
       with c_n2:
-        first_name = st.text_input("First Name", value="").strip().upper()
+        first_name = st.text_input("First Name", value="").strip()
       with c_n3:
-        middle_name = st.text_input("Middle Name", value="").strip().upper()
+        middle_name = st.text_input("Middle Name", value="").strip()
       with c_n4:
         age = st.number_input("Age", min_value=0, max_value=120, value=0)
       with c_n5:
@@ -2800,7 +2800,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
             "Attending Physician Name",
             value=st.session_state["fast_attending"],
             key=f"gnu_{form_key_slug}_att",
-        ).strip().upper()
+        ).strip()
       with c_doc2:
         attending_spec = st.selectbox(
             "Specialization",
@@ -2812,10 +2812,10 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
       tag_as_cm = st.form_submit_button("Tag as Co-Management")
       cm_list_key = f"cm_list_{form_key_slug}"
       if tag_as_cm and attending_physician:
-        doc_name_up = attending_physician.strip().upper()
+        doc_name_up = attending_physician.strip()
         existing_cms = st.session_state.setdefault(cm_list_key, [])
         if not any(
-            cm["name"] == doc_name_up and cm["spec"] == attending_spec
+            cm["name"].lower() == doc_name_up.lower() and cm["spec"] == attending_spec
             for cm in existing_cms
         ):
           existing_cms.append({"name": doc_name_up, "spec": attending_spec})
@@ -2826,18 +2826,18 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
           st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
       st.subheader("4. Clinical and Diagnostic Details")
-      diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip().upper()
+      diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip()
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
       diagnostic_exams_text = st.text_area(
           "Diagnostic Examinations", value="", key=f"gnu_{form_key_slug}_diags"
-      ).strip().upper()
+      ).strip()
       medications_text = st.text_area(
           "Medications", value="", key=f"gnu_{form_key_slug}_meds"
-      ).strip().upper()
+      ).strip()
       special_endorsements_text = st.text_area(
           "Special Endorsements", value="", key=f"gnu_{form_key_slug}_ends"
-      ).strip().upper()
+      ).strip()
 
       submitted = st.form_submit_button("Submit Record (Fast-Entry)")
       if submitted:
@@ -2943,15 +2943,15 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
       with c_dt2:
         entry_time_str = civilian_time_input_field("Time", key_suffix="ecc_time")
       with c_dt3:
-        room_no = st.text_input("Room No.", value="").strip().upper()
+        room_no = st.text_input("Room No.", value="").strip()
 
       c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
       with c1:
-        last_name = st.text_input("Last Name", value="").strip().upper()
+        last_name = st.text_input("Last Name", value="").strip()
       with c2:
-        first_name = st.text_input("First Name", value="").strip().upper()
+        first_name = st.text_input("First Name", value="").strip()
       with c3:
-        middle_name = st.text_input("Middle Name", value="").strip().upper()
+        middle_name = st.text_input("Middle Name", value="").strip()
       with c4:
         age = st.number_input("Age", min_value=0, max_value=120, value=0)
       with c5:
@@ -2991,7 +2991,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
       with c_doc1:
         attending_physician = st.text_input(
             "Attending Physician Name", value=st.session_state["fast_attending"], key="ecc_att_input"
-        ).strip().upper()
+        ).strip()
       with c_doc2:
         attending_spec = st.selectbox(
             "Specialization",
@@ -3002,10 +3002,10 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
 
       tag_as_cm = st.form_submit_button("Tag as Co-Management")
       if tag_as_cm and attending_physician:
-        doc_name_up = attending_physician.strip().upper()
+        doc_name_up = attending_physician.strip()
         existing_cms = st.session_state.setdefault("cm_list_ecc", [])
         if not any(
-            cm["name"] == doc_name_up and cm["spec"] == attending_spec
+            cm["name"].lower() == doc_name_up.lower() and cm["spec"] == attending_spec
             for cm in existing_cms
         ):
           existing_cms.append({"name": doc_name_up, "spec": attending_spec})
@@ -3016,7 +3016,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
           st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
       st.subheader("4. Clinical and Diagnostic Details")
-      diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip().upper()
+      diagnosis_text = st.text_area("Clinical Diagnosis", value="").strip()
 
       disease_options = sorted([
           "ACUTE GASTROENTERITIS",
@@ -3042,14 +3042,14 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
       selected_diseases = st.multiselect("Disease Category", disease_options)
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      ecc_procedures = st.text_area("Procedures Performed", value="", key="ecc_procs").strip().upper()
+      ecc_procedures = st.text_area("Procedures Performed", value="", key="ecc_procs").strip()
       ecc_diagnostic_exams = st.text_area(
           "Diagnostic Examinations", value="", key="ecc_diags"
-      ).strip().upper()
-      ecc_medications = st.text_area("Medications", value="", key="ecc_meds").strip().upper()
+      ).strip()
+      ecc_medications = st.text_area("Medications", value="", key="ecc_meds").strip()
       ecc_special_endorsements = st.text_area(
           "Special Endorsements", value="", key="ecc_ends"
-      ).strip().upper()
+      ).strip()
 
       submitted = st.form_submit_button("Submit Record (Fast-Entry)")
       if submitted:
@@ -3247,11 +3247,11 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
       st.subheader("1. Patient Demographics")
       c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
       with c1:
-        last_name = st.text_input("Last Name", value="").strip().upper()
+        last_name = st.text_input("Last Name", value="").strip()
       with c2:
-        first_name = st.text_input("First Name", value="").strip().upper()
+        first_name = st.text_input("First Name", value="").strip()
       with c3:
-        middle_name = st.text_input("Middle Name", value="").strip().upper()
+        middle_name = st.text_input("Middle Name", value="").strip()
       with c4:
         age = st.number_input("Age", min_value=0, max_value=120, value=0)
       with c5:
@@ -3295,7 +3295,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
       with c_doc1:
         attending_physician = st.text_input(
             "Attending Physician Name", value="", key="endo_att_input"
-        ).strip().upper()
+        ).strip()
       with c_doc2:
         attending_spec = st.selectbox(
             "Attending Specialization",
@@ -3306,10 +3306,10 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 
       tag_as_cm = st.form_submit_button("Tag as Co-Management")
       if tag_as_cm and attending_physician:
-        doc_name_up = attending_physician.strip().upper()
+        doc_name_up = attending_physician.strip()
         existing_cms = st.session_state.setdefault("cm_list_endo", [])
         if not any(
-            cm["name"] == doc_name_up and cm["spec"] == attending_spec
+            cm["name"].lower() == doc_name_up.lower() and cm["spec"] == attending_spec
             for cm in existing_cms
         ):
           existing_cms.append({"name": doc_name_up, "spec": attending_spec})
@@ -3321,13 +3321,13 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 
       surgeon = st.text_input(
           "Surgeon / Endoscopist / Proceduralist", value=""
-      ).strip().upper()
+      ).strip()
       surgeon_spec = st.selectbox(
           "Surgeon / Proceduralist Specialization",
           SPECIALTY_DROPDOWN_OPTIONS,
           index=0,
       )
-      anesthesiologist = st.text_input("Anesthesiologist Name", value="").strip().upper()
+      anesthesiologist = st.text_input("Anesthesiologist Name", value="").strip()
       anes_spec = st.selectbox(
           "Anesthesiologist Specialization",
           SPECIALTY_DROPDOWN_OPTIONS,
@@ -3337,9 +3337,9 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
       st.subheader("4. Clinical and Diagnostic Details")
       cd1, cd2 = st.columns(2)
       with cd1:
-        diagnosis_text = st.text_input("Clinical Diagnosis", value="").strip().upper()
+        diagnosis_text = st.text_input("Clinical Diagnosis", value="").strip()
       with cd2:
-        procedure_text = st.text_input("Procedure Name", value="").strip().upper()
+        procedure_text = st.text_input("Procedure Name", value="").strip()
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
       c_p1, c_p2 = st.columns(2)
@@ -3446,11 +3446,11 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
       st.subheader("1. Patient Demographics")
       c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
       with c1:
-        last_name = st.text_input("Last Name", value="").strip().upper()
+        last_name = st.text_input("Last Name", value="").strip()
       with c2:
-        first_name = st.text_input("First Name", value="").strip().upper()
+        first_name = st.text_input("First Name", value="").strip()
       with c3:
-        middle_name = st.text_input("Middle Name", value="").strip().upper()
+        middle_name = st.text_input("Middle Name", value="").strip()
       with c4:
         age = st.number_input("Age", min_value=0, max_value=120, value=0)
       with c5:
@@ -3494,7 +3494,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
       with c_doc1:
         attending_physician = st.text_input(
             "Attending Physician", value="", key="hdu_att_input"
-        ).strip().upper()
+        ).strip()
       with c_doc2:
         attending_spec = st.selectbox(
             "Attending Specialization",
@@ -3506,10 +3506,10 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
       tag_as_cm = st.form_submit_button("Tag as Co-Management")
       cm_list_key = "cm_list_hdu"
       if tag_as_cm and attending_physician:
-        doc_name_up = attending_physician.strip().upper()
+        doc_name_up = attending_physician.strip()
         existing_cms = st.session_state.setdefault(cm_list_key, [])
         if not any(
-            cm["name"] == doc_name_up and cm["spec"] == attending_spec
+            cm["name"].lower() == doc_name_up.lower() and cm["spec"] == attending_spec
             for cm in existing_cms
         ):
           existing_cms.append({"name": doc_name_up, "spec": attending_spec})
@@ -3520,17 +3520,17 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
           st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
       st.subheader("4. Clinical and Diagnostic Details")
-      diagnosis = st.text_input("Diagnosis", value="").strip().upper()
+      diagnosis = st.text_input("Diagnosis", value="").strip()
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      hdu_procedures = st.text_area("Procedures", value="", key="hdu_procs").strip().upper()
+      hdu_procedures = st.text_area("Procedures", value="", key="hdu_procs").strip()
       hdu_diagnostic_exams = st.text_area(
           "Diagnostic Examinations", value="", key="hdu_diags"
-      ).strip().upper()
-      hdu_medications = st.text_area("Medications", value="", key="hdu_meds").strip().upper()
+      ).strip()
+      hdu_medications = st.text_area("Medications", value="", key="hdu_meds").strip()
       hdu_special_endorsements = st.text_area(
           "Special Endorsements", value="", key="hdu_ends"
-      ).strip().upper()
+      ).strip()
 
       submitted = st.form_submit_button("Submit Record")
       if submitted:
@@ -3660,11 +3660,11 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
       st.subheader("1. Patient Demographics")
       c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
       with c1:
-        last_name = st.text_input("Last Name", value="").strip().upper()
+        last_name = st.text_input("Last Name", value="").strip()
       with c2:
-        first_name = st.text_input("First Name", value="").strip().upper()
+        first_name = st.text_input("First Name", value="").strip()
       with c3:
-        middle_name = st.text_input("Middle Name", value="").strip().upper()
+        middle_name = st.text_input("Middle Name", value="").strip()
       with c4:
         age = st.number_input("Age", min_value=10, max_value=100, value=10)
       with c5:
@@ -3708,7 +3708,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
       with c_doc1:
         attending_physician = st.text_input(
             "Attending Physician Name", value="", key="ob_att_input"
-        ).strip().upper()
+        ).strip()
       with c_doc2:
         attending_spec = st.selectbox(
             "Attending Specialization",
@@ -3720,10 +3720,10 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
       tag_as_cm = st.form_submit_button("Tag as Co-Management")
       cm_list_key = "cm_list_ob"
       if tag_as_cm and attending_physician:
-        doc_name_up = attending_physician.strip().upper()
+        doc_name_up = attending_physician.strip()
         existing_cms = st.session_state.setdefault(cm_list_key, [])
         if not any(
-            cm["name"] == doc_name_up and cm["spec"] == attending_spec
+            cm["name"].lower() == doc_name_up.lower() and cm["spec"] == attending_spec
             for cm in existing_cms
         ):
           existing_cms.append({"name": doc_name_up, "spec": attending_spec})
@@ -3735,11 +3735,11 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 
       surgeon = st.text_input(
           "Surgeon / OBGYNE Primary Operator", value=""
-      ).strip().upper()
+      ).strip()
       surgeon_spec = st.selectbox(
           "Surgeon Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0
       )
-      anesthesiologist = st.text_input("Anesthesiologist Name", value="").strip().upper()
+      anesthesiologist = st.text_input("Anesthesiologist Name", value="").strip()
       anes_spec = st.selectbox(
           "Anesthesiologist Specialization",
           SPECIALTY_DROPDOWN_OPTIONS,
@@ -3749,17 +3749,17 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
       st.subheader("4. Clinical and Diagnostic Details")
       cd1, cd2 = st.columns(2)
       with cd1:
-        pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="").strip().upper()
+        pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="").strip()
       with cd2:
-        post_op_diagnosis = st.text_area("Post-Op Diagnosis", value="").strip().upper()
+        post_op_diagnosis = st.text_area("Post-Op Diagnosis", value="").strip()
 
       cp1, cp2 = st.columns(2)
       with cp1:
-        procedure_name = st.text_input("Procedure Name", value="").strip().upper()
+        procedure_name = st.text_input("Procedure Name", value="").strip()
       with cp2:
         surgical_procedure = st.text_area(
             "Surgical Procedure", value=""
-        ).strip().upper()
+        ).strip()
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
       c_p1, c_p2 = st.columns(2)
@@ -3902,11 +3902,11 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
       st.subheader("1. Patient Demographics")
       c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
       with c1:
-        last_name = st.text_input("Last Name", value="").strip().upper()
+        last_name = st.text_input("Last Name", value="").strip()
       with c2:
-        first_name = st.text_input("First Name", value="").strip().upper()
+        first_name = st.text_input("First Name", value="").strip()
       with c3:
-        middle_name = st.text_input("Middle Name", value="").strip().upper()
+        middle_name = st.text_input("Middle Name", value="").strip()
       with c4:
         age = st.number_input("Age", min_value=0, max_value=120, value=0)
       with c5:
@@ -3950,7 +3950,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
       with c_doc1:
         attending_physician = st.text_input(
             "Attending Physician Name", value="", key="scc_att_input"
-        ).strip().upper()
+        ).strip()
       with c_doc2:
         attending_spec = st.selectbox(
             "Specialization",
@@ -3962,10 +3962,10 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
       tag_as_cm = st.form_submit_button("Tag as Co-Management")
       cm_list_key = "cm_list_scc"
       if tag_as_cm and attending_physician:
-        doc_name_up = attending_physician.strip().upper()
+        doc_name_up = attending_physician.strip()
         existing_cms = st.session_state.setdefault(cm_list_key, [])
         if not any(
-            cm["name"] == doc_name_up and cm["spec"] == attending_spec
+            cm["name"].lower() == doc_name_up.lower() and cm["spec"] == attending_spec
             for cm in existing_cms
         ):
           existing_cms.append({"name": doc_name_up, "spec": attending_spec})
@@ -3975,11 +3975,11 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
         for cm in st.session_state[cm_list_key]:
           st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
-      surgeon = st.text_input("Primary Surgeon", value="").strip().upper()
+      surgeon = st.text_input("Primary Surgeon", value="").strip()
       surgeon_spec = st.selectbox(
           "Surgeon Specialization", SPECIALTY_DROPDOWN_OPTIONS, index=0
       )
-      anesthesiologist = st.text_input("Anesthesiologist Name", value="").strip().upper()
+      anesthesiologist = st.text_input("Anesthesiologist Name", value="").strip()
       anes_spec = st.selectbox(
           "Anesthesiologist Specialization",
           SPECIALTY_DROPDOWN_OPTIONS,
@@ -3989,13 +3989,13 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
       st.subheader("4. Clinical and Diagnostic Details")
       cd1, cd2 = st.columns(2)
       with cd1:
-        pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="").strip().upper()
+        pre_op_diagnosis = st.text_area("Pre-Op Diagnosis", value="").strip()
       with cd2:
         post_op_diagnosis = st.text_area(
             "Post-Op Diagnosis", value=""
-        ).strip().upper()
+        ).strip()
 
-      procedure = st.text_area("Surgical Procedure", value="").strip().upper()
+      procedure = st.text_area("Surgical Procedure", value="").strip()
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
       c_p1, c_p2 = st.columns(2)
@@ -4108,16 +4108,16 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
       st.subheader("1. Patient Demographics")
       c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
       with c1:
-        last_name = st.text_input("Last Name", value="").strip().upper()
+        last_name = st.text_input("Last Name", value="").strip()
       with c2:
-        first_name = st.text_input("First Name", value="").strip().upper()
+        first_name = st.text_input("First Name", value="").strip()
       with c3:
-        middle_name = st.text_input("Middle Name", value="").strip().upper()
+        middle_name = st.text_input("Middle Name", value="").strip()
       with c4:
         sex_options = ["Select Sex", "FEMALE", "MALE", "OTHERS"]
         sex = st.selectbox("Sex", sex_options, index=0)
       with c5:
-        aog = st.text_input("Age of Gestation (AOG)", value="").strip().upper()
+        aog = st.text_input("Age of Gestation (AOG)", value="").strip()
 
       c5_d, c6, c7, c8 = st.columns(4)
       with c5_d:
@@ -4166,7 +4166,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
       with c_doc1:
         attending_physician = st.text_input(
             "Attending Physician Name", value="", key="scu_att_input"
-        ).strip().upper()
+        ).strip()
       with c_doc2:
         attending_spec = st.selectbox(
             "Specialization",
@@ -4178,10 +4178,10 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
       tag_as_cm = st.form_submit_button("Tag as Co-Management")
       cm_list_key = "cm_list_scu"
       if tag_as_cm and attending_physician:
-        doc_name_up = attending_physician.strip().upper()
+        doc_name_up = attending_physician.strip()
         existing_cms = st.session_state.setdefault(cm_list_key, [])
         if not any(
-            cm["name"] == doc_name_up and cm["spec"] == attending_spec
+            cm["name"].lower() == doc_name_up.lower() and cm["spec"] == attending_spec
             for cm in existing_cms
         ):
           existing_cms.append({"name": doc_name_up, "spec": attending_spec})
@@ -4192,20 +4192,20 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
           st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
       st.subheader("4. Clinical and Diagnostic Details")
-      diagnosis = st.text_area("Diagnosis Text", value="").strip().upper()
+      diagnosis = st.text_area("Diagnosis Text", value="").strip()
       diag_flags = st.multiselect(
           "Diagnosis Category", sorted(["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY", "OTHERS"])
       )
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      scu_procedures = st.text_area("Procedures", value="", key="scu_procs").strip().upper()
+      scu_procedures = st.text_area("Procedures", value="", key="scu_procs").strip()
       scu_diagnostic_exams = st.text_area(
           "Diagnostic Examinations", value="", key="scu_diags"
-      ).strip().upper()
-      scu_medications = st.text_area("Medications", value="", key="scu_meds").strip().upper()
+      ).strip()
+      scu_medications = st.text_area("Medications", value="", key="scu_meds").strip()
       scu_special_endorsements = st.text_area(
           "Special Endorsements", value="", key="scu_ends"
-      ).strip().upper()
+      ).strip()
 
       submitted = st.form_submit_button("Submit Record")
       if submitted:
