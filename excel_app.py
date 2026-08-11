@@ -809,9 +809,9 @@ def get_month_str(date_obj, fmt_style="numeric_prefix"):
 
 
 # ---------------------------------------------------------
-# HYBRID SQLITE BACKEND & LOCAL-FIRST INSTANT READ ARCHITECTURE
+# HYBRID SQLITE BACKEND & CONCURRENCY-LOCKED ARCHITECTURE
 # ---------------------------------------------------------
-sqlite_lock = threading.Lock()
+sqlite_write_lock = threading.Lock()
 
 
 def get_sqlite_conn():
@@ -823,92 +823,96 @@ def get_sqlite_conn():
 
 
 def init_local_sqlite():
-  conn = get_sqlite_conn()
-  cursor = conn.cursor()
-  for s_name, cols in SHEET_HEADERS.items():
-    cols_def = ", ".join([f'"{col}" TEXT' for col in cols])
-    cursor.execute(f'CREATE TABLE IF NOT EXISTS "{s_name}" ({cols_def})')
+  with sqlite_write_lock:
+    conn = get_sqlite_conn()
+    cursor = conn.cursor()
+    for s_name, cols in SHEET_HEADERS.items():
+      cols_def = ", ".join([f'"{col}" TEXT' for col in cols])
+      cursor.execute(f'CREATE TABLE IF NOT EXISTS "{s_name}" ({cols_def})')
+      try:
+        cursor.execute(f'CREATE INDEX IF NOT EXISTS idx_{s_name.replace(" ", "_")}_names ON "{s_name}" ("LAST NAME", "FIRST NAME")')
+      except Exception:
+        pass
+
+    cursor.execute("""
+          CREATE TABLE IF NOT EXISTS "System Audit Logs" (
+              TIMESTAMP TEXT,
+              USERNAME TEXT,
+              ROLE TEXT,
+              ACTION TEXT,
+              DEPARTMENT TEXT,
+              DETAILS TEXT
+          )
+      """)
+
+    cursor.execute("""
+          CREATE TABLE IF NOT EXISTS "Sync_Queue" (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              sheet_name TEXT,
+              row_json TEXT,
+              is_update INTEGER,
+              df_pickle BLOB,
+              retries INTEGER DEFAULT 0
+          )
+      """)
     try:
-      cursor.execute(f'CREATE INDEX IF NOT EXISTS idx_{s_name.replace(" ", "_")}_names ON "{s_name}" ("LAST NAME", "FIRST NAME")')
+      cursor.execute('ALTER TABLE "Sync_Queue" ADD COLUMN retries INTEGER DEFAULT 0')
     except Exception:
       pass
 
-  cursor.execute("""
-        CREATE TABLE IF NOT EXISTS "System Audit Logs" (
-            TIMESTAMP TEXT,
-            USERNAME TEXT,
-            ROLE TEXT,
-            ACTION TEXT,
-            DEPARTMENT TEXT,
-            DETAILS TEXT
-        )
-    """)
-
-  cursor.execute("""
-        CREATE TABLE IF NOT EXISTS "Sync_Queue" (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            sheet_name TEXT,
-            row_json TEXT,
-            is_update INTEGER,
-            df_pickle BLOB,
-            retries INTEGER DEFAULT 0
-        )
-    """)
-  try:
-    cursor.execute('ALTER TABLE "Sync_Queue" ADD COLUMN retries INTEGER DEFAULT 0')
-  except Exception:
-    pass
-
-  conn.commit()
-  conn.close()
+    conn.commit()
+    conn.close()
 
 
 init_local_sqlite()
 
 
 def log_audit_event(action, department, details):
-  conn = get_sqlite_conn()
-  cursor = conn.cursor()
-  ts = get_ph_time().strftime("%Y-%m-%d %I:%M %p")
-  username = st.session_state.get("username", "system")
-  role = st.session_state.get("role", "system")
-  cursor.execute(
-      """
-        INSERT INTO "System Audit Logs" (TIMESTAMP, USERNAME, ROLE, ACTION, DEPARTMENT, DETAILS)
-        VALUES (?, ?, ?, ?, ?, ?)
-    """,
-      (ts, username, role, action, department, details),
-  )
-  conn.commit()
-  conn.close()
+  with sqlite_write_lock:
+    conn = get_sqlite_conn()
+    cursor = conn.cursor()
+    ts = get_ph_time().strftime("%Y-%m-%d %I:%M %p")
+    username = st.session_state.get("username", "system")
+    role = st.session_state.get("role", "system")
+    cursor.execute(
+        """
+          INSERT INTO "System Audit Logs" (TIMESTAMP, USERNAME, ROLE, ACTION, DEPARTMENT, DETAILS)
+          VALUES (?, ?, ?, ?, ?, ?)
+      """,
+        (ts, username, role, action, department, details),
+    )
+    conn.commit()
+    conn.close()
 
 
 def sync_df_to_sqlite(sheet_name, df):
-  if df is None or df.empty:
-    return
-  conn = get_sqlite_conn()
-  try:
-    df.to_sql(sheet_name, conn, if_exists="replace", index=False)
-  except Exception:
-    pass
-  conn.close()
+  with sqlite_write_lock:
+    if df is None or df.empty:
+      return
+    conn = get_sqlite_conn()
+    try:
+      df.to_sql(sheet_name, conn, if_exists="replace", index=False)
+    except Exception:
+      pass
+    conn.close()
 
 
 def read_sqlite_sheet(sheet_name):
   conn = get_sqlite_conn()
+  expected_cols = SHEET_HEADERS.get(sheet_name, [])
   try:
     df = pd.read_sql(f'SELECT * FROM "{sheet_name}"', conn)
     conn.close()
     if not df.empty:
-      expected_cols = SHEET_HEADERS.get(sheet_name, [])
       for c in expected_cols:
         if c not in df.columns:
           df[c] = ""
       return df
   except Exception:
-    conn.close()
-  
-  expected_cols = SHEET_HEADERS.get(sheet_name, [])
+    try:
+      conn.close()
+    except:
+      pass
   return pd.DataFrame(columns=expected_cols)
 
 
@@ -1023,10 +1027,11 @@ def background_durable_sync_worker():
 
       safe_gspread_call(sheet_name, _do_sync)
 
-      conn_del = get_sqlite_conn()
-      conn_del.execute('DELETE FROM "Sync_Queue" WHERE id = ?', (task_id,))
-      conn_del.commit()
-      conn_del.close()
+      with sqlite_write_lock:
+        conn_del = get_sqlite_conn()
+        conn_del.execute('DELETE FROM "Sync_Queue" WHERE id = ?', (task_id,))
+        conn_del.commit()
+        conn_del.close()
 
       st.session_state["sync_health_status"] = (
           f"Healthy (Last synced: {get_ph_time().strftime('%I:%M:%S %p')})"
@@ -1036,20 +1041,21 @@ def background_durable_sync_worker():
         conn.close()
       except:
         pass
-      conn_retry = get_sqlite_conn()
-      cursor_r = conn_retry.cursor()
-      cursor_r.execute('SELECT retries FROM "Sync_Queue" WHERE id = ?', (task_id,))
-      r_res = cursor_r.fetchone()
-      current_retries = r_res[0] if r_res else 0
+      with sqlite_write_lock:
+        conn_retry = get_sqlite_conn()
+        cursor_r = conn_retry.cursor()
+        cursor_r.execute('SELECT retries FROM "Sync_Queue" WHERE id = ?', (task_id,))
+        r_res = cursor_r.fetchone()
+        current_retries = r_res[0] if r_res else 0
 
-      if current_retries >= 2:
-        cursor_r.execute('DELETE FROM "Sync_Queue" WHERE id = ?', (task_id,))
-        conn_retry.commit()
-        log_audit_event("SYNC_FAIL", sheet_name, f"Dropped task after 3 failed sync attempts: {str(e)}")
-      else:
-        cursor_r.execute('UPDATE "Sync_Queue" SET retries = retries + 1 WHERE id = ?', (task_id,))
-        conn_retry.commit()
-      conn_retry.close()
+        if current_retries >= 2:
+          cursor_r.execute('DELETE FROM "Sync_Queue" WHERE id = ?', (task_id,))
+          conn_retry.commit()
+          log_audit_event("SYNC_FAIL", sheet_name, f"Dropped task after 3 failed sync attempts: {str(e)}")
+        else:
+          cursor_r.execute('UPDATE "Sync_Queue" SET retries = retries + 1 WHERE id = ?', (task_id,))
+          conn_retry.commit()
+        conn_retry.close()
 
       st.session_state["sync_health_status"] = f"Sync Error (Retry {current_retries+1}/3): {str(e)}"
       py_time.sleep(5)
@@ -1137,21 +1143,22 @@ def safe_gspread_call(sheet_name, func, *args, **kwargs):
 
 def append_record_to_google_sheet(sheet_name, row_dict):
   ensure_google_sheets_exist()
-  conn = get_sqlite_conn()
-  df_curr = read_sqlite_sheet(sheet_name)
-  df_new = pd.DataFrame([row_dict])
-  df_combined = pd.concat([df_curr, df_new], ignore_index=True)
-  sync_df_to_sqlite(sheet_name, df_combined)
-  conn.close()
+  with sqlite_write_lock:
+    conn = get_sqlite_conn()
+    df_curr = read_sqlite_sheet(sheet_name)
+    df_new = pd.DataFrame([row_dict])
+    df_combined = pd.concat([df_curr, df_new], ignore_index=True)
+    sync_df_to_sqlite(sheet_name, df_combined)
+    conn.close()
 
-  conn_q = get_sqlite_conn()
-  conn_q.execute(
-      'INSERT INTO "Sync_Queue" (sheet_name, row_json, is_update, df_pickle, retries)'
-      " VALUES (?, ?, ?, ?, 0)",
-      (sheet_name, json.dumps(row_dict), 0, None),
-  )
-  conn_q.commit()
-  conn_q.close()
+    conn_q = get_sqlite_conn()
+    conn_q.execute(
+        'INSERT INTO "Sync_Queue" (sheet_name, row_json, is_update, df_pickle, retries)'
+        " VALUES (?, ?, ?, ?, 0)",
+        (sheet_name, json.dumps(row_dict), 0, None),
+    )
+    conn_q.commit()
+    conn_q.close()
 
   log_audit_event(
       "INSERT",
@@ -1163,16 +1170,16 @@ def append_record_to_google_sheet(sheet_name, row_dict):
 
 def update_google_sheet_from_df(sheet_name, df):
   ensure_google_sheets_exist()
-  sync_df_to_sqlite(sheet_name, df)
-
-  conn_q = get_sqlite_conn()
-  conn_q.execute(
-      'INSERT INTO "Sync_Queue" (sheet_name, row_json, is_update, df_pickle, retries)'
-      " VALUES (?, ?, ?, ?, 0)",
-      (sheet_name, None, 1, pickle.dumps(df)),
-  )
-  conn_q.commit()
-  conn_q.close()
+  with sqlite_write_lock:
+    sync_df_to_sqlite(sheet_name, df)
+    conn_q = get_sqlite_conn()
+    conn_q.execute(
+        'INSERT INTO "Sync_Queue" (sheet_name, row_json, is_update, df_pickle, retries)'
+        " VALUES (?, ?, ?, ?, 0)",
+        (sheet_name, None, 1, pickle.dumps(df)),
+    )
+    conn_q.commit()
+    conn_q.close()
 
   log_audit_event(
       "UPDATE", sheet_name, f"Updated sheet rows count: {len(df)}"
@@ -1399,12 +1406,19 @@ def render_inpatient_order_updater_form(dept_name_label):
     st.info("No active admitted inpatients in this department.")
     return
 
+  room_col_name = "ROOM NO" if "ROOM NO" in active_sub.columns else ("ROOM NUMBER" if "ROOM NUMBER" in active_sub.columns else None)
+  
+  if room_col_name:
+    room_series = active_sub[room_col_name].fillna("N/A").astype(str)
+  else:
+    room_series = pd.Series(["N/A"] * len(active_sub), index=active_sub.index)
+
   active_sub["DISPLAY_LABEL"] = (
       active_sub["LAST NAME"].astype(str).str.strip()
       + ", "
       + active_sub["FIRST NAME"].astype(str).str.strip()
       + " (Rm: "
-      + active_sub.get("ROOM NO", "N/A").astype(str)
+      + room_series
       + ")"
   )
 
@@ -2063,12 +2077,13 @@ if st.session_state["role"] == "Administrator":
               pass
             py_time.sleep(0.2)
 
-          conn = get_sqlite_conn()
-          cursor = conn.cursor()
-          for s_name, cols in SHEET_HEADERS.items():
-            cursor.execute(f'DELETE FROM "{s_name}"')
-          conn.commit()
-          conn.close()
+          with sqlite_write_lock:
+            conn = get_sqlite_conn()
+            cursor = conn.cursor()
+            for s_name, cols in SHEET_HEADERS.items():
+              cursor.execute(f'DELETE FROM "{s_name}"')
+            conn.commit()
+            conn.close()
 
           st.cache_data.clear()
           st.session_state["df_cache"] = {}
@@ -2573,27 +2588,23 @@ elif selected_sheet == "Hospital Information System":
         gnu_filtered = master_gnu_df
 
       if not gnu_filtered.empty:
+        # Normalize types securely to prevent concat attribute errors
+        gnu_filtered["LAST NAME"] = gnu_filtered.get("LAST NAME", "").astype(str).str.strip()
+        gnu_filtered["FIRST NAME"] = gnu_filtered.get("FIRST NAME", "").astype(str).str.strip()
+        gnu_filtered["MIDDLE NAME"] = gnu_filtered.get("MIDDLE NAME", "").astype(str).str.strip()
         gnu_filtered["NAME OF PATIENT"] = (
-            gnu_filtered.get("LAST NAME", "").astype(str).str.strip()
-            + ", "
-            + gnu_filtered.get("FIRST NAME", "").astype(str).str.strip()
-            + " "
-            + gnu_filtered.get("MIDDLE NAME", "").astype(str).str.strip()
+            gnu_filtered["LAST NAME"] + ", " + gnu_filtered["FIRST NAME"] + " " + gnu_filtered["MIDDLE NAME"]
         ).str.strip(", ")
 
         gnu_mapped = pd.DataFrame()
-        gnu_mapped["Admission Date"] = gnu_filtered.get("DATE", "")
-        gnu_mapped["Department / Unit"] = gnu_filtered.get(
-            "SOURCE DEPARTMENT", ""
-        )
-        gnu_mapped["Room No."] = gnu_filtered.get("ROOM NO", "N/A")
-        gnu_mapped["Name of Patient"] = gnu_filtered["NAME OF PATIENT"]
-        gnu_mapped["Age"] = gnu_filtered.get("AGE", "")
-        gnu_mapped["Diagnosis"] = gnu_filtered.get("DIAGNOSIS", "")
-        gnu_mapped["Attending Physician"] = gnu_filtered.get(
-            "ATTENDING PHYSICIAN", ""
-        )
-        gnu_mapped["Status"] = gnu_filtered.get("PATIENT STATUS", "")
+        gnu_mapped["Admission Date"] = gnu_filtered.get("DATE", "").astype(str)
+        gnu_mapped["Department / Unit"] = gnu_filtered.get("SOURCE DEPARTMENT", "").astype(str)
+        gnu_mapped["Room No."] = gnu_filtered.get("ROOM NO", "N/A").astype(str)
+        gnu_mapped["Name of Patient"] = gnu_filtered["NAME OF PATIENT"].astype(str)
+        gnu_mapped["Age"] = gnu_filtered.get("AGE", "").astype(str)
+        gnu_mapped["Diagnosis"] = gnu_filtered.get("DIAGNOSIS", "").astype(str)
+        gnu_mapped["Attending Physician"] = gnu_filtered.get("ATTENDING PHYSICIAN", "").astype(str)
+        gnu_mapped["Status"] = gnu_filtered.get("PATIENT STATUS", "").astype(str)
         roster_combined_frames.append(gnu_mapped)
 
     scu_raw_df = dept_data_map.get(scu_sheet, pd.DataFrame())
@@ -2615,29 +2626,26 @@ elif selected_sheet == "Hospital Information System":
         scu_filtered = scu_c
 
       if not scu_filtered.empty:
+        scu_filtered["LAST NAME"] = scu_filtered.get("LAST NAME", "").astype(str).str.strip()
+        scu_filtered["FIRST NAME"] = scu_filtered.get("FIRST NAME", "").astype(str).str.strip()
+        scu_filtered["MIDDLE NAME"] = scu_filtered.get("MIDDLE NAME", "").astype(str).str.strip()
         scu_filtered["NAME OF PATIENT"] = (
-            scu_filtered.get("LAST NAME", "").astype(str).str.strip()
-            + ", "
-            + scu_filtered.get("FIRST NAME", "").astype(str).str.strip()
-            + " "
-            + scu_filtered.get("MIDDLE NAME", "").astype(str).str.strip()
+            scu_filtered["LAST NAME"] + ", " + scu_filtered["FIRST NAME"] + " " + scu_filtered["MIDDLE NAME"]
         ).str.strip(", ")
 
         scu_mapped = pd.DataFrame()
-        scu_mapped["Admission Date"] = scu_filtered.get("DATE", "")
+        scu_mapped["Admission Date"] = scu_filtered.get("DATE", "").astype(str)
         scu_mapped["Department / Unit"] = (
             "SPECIAL CARE COMPLEX ("
-            + scu_filtered.get("ADMITTED TO", "NICU")
+            + scu_filtered.get("ADMITTED TO", "NICU").astype(str)
             + ")"
         )
-        scu_mapped["Room No."] = "N/A"
-        scu_mapped["Name of Patient"] = scu_filtered["NAME OF PATIENT"]
-        scu_mapped["Age"] = scu_filtered.get("AGE", "")
-        scu_mapped["Diagnosis"] = scu_filtered.get("DIAGNOSIS", "")
-        scu_mapped["Attending Physician"] = scu_filtered.get(
-            "ATTENDING PHYSICIAN", ""
-        )
-        scu_mapped["Status"] = scu_filtered.get("PATIENT STATUS", "ACTIVE")
+        scu_mapped["Room No."] = pd.Series(["N/A"] * len(scu_filtered), index=scu_filtered.index, dtype=str)
+        scu_mapped["Name of Patient"] = scu_filtered["NAME OF PATIENT"].astype(str)
+        scu_mapped["Age"] = scu_filtered.get("AGE", "").astype(str)
+        scu_mapped["Diagnosis"] = scu_filtered.get("DIAGNOSIS", "").astype(str)
+        scu_mapped["Attending Physician"] = scu_filtered.get("ATTENDING PHYSICIAN", "").astype(str)
+        scu_mapped["Status"] = scu_filtered.get("PATIENT STATUS", "ACTIVE").astype(str)
         roster_combined_frames.append(scu_mapped)
 
     if roster_combined_frames:
