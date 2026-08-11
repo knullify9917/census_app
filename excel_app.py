@@ -2260,7 +2260,7 @@ st.markdown("---")
 
 
 # =========================================================
-# MODULE DISPATCHER (UI ROUTING)
+# MODULE DISPATCHER (UI ROUTING) & RESTORED DEPARTMENT FORMS
 # =========================================================
 
 if selected_sheet == "Pareto Tally Sheet":
