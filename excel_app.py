@@ -2793,8 +2793,7 @@ elif selected_sheet == "Hospital Information System":
 elif selected_sheet.startswith("General Nursing Unit (GNU"):
   gnu_title = selected_sheet
   st.header(
-      f"🛏️ {gnu_title} Patient Registration & Admitted Patient Update"
-  )
+      f"🛏️ {gnu_title}")
   ph_now = get_ph_time()
   form_key_slug = (
       gnu_title.replace("General Nursing Unit (", "")
@@ -3000,7 +2999,7 @@ elif selected_sheet.startswith("General Nursing Unit (GNU"):
     render_department_live_roster(gnu_title)
 
 elif selected_sheet == "Emergency Care Complex (ECC)":
-  st.header("🚑 Emergency Care Complex (Standalone Registration)")
+  st.header("🚑 Emergency Care Complex")
   ph_now = get_ph_time()
 
   tab_reg, tab_update_inpatient, tab_roster = st.tabs([
