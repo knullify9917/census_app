@@ -2106,11 +2106,10 @@ if st.session_state["role"] == "Administrator":
             row_data["MEDICATIONS"] = scenario["meds"]
             row_data["SPECIAL ENDORSEMENTS"] = scenario["ends"]
 
-          # If target_dept is ECC, let's also test routing logic explicitly in Seeder
           if target_dept == "Emergency Care Complex (ECC)" and i % 3 == 0:
             row_data["HOSPITALIZATION MODE"] = "INPATIENT"
             row_data["ADMITTED TO"] = "MS-ICU"
-            
+
           append_record_to_google_sheet(target_dept, row_data)
           completed_count += 1
           progress_bar.progress(completed_count / total_tasks)
@@ -3280,7 +3279,7 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
     render_department_live_roster("Emergency Care Complex (ECC)")
 
 elif selected_sheet == "Endoscopy Unit (ENDO)":
-  st.header("🔬 Endoscopy Unit (Standalone Registration)")
+  st.header("Endoscopy Unit")
   ph_now = get_ph_time()
 
   tab_reg, tab_update_inpatient, tab_roster = st.tabs([
@@ -3509,7 +3508,7 @@ elif selected_sheet == "Endoscopy Unit (ENDO)":
 elif selected_sheet == "Hemodialysis Unit (HDU)":
   hdu_icon_html = get_custom_icon_html("medical_icon.png", width=38)
   st.markdown(
-      f"<h2>{hdu_icon_html} Hemodialysis Unit Patient Registration & Update</h2>",
+      f"<h2>{hdu_icon_html} Hemodialysis Unit</h2>",
       unsafe_allow_html=True,
   )
   ph_now = get_ph_time()
@@ -3691,7 +3690,7 @@ elif selected_sheet == "Hemodialysis Unit (HDU)":
 elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
   ob_icon_html = get_custom_icon_html("pregnant_icon.png", width=38)
   st.markdown(
-      f"<h2>{ob_icon_html} OBGYNE Care Complex (Standalone Registration)</h2>",
+      f"<h2>{ob_icon_html} OBGYNE Care Complex</h2>",
       unsafe_allow_html=True,
   )
   ph_now = get_ph_time()
@@ -3933,7 +3932,7 @@ elif selected_sheet == "OBGYNE Care Complex (LRDR-OB Surgery)":
 elif selected_sheet == "Surgical Care Complex (OR Main)":
   surgery_icon_html = get_custom_icon_html("surgery_icon.png", width=38)
   st.markdown(
-      f"<h2>{surgery_icon_html} Surgical Care Complex (Standalone Registration)</h2>",
+      f"<h2>{surgery_icon_html} Surgical Care Complex</h2>",
       unsafe_allow_html=True,
   )
   ph_now = get_ph_time()
@@ -4168,7 +4167,7 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
 elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)" or selected_sheet == "Special Care Complex (MS - ICU)":
   baby_icon_html = get_custom_icon_html("baby_feet_icon.png", width=38)
   st.markdown(
-      f"<h2>{baby_icon_html} Special Care Unit Patient Registration ({selected_sheet})</h2>",
+      f"<h2>{baby_icon_html} Special Care Complex</h2>",
       unsafe_allow_html=True,
   )
   ph_now = get_ph_time()
