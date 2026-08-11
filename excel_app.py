@@ -63,7 +63,7 @@ st.markdown(
         border-left: 5px solid #1e3a8a !important;
     }
 
-    /* Form Inputs, Textareas, and Dropdown Controls (Allowing user-defined case) */
+    /* Form Inputs, Textareas, and Dropdown Controls */
     div[data-baseweb="select"] > div, input[type="text"]:not([type="password"]), input[type="number"], textarea {
         background-color: #ffffff !important; color: #1e3a8a !important; border: 1px solid #cbd5e1 !important; border-radius: 6px !important;
     }
@@ -164,6 +164,7 @@ DEFAULT_USER_DATABASE = {
             "Hospital Information System",
             "Pareto Tally Sheet",
             "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
+            "Special Care Complex (MS - ICU)",
         ],
     },
     "obgyne_staff": {
@@ -227,6 +228,7 @@ for form_key in [
     "ob",
     "scc",
     "scu",
+    "ms_icu",
     "1c",
     "2a",
     "2b",
@@ -292,7 +294,6 @@ def civilian_time_input_field(label, key_suffix=""):
 def sanitize_medical_text(text):
   if not text or pd.isna(text):
     return ""
-  # Preserves user-defined casing locally while cleaning extra whitespaces
   return " ".join(str(text).strip().split())
 
 
@@ -332,6 +333,7 @@ raw_sorted_departments = [
     "OBGYNE Care Complex (LRDR-OB Surgery)",
     "Surgical Care Complex (OR Main)",
     "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
+    "Special Care Complex (MS - ICU)",
     "General Nursing Unit (GNU 1C)",
     "General Nursing Unit (GNU 2A)",
     "General Nursing Unit (GNU 2B)",
@@ -761,6 +763,7 @@ SHEET_HEADERS = {
         "SEEDED_TRIAL",
     ],
     "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)": SCU_SHEET_HEADER,
+    "Special Care Complex (MS - ICU)": SCU_SHEET_HEADER,
     "Surgical Care Complex (OR Main)": [
         "MONTH",
         "DATE",
@@ -1381,6 +1384,7 @@ def get_sheet_name_from_label(label, fallback="Emergency Care Complex (ECC)"):
       "OBGYNE": "OBGYNE Care Complex (LRDR-OB Surgery)",
       "SCC": "Surgical Care Complex (OR Main)",
       "SCU": "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
+      "MS-ICU": "Special Care Complex (MS - ICU)",
   }
   return mapping.get(label, label if label in SHEET_HEADERS else fallback)
 
@@ -1773,6 +1777,7 @@ if st.session_state["role"] == "Administrator":
           "Endoscopy Unit (ENDO)",
           "Hemodialysis Unit (HDU)",
           "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
+          "Special Care Complex (MS - ICU)",
       ] + sorted(
           [d for d in sorted_departments if d.startswith("General Nursing Unit")]
       )
@@ -2002,13 +2007,13 @@ if st.session_state["role"] == "Administrator":
             row_data["MEDICATIONS"] = scenario["meds"]
             row_data["SPECIAL ENDORSEMENTS"] = scenario["ends"]
 
-          elif target_dept == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
+          elif target_dept in ["Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", "Special Care Complex (MS - ICU)"]:
             row_data["AGE"] = f"{random.randint(1, 28)} DAYS"
             row_data["AOG"] = "38 WKS"
             row_data["DIAGNOSIS"] = scenario["condition"]
             row_data["DIAGNOSIS CATEGORY"] = scenario["spec"]
             row_data["ADMITTED FROM"] = "LRDR"
-            row_data["ADMITTED TO"] = random.choice(["NICU", "PICU", "NSU", "PCN", "OUTBORN"])
+            row_data["ADMITTED TO"] = "MS-ICU" if "MS - ICU" in target_dept else random.choice(["NICU", "PICU", "NSU", "PCN", "OUTBORN"])
             row_data["TRANSFERRED TO"] = "NONE"
             row_data["ATTENDING PHYSICIAN"] = "DR. E. SANTOS"
             row_data["ATTENDING SPECIALIZATION"] = "NEONATOLOGY"
@@ -2205,6 +2210,7 @@ if selected_sheet == "Pareto Tally Sheet":
       "Hemodialysis Unit (HDU)",
       "Endoscopy Unit (ENDO)",
       "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
+      "Special Care Complex (MS - ICU)",
   ]) + sorted([
       d
       for d in sorted_departments
@@ -2227,6 +2233,7 @@ if selected_sheet == "Pareto Tally Sheet":
       "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)": (
           "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
       ),
+      "Special Care Complex (MS - ICU)": "Special Care Complex (MS - ICU)",
   }
   for gnu in [
       d for d in sorted_departments if d.startswith("General Nursing Unit")
@@ -2425,6 +2432,7 @@ elif selected_sheet == "Hospital Information System":
         "OBGYNE Care Complex (LRDR-OB Surgery)",
         "Surgical Care Complex (OR Main)",
         "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
+        "Special Care Complex (MS - ICU)",
         "General Nursing Unit (GNU 1C)",
         "General Nursing Unit (GNU 2A)",
         "General Nursing Unit (GNU 2B)",
@@ -2439,7 +2447,10 @@ elif selected_sheet == "Hospital Information System":
     gnu_sheets = [
         d for d in department_sheets if d.startswith("General Nursing Unit (GNU")
     ]
-    scu_sheet = "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
+    scu_sheets = [
+        "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
+        "Special Care Complex (MS - ICU)"
+    ]
 
     count_active_gnu = 0
     count_mgh_gnu = 0
@@ -2454,7 +2465,7 @@ elif selected_sheet == "Hospital Information System":
     dept_data_map = read_multiple_sheets_parallel(department_sheets)
 
     current_status_tokens = []
-    for gnu in gnu_sheets + [scu_sheet]:
+    for gnu in gnu_sheets + scu_sheets:
       df_chk = dept_data_map.get(gnu, pd.DataFrame())
       if not df_chk.empty and "PATIENT STATUS" in df_chk.columns:
         current_status_tokens.append(str(df_chk["PATIENT STATUS"].fillna("ACTIVE").tolist()))
@@ -2502,27 +2513,21 @@ elif selected_sheet == "Hospital Information System":
           "Monthly Patient Census": monthly_count,
       })
 
-    scu_df = dept_data_map.get(scu_sheet, pd.DataFrame())
-    nic_count, pic_count, nsu_count, pcn_count, out_count = 0, 0, 0, 0, 0
-    if not scu_df.empty and "ADMITTED TO" in scu_df.columns:
-      scu_df["ADMITTED_TO_UP"] = (
-          scu_df["ADMITTED TO"].astype(str).str.strip().str.upper()
-      )
-      nic_count = len(
-          scu_df[scu_df["ADMITTED_TO_UP"].str.contains("NICU", na=False)]
-      )
-      pic_count = len(
-          scu_df[scu_df["ADMITTED_TO_UP"].str.contains("PICU", na=False)]
-      )
-      nsu_count = len(
-          scu_df[scu_df["ADMITTED_TO_UP"].str.contains("NSU", na=False)]
-      )
-      pcn_count = len(
-          scu_df[scu_df["ADMITTED_TO_UP"].str.contains("PCN", na=False)]
-      )
-      out_count = len(
-          scu_df[scu_df["ADMITTED_TO_UP"].str.contains("OUTBORN", na=False)]
-      )
+    nic_count, pic_count, nsu_count, pcn_count, out_count, msicu_count = 0, 0, 0, 0, 0, 0
+    for scu_s in scu_sheets:
+      scu_df = dept_data_map.get(scu_s, pd.DataFrame())
+      if not scu_df.empty and "ADMITTED TO" in scu_df.columns:
+        scu_df["ADMITTED_TO_UP"] = (
+            scu_df["ADMITTED TO"].astype(str).str.strip().str.upper()
+        )
+        nic_count += len(scu_df[scu_df["ADMITTED_TO_UP"].str.contains("NICU", na=False)])
+        pic_count += len(scu_df[scu_df["ADMITTED_TO_UP"].str.contains("PICU", na=False)])
+        nsu_count += len(scu_df[scu_df["ADMITTED_TO_UP"].str.contains("NSU", na=False)])
+        pcn_count += len(scu_df[scu_df["ADMITTED_TO_UP"].str.contains("PCN", na=False)])
+        out_count += len(scu_df[scu_df["ADMITTED_TO_UP"].str.contains("OUTBORN", na=False)])
+        msicu_count += len(scu_df[scu_df["ADMITTED_TO_UP"].str.contains("MS-ICU", na=False)])
+      if scu_s == "Special Care Complex (MS - ICU)":
+        msicu_count += len(scu_df)
 
     w1, w2, w3 = st.columns(3)
     with w1:
@@ -2535,7 +2540,7 @@ elif selected_sheet == "Hospital Information System":
     st.markdown("<br>", unsafe_allow_html=True)
 
     st.markdown("##### ⭐ Special Care Complex Census Breakdown")
-    s1, s2, s3, s4, s5 = st.columns(5)
+    s1, s2, s3, s4, s5, s6 = st.columns(6)
     with s1:
       st.metric(label="NICU", value=nic_count)
     with s2:
@@ -2546,6 +2551,8 @@ elif selected_sheet == "Hospital Information System":
       st.metric(label="PCN", value=pcn_count)
     with s5:
       st.metric(label="Outborn", value=out_count)
+    with s6:
+      st.metric(label="MS-ICU", value=msicu_count)
 
     st.markdown("---")
 
@@ -2607,46 +2614,47 @@ elif selected_sheet == "Hospital Information System":
         gnu_mapped["Status"] = gnu_filtered.get("PATIENT STATUS", "").astype(str)
         roster_combined_frames.append(gnu_mapped)
 
-    scu_raw_df = dept_data_map.get(scu_sheet, pd.DataFrame())
-    if not scu_raw_df.empty:
-      scu_c = scu_raw_df.copy()
-      if "PATIENT STATUS" in scu_c.columns:
-        scu_c["PATIENT STATUS"] = scu_c["PATIENT STATUS"].fillna("ACTIVE")
-        if not show_discharged:
-          scu_filtered = scu_c[
-              scu_c["PATIENT STATUS"]
-              .astype(str)
-              .str.strip()
-              .str.upper()
-              .isin(["ACTIVE", "MGH", "CAB"])
-          ]
+    for scu_s in scu_sheets:
+      scu_raw_df = dept_data_map.get(scu_s, pd.DataFrame())
+      if not scu_raw_df.empty:
+        scu_c = scu_raw_df.copy()
+        if "PATIENT STATUS" in scu_c.columns:
+          scu_c["PATIENT STATUS"] = scu_c["PATIENT STATUS"].fillna("ACTIVE")
+          if not show_discharged:
+            scu_filtered = scu_c[
+                scu_c["PATIENT STATUS"]
+                .astype(str)
+                .str.strip()
+                .str.upper()
+                .isin(["ACTIVE", "MGH", "CAB"])
+            ]
+          else:
+            scu_filtered = scu_c
         else:
           scu_filtered = scu_c
-      else:
-        scu_filtered = scu_c
 
-      if not scu_filtered.empty:
-        scu_filtered["LAST NAME"] = scu_filtered.get("LAST NAME", "").astype(str).str.strip()
-        scu_filtered["FIRST NAME"] = scu_filtered.get("FIRST NAME", "").astype(str).str.strip()
-        scu_filtered["MIDDLE NAME"] = scu_filtered.get("MIDDLE NAME", "").astype(str).str.strip()
-        scu_filtered["NAME OF PATIENT"] = (
-            scu_filtered["LAST NAME"] + ", " + scu_filtered["FIRST NAME"] + " " + scu_filtered["MIDDLE NAME"]
-        ).str.strip(", ")
+        if not scu_filtered.empty:
+          scu_filtered["LAST NAME"] = scu_filtered.get("LAST NAME", "").astype(str).str.strip()
+          scu_filtered["FIRST NAME"] = scu_filtered.get("FIRST NAME", "").astype(str).str.strip()
+          scu_filtered["MIDDLE NAME"] = scu_filtered.get("MIDDLE NAME", "").astype(str).str.strip()
+          scu_filtered["NAME OF PATIENT"] = (
+              scu_filtered["LAST NAME"] + ", " + scu_filtered["FIRST NAME"] + " " + scu_filtered["MIDDLE NAME"]
+          ).str.strip(", ")
 
-        scu_mapped = pd.DataFrame()
-        scu_mapped["Admission Date"] = scu_filtered.get("DATE", "").astype(str)
-        scu_mapped["Department / Unit"] = (
-            "SPECIAL CARE COMPLEX ("
-            + scu_filtered.get("ADMITTED TO", "NICU").astype(str)
-            + ")"
-        )
-        scu_mapped["Room No."] = pd.Series(["N/A"] * len(scu_filtered), index=scu_filtered.index, dtype=str)
-        scu_mapped["Name of Patient"] = scu_filtered["NAME OF PATIENT"].astype(str)
-        scu_mapped["Age"] = scu_filtered.get("AGE", "").astype(str)
-        scu_mapped["Diagnosis"] = scu_filtered.get("DIAGNOSIS", "").astype(str)
-        scu_mapped["Attending Physician"] = scu_filtered.get("ATTENDING PHYSICIAN", "").astype(str)
-        scu_mapped["Status"] = scu_filtered.get("PATIENT STATUS", "ACTIVE").astype(str)
-        roster_combined_frames.append(scu_mapped)
+          scu_mapped = pd.DataFrame()
+          scu_mapped["Admission Date"] = scu_filtered.get("DATE", "").astype(str)
+          scu_mapped["Department / Unit"] = (
+              "SPECIAL CARE COMPLEX ("
+              + scu_filtered.get("ADMITTED TO", "NICU").astype(str)
+              + ")"
+          )
+          scu_mapped["Room No."] = pd.Series(["N/A"] * len(scu_filtered), index=scu_filtered.index, dtype=str)
+          scu_mapped["Name of Patient"] = scu_filtered["NAME OF PATIENT"].astype(str)
+          scu_mapped["Age"] = scu_filtered.get("AGE", "").astype(str)
+          scu_mapped["Diagnosis"] = scu_filtered.get("DIAGNOSIS", "").astype(str)
+          scu_mapped["Attending Physician"] = scu_filtered.get("ATTENDING PHYSICIAN", "").astype(str)
+          scu_mapped["Status"] = scu_filtered.get("PATIENT STATUS", "ACTIVE").astype(str)
+          roster_combined_frames.append(scu_mapped)
 
     if roster_combined_frames:
       final_master_roster = pd.concat(roster_combined_frames, ignore_index=True)
@@ -2674,7 +2682,7 @@ elif selected_sheet == "Hospital Information System":
 
       if (
           selected_dept_view
-          == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
+          in ["Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", "Special Care Complex (MS - ICU)"]
           and "ADMITTED TO" in cleaned_dept_df.columns
       ):
         st.markdown("##### 📍 Sort & Filter by Admitted Area")
@@ -3125,8 +3133,8 @@ elif selected_sheet == "Emergency Care Complex (ECC)":
             if gnu_part in target_unit_str:
               target_sheet_to_sync = f"General Nursing Unit ({gnu_part})"
               break
-        elif any(scu_key in target_unit_str for scu_key in ["NICU", "PICU", "NSU", "PCN", "OUTBORN"]):
-          target_sheet_to_sync = "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
+        elif any(scu_key in target_unit_str for scu_key in ["NICU", "PICU", "NSU", "PCN", "OUTBORN", "MS-ICU"]):
+          target_sheet_to_sync = "Special Care Complex (MS - ICU)" if "MS-ICU" in target_unit_str else "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)"
 
         destination_sheet = target_sheet_to_sync if (hosp_mode.upper() == "INPATIENT" and target_sheet_to_sync and target_sheet_to_sync in SHEET_HEADERS) else "Emergency Care Complex (ECC)"
 
@@ -4088,10 +4096,10 @@ elif selected_sheet == "Surgical Care Complex (OR Main)":
   with tab_roster:
     render_department_live_roster("Surgical Care Complex (OR Main)")
 
-elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
+elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)" or selected_sheet == "Special Care Complex (MS - ICU)":
   baby_icon_html = get_custom_icon_html("baby_feet_icon.png", width=38)
   st.markdown(
-      f"<h2>{baby_icon_html} Special Care Unit Patient Registration</h2>",
+      f"<h2>{baby_icon_html} Special Care Unit Patient Registration ({selected_sheet})</h2>",
       unsafe_allow_html=True,
   )
   ph_now = get_ph_time()
@@ -4104,7 +4112,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
   with tab_scu_reg:
     st.info("ℹ️ **Rule Notice:** Patients transferred from ECC to Special Care Complex are automatically routed directly into this unit's database.")
 
-    with st.form("scu_form", clear_on_submit=True):
+    with st.form(f"scu_form_{selected_sheet}", clear_on_submit=True):
       st.subheader("1. Patient Demographics")
       c1, c2, c3, c4, c5 = st.columns([2, 2, 2, 1, 1.5])
       with c1:
@@ -4136,7 +4144,10 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
       with c10:
         admitted_from = st.selectbox("Admitted From", HOSPITAL_UNIT_AREAS, index=0)
       with c11:
-        scu_areas = ["NICU", "OUTBORN", "PCN", "PICU", "ROOM-IN", "NSU"]
+        if "MS - ICU" in selected_sheet:
+          scu_areas = ["MS-ICU"]
+        else:
+          scu_areas = ["NICU", "OUTBORN", "PCN", "PICU", "ROOM-IN", "NSU"]
         scu_areas = ["Select Area"] + sorted([x for x in scu_areas if x != "Select Area"])
         admitted_to = st.selectbox(
             "Admitted To",
@@ -4165,18 +4176,18 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
       c_doc1, c_doc2 = st.columns([2, 2])
       with c_doc1:
         attending_physician = st.text_input(
-            "Attending Physician Name", value="", key="scu_att_input"
+            "Attending Physician Name", value="", key=f"scu_att_input_{selected_sheet}"
         ).strip()
       with c_doc2:
         attending_spec = st.selectbox(
             "Specialization",
             SPECIALTY_DROPDOWN_OPTIONS,
             index=0,
-            key="scu_spec_input",
+            key=f"scu_spec_input_{selected_sheet}",
         )
 
       tag_as_cm = st.form_submit_button("Tag as Co-Management")
-      cm_list_key = "cm_list_scu"
+      cm_list_key = f"cm_list_scu_{selected_sheet}"
       if tag_as_cm and attending_physician:
         doc_name_up = attending_physician.strip()
         existing_cms = st.session_state.setdefault(cm_list_key, [])
@@ -4192,19 +4203,19 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
           st.write(f"- Dr. {cm['name']} ({cm['spec']})")
 
       st.subheader("4. Clinical and Diagnostic Details")
-      diagnosis = st.text_area("Diagnosis Text", value="").strip()
+      diagnosis = st.text_area("Diagnosis Text", value="", key=f"scu_diag_{selected_sheet}").strip()
       diag_flags = st.multiselect(
-          "Diagnosis Category", sorted(["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY", "OTHERS"])
+          "Diagnosis Category", sorted(["PNEUMONIA", "SEPSIS", "PCAP", "SURGERY", "OTHERS"]), key=f"scu_flags_{selected_sheet}"
       )
 
       st.subheader("5. Diagnostics Procedures and Treatment Plans")
-      scu_procedures = st.text_area("Procedures", value="", key="scu_procs").strip()
+      scu_procedures = st.text_area("Procedures", value="", key=f"scu_procs_{selected_sheet}").strip()
       scu_diagnostic_exams = st.text_area(
-          "Diagnostic Examinations", value="", key="scu_diags"
+          "Diagnostic Examinations", value="", key=f"scu_diags_{selected_sheet}"
       ).strip()
-      scu_medications = st.text_area("Medications", value="", key="scu_meds").strip()
+      scu_medications = st.text_area("Medications", value="", key=f"scu_meds_{selected_sheet}").strip()
       scu_special_endorsements = st.text_area(
-          "Special Endorsements", value="", key="scu_ends"
+          "Special Endorsements", value="", key=f"scu_ends_{selected_sheet}"
       ).strip()
 
       submitted = st.form_submit_button("Submit Record")
@@ -4221,7 +4232,7 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
           st.stop()
 
         existing_record = check_existing_patient_ai(
-            "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)",
+            selected_sheet,
             last_name,
             first_name,
             curr_date_str,
@@ -4289,14 +4300,14 @@ elif selected_sheet == "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)":
         }
 
         if append_record_to_google_sheet(
-            "Special Care Complex (NICU-PICU-NSU/PCN-Outborn)", row_data
+            selected_sheet, row_data
         ):
           st.cache_data.clear()
           st.session_state["df_cache"] = {}
           st.success(
-              "Successfully saved to Special Care Complex!"
+              f"Successfully saved to `{selected_sheet}`!"
           )
           st.session_state[cm_list_key] = []
 
   with tab_scu_roster:
-    render_department_live_roster("Special Care Complex (NICU-PICU-NSU/PCN-Outborn)")
+    render_department_live_roster(selected_sheet)
